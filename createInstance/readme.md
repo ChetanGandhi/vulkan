@@ -9,7 +9,7 @@ Building Vulkan Programs from Command Line
 3. Use following command to compile your program.
 
 ```
-cl.exe /EHse /I"%VK_SDK_PATH%\include" main.cpp /link /LIBPATH:"%VK_SDK_PATH%\bin" user32.lib kernel32.lib gdi32.lib vulkan-1.lib
+cl.exe /EHsc /I"%VK_SDK_PATH%\include" main.cpp /link /LIBPATH:"%VK_SDK_PATH%\bin" user32.lib kernel32.lib gdi32.lib vulkan-1.lib
 ```
 
 --
@@ -54,6 +54,8 @@ vulkan-1.lib - The Vulkan library.
 
 - The path for x64 bit version Vulkan libraries, i.e. vulkan-1.lib 64 bit version.
 
+[vulkan_command_line_x64]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x64.png "vulkan_command_line_x64"
+
 32-Bit Platform
 ---------------
 
@@ -62,7 +64,7 @@ vulkan-1.lib - The Vulkan library.
 3. Use following command to compile your program.
 
 ```
-cl.exe /EHse /I"%VK_SDK_PATH%\include" main.cpp /link /LIBPATH:"%VK_SDK_PATH%\bin32" user32.lib kernel32.lib gdi32.lib "vulkan-1.lib"
+cl.exe /EHsc /I"%VK_SDK_PATH%\include" main.cpp /link /LIBPATH:"%VK_SDK_PATH%\bin32" user32.lib kernel32.lib gdi32.lib "vulkan-1.lib"
 ```
 
 --
@@ -109,4 +111,4 @@ vulkan-1.lib
 
 ![alt text][vulkan_command_line_x86]
 
-[vulkan_command_line_x86]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x64.png "vulkan_command_line_x86"
+[vulkan_command_line_x86]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x86.png "vulkan_command_line_x86"
