@@ -106,3 +106,7 @@ vulkan-1.lib
 "%VK_SDK_PATH%\bin32"
 
 - The path for x86 bit version Vulkan libraries, i.e. vulkan-1.lib 32 bit version. Note that its "bin32" and not "bin" as for 32-bit version of Vulkan libraries are in "bin32" folder.
+
+![alt text][vulkan_command_line_x86]
+
+[vulkan_command_line_x86]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x64.png "vulkan_command_line_x86"
