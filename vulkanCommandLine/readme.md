@@ -57,7 +57,7 @@ vulkan-1.lib - The Vulkan library.
 
 ![alt text][vulkan_command_line_x64]
 
-[vulkan_command_line_x64]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x64.png "vulkan_command_line_x64"
+[vulkan_command_line_x64]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/vulkanCommandLine/vulkan_command_line_x64.png "vulkan_command_line_x64"
 
 32-Bit Platform
 ---------------
@@ -114,4 +114,4 @@ vulkan-1.lib
 
 ![alt text][vulkan_command_line_x86]
 
-[vulkan_command_line_x86]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x86.png "vulkan_command_line_x86"
+[vulkan_command_line_x86]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/vulkanCommandLine/vulkan_command_line_x86.png "vulkan_command_line_x86"
