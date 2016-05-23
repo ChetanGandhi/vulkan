@@ -54,6 +54,9 @@ vulkan-1.lib - The Vulkan library.
 
 - The path for x64 bit version Vulkan libraries, i.e. vulkan-1.lib 64 bit version.
 
+
+![alt text][vulkan_command_line_x64]
+
 [vulkan_command_line_x64]: https://raw.githubusercontent.com/ChetanGandhi/vulkan/master/createInstance/vulkan_command_line_x64.png "vulkan_command_line_x64"
 
 32-Bit Platform
