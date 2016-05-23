@@ -1,11 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
-
-#pragma comment(lib, "user32.lib")
-#pragma comment(lib, "kernel32.lib")
-#pragma comment(lib, "gdi32.lib")
-#pragma comment(lib, "vulkan-1.lib")
+#include <string.h>
 
 int main()
 {
@@ -13,8 +9,11 @@ int main()
     VkInstance instance = 0;
     VkResult result;
 
+    memset(&instanceCreateInfo, 0, sizeof(instanceCreateInfo));
+
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pNext = NULL;
+    instanceCreateInfo.flags = 0; // Must be 0 as per documentation.
     instanceCreateInfo.pApplicationInfo = NULL;
     instanceCreateInfo.enabledLayerCount = 0;
     instanceCreateInfo.ppEnabledLayerNames = NULL;
@@ -25,7 +24,7 @@ int main()
 
     if(result != VK_SUCCESS)
     {
-        printf("Error %d\n", result);
+        printf("Instance Create Error %d\n", result);
         return (EXIT_FAILURE);
     }
 
