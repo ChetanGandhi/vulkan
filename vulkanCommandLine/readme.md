@@ -1,6 +1,8 @@
 Building Vulkan Programs from Command Line
 ==========================================
 
+I am using Visual Studio 2015 Community Edition. You can use Visual Studio 2013, just make sure you are using right Visual Studio command prompt.
+
 64-Bit Platform
 ---------------
 
@@ -38,7 +40,9 @@ user32.lib, kernel32.lib, gdi32.lib
 
 - Win32 libraries, we will need this when we do Window based programs.
 
-vulkan-1.lib - The Vulkan library.
+vulkan-1.lib
+
+- The Vulkan library.
 
 %VK_SDK_PATH%
 
