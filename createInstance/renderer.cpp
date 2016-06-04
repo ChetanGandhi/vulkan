@@ -1,4 +1,6 @@
 #include "renderer.h"
+#include "buildParam.h"
+#include "utils.h"
 #include <assert.h>
 #include <cstdlib>
 #include <iostream>
@@ -34,25 +36,25 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, 
 
     if(flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
     {
-        stream<<"Debug Message [INFO]    : ";
+        stream<<"[INFO | ";
     }
 
     if(flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
     {
-        stream<<"Debug Message [WARNING] : ";
+        stream<<"[WARNING | ";
     }
 
     if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
     {
-        stream<<"Debug Message [ERROR]   : ";
+        stream<<"[ERROR | ";
     }
 
     if(flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
     {
-        stream<<"Debug Message [DEBUG]   : ";
+        stream<<"[DEBUG | ";
     }
 
-    stream<<"@["<<layerPrefix<<"] "<<message<<"\n";
+    stream<<layerPrefix<<"]: "<<message<<"\n";
     std::cout<<stream.str();
 
     #ifdef _WIN32
@@ -71,33 +73,31 @@ void Renderer::setupDebugLayer()
 {
     debugReportCallbackInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
     debugReportCallbackInfo.pfnCallback = debugReportCallback;
-    debugReportCallbackInfo.flags = 0
-        | VK_DEBUG_REPORT_INFORMATION_BIT_EXT
-        | VK_DEBUG_REPORT_WARNING_BIT_EXT
-        | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT
-        | VK_DEBUG_REPORT_ERROR_BIT_EXT
-        | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
     debugReportCallbackInfo.pNext = NULL;
     debugReportCallbackInfo.pUserData = NULL;
+    debugReportCallbackInfo.flags = 0
+    | (VK_DEBUG_REPORT_INFORMATION_BIT_EXT & ENABLE_DEBUG_REPORT_INFORMATION_BIT)
+    | (VK_DEBUG_REPORT_WARNING_BIT_EXT & ENABLE_DEBUG_REPORT_WARNING_BIT)
+    | (VK_DEBUG_REPORT_DEBUG_BIT_EXT & ENABLE_DEBUG_REPORT_DEBUG_BIT)
+    | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT
+    | VK_DEBUG_REPORT_ERROR_BIT_EXT;
 
-
-    // instanceLayerList.push_back("VK_LAYER_LUNARG_standard_validation");
-    instanceLayerList.push_back("VK_LAYER_GOOGLE_threading");
-    instanceLayerList.push_back("VK_LAYER_LUNARG_image");
-    instanceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
-    instanceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
-    instanceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
+    instanceLayerList.push_back("VK_LAYER_LUNARG_standard_validation");
+    // instanceLayerList.push_back("VK_LAYER_GOOGLE_threading");
+    // instanceLayerList.push_back("VK_LAYER_LUNARG_image");
+    // instanceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
+    // instanceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
+    // instanceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
 
     instanceExtensionList.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
-    // deviceLayerList.push_back("VK_LAYER_LUNARG_standard_validation");
-    deviceLayerList.push_back("VK_LAYER_LUNARG_threading");
-    deviceLayerList.push_back("VK_LAYER_LUNARG_image");
-    deviceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
-    deviceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
-    deviceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
+    deviceLayerList.push_back("VK_LAYER_LUNARG_standard_validation");
+    // deviceLayerList.push_back("VK_LAYER_LUNARG_threading");
+    // deviceLayerList.push_back("VK_LAYER_LUNARG_image");
+    // deviceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
+    // deviceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
+    // deviceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
 }
-
 
 void Renderer::enableDebud()
 {
@@ -141,13 +141,7 @@ void Renderer::initInstance()
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensionList.data();
 
     VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
-
-    if(VK_SUCCESS != result)
-    {
-        std::cout<<"Error code: "<<result<<"\n";
-        assert(0 && "Vulkan Error: Create instance failed.");
-        std::exit(-1);
-    }
+    checkError(result);
 }
 
 void Renderer::destroyInstance()
@@ -233,12 +227,7 @@ void Renderer::initDevice()
     deviceCreateInfo.pEnabledFeatures = NULL;
 
     VkResult result = vkCreateDevice(gpu, &deviceCreateInfo, nullptr, &device);
-
-    if(result != VK_SUCCESS)
-    {
-        assert(0 && "Vulkan Error: Device creation failed.");
-        std::exit(-1);
-    }
+    checkError(result);
 }
 
 void Renderer::destroyDevice()
