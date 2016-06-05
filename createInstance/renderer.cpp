@@ -12,8 +12,8 @@
 
 #endif
 
-PFN_vkCreateDebugReportCallbackEXT _vkCreateDebugReportCallbackEXT = nullptr;
-PFN_vkDestroyDebugReportCallbackEXT _vkDestroyDebugReportCallbackEXT = nullptr;
+PFN_vkCreateDebugReportCallbackEXT _vkCreateDebugReportCallbackEXT = VK_NULL_HANDLE;
+PFN_vkDestroyDebugReportCallbackEXT _vkDestroyDebugReportCallbackEXT = VK_NULL_HANDLE;
 
 Renderer::Renderer()
 {
@@ -104,19 +104,19 @@ void Renderer::enableDebud()
     _vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
     _vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
 
-    if(_vkCreateDebugReportCallbackEXT == nullptr || _vkDestroyDebugReportCallbackEXT == nullptr)
+    if(_vkCreateDebugReportCallbackEXT == VK_NULL_HANDLE || _vkDestroyDebugReportCallbackEXT == VK_NULL_HANDLE)
     {
         assert(0 && "Vulkan Error: Cannot fetch debug functions");
         std::exit(-1);
     }
 
-    _vkCreateDebugReportCallbackEXT(instance, &debugReportCallbackInfo, nullptr, &debugReport);
+    _vkCreateDebugReportCallbackEXT(instance, &debugReportCallbackInfo, VK_NULL_HANDLE, &debugReport);
 }
 
 void Renderer::disableDebug()
 {
-    _vkDestroyDebugReportCallbackEXT(instance, debugReport, nullptr);
-    debugReport = nullptr;
+    _vkDestroyDebugReportCallbackEXT(instance, debugReport, VK_NULL_HANDLE);
+    debugReport = VK_NULL_HANDLE;
 }
 
 void Renderer::initInstance()
@@ -140,21 +140,21 @@ void Renderer::initInstance()
     instanceCreateInfo.enabledExtensionCount = instanceExtensionList.size();
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensionList.data();
 
-    VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+    VkResult result = vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &instance);
     checkError(result);
 }
 
 void Renderer::destroyInstance()
 {
-    vkDestroyInstance(instance, nullptr);
-    instance = nullptr;
+    vkDestroyInstance(instance, VK_NULL_HANDLE);
+    instance = VK_NULL_HANDLE;
 }
 
 void Renderer::initDevice()
 {
     {
         uint32_t gpuCount = 0;
-        vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
+        vkEnumeratePhysicalDevices(instance, &gpuCount, VK_NULL_HANDLE);
         std::vector<VkPhysicalDevice> gpuList(gpuCount);
         vkEnumeratePhysicalDevices(instance, &gpuCount, gpuList.data());
         gpu = gpuList[0];
@@ -165,7 +165,7 @@ void Renderer::initDevice()
 
     {
         uint32_t familyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, VK_NULL_HANDLE);
         std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
 
@@ -190,7 +190,7 @@ void Renderer::initDevice()
 
     {
         uint32_t layerCount = 0;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        vkEnumerateInstanceLayerProperties(&layerCount, VK_NULL_HANDLE);
         std::vector<VkLayerProperties> layerPropertiesList(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, layerPropertiesList.data());
         printInstanceLayerProperties(layerPropertiesList);
@@ -198,7 +198,7 @@ void Renderer::initDevice()
 
     {
         uint32_t layerCount = 0;
-        vkEnumerateDeviceLayerProperties(gpu, &layerCount, nullptr);
+        vkEnumerateDeviceLayerProperties(gpu, &layerCount, VK_NULL_HANDLE);
         std::vector<VkLayerProperties> layerPropertiesList(layerCount);
         vkEnumerateDeviceLayerProperties(gpu, &layerCount, layerPropertiesList.data());
         printDeviceLayerProperties(layerPropertiesList);
@@ -226,14 +226,16 @@ void Renderer::initDevice()
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensionList.data();
     deviceCreateInfo.pEnabledFeatures = NULL;
 
-    VkResult result = vkCreateDevice(gpu, &deviceCreateInfo, nullptr, &device);
+    VkResult result = vkCreateDevice(gpu, &deviceCreateInfo, VK_NULL_HANDLE, &device);
     checkError(result);
+
+    vkGetDeviceQueue(device, graphicsFamilyIndex, 0, &queue);
 }
 
 void Renderer::destroyDevice()
 {
-    vkDestroyDevice(device, nullptr);
-    device = nullptr;
+    vkDestroyDevice(device, VK_NULL_HANDLE);
+    device = VK_NULL_HANDLE;
 }
 
 void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties)

@@ -10,12 +10,13 @@ public:
     Renderer();
     ~Renderer();
 
-private:
-    VkInstance instance = nullptr;
-    VkPhysicalDevice gpu = nullptr;
-    VkDevice device = nullptr;
+// private:
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice gpu = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkQueue queue = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties gpuProperties {};
-    VkDebugReportCallbackEXT debugReport = nullptr;
+    VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
 
     uint32_t graphicsFamilyIndex = 0;
