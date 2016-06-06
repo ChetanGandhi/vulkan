@@ -7,15 +7,23 @@ int main()
     VkDevice device = renderer.device;
     VkQueue queue = renderer.queue;
     VkCommandPool commandPool = VK_NULL_HANDLE;
-    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    VkFence fence = VK_NULL_HANDLE;
+    VkCommandBuffer commandBuffers[2];
+    // VkFence fence = VK_NULL_HANDLE;
+    VkSemaphore semaphore = VK_NULL_HANDLE;
 
-    VkFenceCreateInfo fenceCreateInfo {};
-    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceCreateInfo.flags = 0;
-    fenceCreateInfo.pNext = NULL;
+    // VkFenceCreateInfo fenceCreateInfo {};
+    // fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    // fenceCreateInfo.flags = 0;
+    // fenceCreateInfo.pNext = NULL;
 
-    vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);
+    // vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);
+
+    VkSemaphoreCreateInfo semaphoreCreateInfo {};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.pNext = NULL;
+    semaphoreCreateInfo.flags = 0;
+
+    vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
 
     VkCommandPoolCreateInfo commandPoolCreateInfo {};
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -28,47 +36,97 @@ int main()
     VkCommandBufferAllocateInfo commandBufferAllocateInfo {};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     commandBufferAllocateInfo.commandPool = commandPool;
-    commandBufferAllocateInfo.commandBufferCount = 1;
+    commandBufferAllocateInfo.commandBufferCount = sizeof(commandBuffers)/sizeof(commandBuffers[0]);
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.pNext = NULL;
 
-    vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer);
+    vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers);
 
-    VkCommandBufferBeginInfo commandBufferBeginInfo {};
-    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    commandBufferBeginInfo.flags = 0;
-    commandBufferBeginInfo.pNext = NULL;
-    commandBufferBeginInfo.pInheritanceInfo = NULL;
+    {
+        VkCommandBufferBeginInfo commandBufferBeginInfo {};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.flags = 0;
+        commandBufferBeginInfo.pNext = NULL;
+        commandBufferBeginInfo.pInheritanceInfo = NULL;
 
-    vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+        vkBeginCommandBuffer(commandBuffers[0], &commandBufferBeginInfo);
 
-    VkViewport viewport {};
-    viewport.maxDepth = 1.0f;
-    viewport.minDepth = 0.0f;
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = 512.0f;
-    viewport.height = 512.0f;
+        vkCmdPipelineBarrier(commandBuffers[0],
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            0, nullptr);
 
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        VkViewport viewport {};
+        viewport.maxDepth = 1.0f;
+        viewport.minDepth = 0.0f;
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = 512.0f;
+        viewport.height = 512.0f;
 
-    vkEndCommandBuffer(commandBuffer);
+        vkCmdSetViewport(commandBuffers[0], 0, 1, &viewport);
+        vkEndCommandBuffer(commandBuffers[0]);
+    }
 
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pNext = NULL;
-    submitInfo.waitSemaphoreCount = 0;
-    submitInfo.pWaitSemaphores = NULL;
-    submitInfo.pWaitDstStageMask = NULL;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-    submitInfo.signalSemaphoreCount = 0;
-    submitInfo.pSignalSemaphores = NULL;
+    {
+        VkCommandBufferBeginInfo commandBufferBeginInfo {};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.pNext = NULL;
+        commandBufferBeginInfo.flags = 0;
+        commandBufferBeginInfo.pInheritanceInfo = NULL;
 
-    vkQueueSubmit(queue, 1, &submitInfo, fence);
-    // vkQueueWaitIdle(queue);
-    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
-    vkDestroyFence(device, fence, nullptr);
+        vkBeginCommandBuffer(commandBuffers[1], &commandBufferBeginInfo);
+
+        VkViewport viewport {};
+        viewport.maxDepth = 1.0f;
+        viewport.minDepth = 0.0f;
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = 512.0f;
+        viewport.height = 512.0f;
+
+        vkCmdSetViewport(commandBuffers[1], 0, 1, &viewport);
+        vkEndCommandBuffer(commandBuffers[1]);
+    }
+
+    {
+        VkSubmitInfo submitInfo {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = NULL;
+        submitInfo.waitSemaphoreCount = 0;
+        submitInfo.pWaitSemaphores = NULL;
+        submitInfo.pWaitDstStageMask = NULL;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffers[0];
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &semaphore;
+
+        vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    }
+
+    {
+        VkPipelineStageFlags pipelineStageFlags[] {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
+        VkSubmitInfo submitInfo {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = NULL;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &semaphore;
+        submitInfo.pWaitDstStageMask = pipelineStageFlags;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffers[1];
+        submitInfo.signalSemaphoreCount = 0;
+        submitInfo.pSignalSemaphores = NULL;
+
+        vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    }
+
+    vkQueueWaitIdle(queue);
+    // vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
+    // vkDestroyFence(device, fence, nullptr);
+    vkDestroySemaphore(device, semaphore, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
 
     return 0;
