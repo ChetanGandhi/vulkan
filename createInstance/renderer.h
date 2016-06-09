@@ -1,7 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include "platform.h"
 #include <vector>
+
+class VulkanWindow;
 
 class Renderer
 {
@@ -9,6 +11,9 @@ class Renderer
 public:
     Renderer();
     ~Renderer();
+
+    VulkanWindow* createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name);
+    bool run();
 
 // private:
     VkInstance instance = VK_NULL_HANDLE;
@@ -19,6 +24,8 @@ public:
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
 
+    VulkanWindow *vulkanWindow = nullptr;
+
     uint32_t graphicsFamilyIndex = 0;
 
     std::vector<const char*> v;
@@ -27,6 +34,7 @@ public:
     std::vector<const char*> instanceExtensionList;
     std::vector<const char*> deviceExtensionList;
 
+    void out();
     void setupDebugLayer();
     void enableDebud();
     void disableDebug();

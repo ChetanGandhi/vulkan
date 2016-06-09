@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include "platform.h"
 #include <assert.h>
 #include <iostream>
 

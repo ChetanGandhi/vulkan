@@ -1,16 +1,12 @@
-#include "renderer.h"
 #include "buildParam.h"
+#include "platform.h"
+#include "renderer.h"
 #include "utils.h"
+#include "vulkanWindow.h"
 #include <assert.h>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
-
-#ifdef _WIN32
-
-#include<windows.h>
-
-#endif // _WIN32
 
 Renderer::Renderer()
 {
@@ -22,6 +18,7 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+    delete vulkanWindow;
     destroyDevice();
     disableDebug();
     destroyInstance();
@@ -137,6 +134,21 @@ void Renderer::disableDebug()
     debugReport = VK_NULL_HANDLE;
 
     #endif // ENABLE_DEBUG
+}
+
+VulkanWindow* Renderer::createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name)
+{
+    vulkanWindow = new VulkanWindow(sizeX, sizeY, name);
+    return vulkanWindow;
+}
+
+bool Renderer::run()
+{
+    if(vulkanWindow != nullptr)
+    {
+        return vulkanWindow->update();
+    }
+    return true;
 }
 
 void Renderer::initInstance()
