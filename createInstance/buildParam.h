@@ -1,3 +1,4 @@
+#pragma once
 
 #define ENABLE_DEBUG 0
 #define ENABLE_RUNTIME_DEBUG (ENABLE_DEBUG & 1)

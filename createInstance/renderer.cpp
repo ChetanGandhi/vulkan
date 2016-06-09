@@ -10,8 +10,7 @@
 
 #include<windows.h>
 
-#endif
-
+#endif // _WIN32
 
 Renderer::Renderer()
 {
