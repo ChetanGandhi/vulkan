@@ -1,7 +1,10 @@
+#include "buildParam.h"
 #include "utils.h"
 
 void checkError(VkResult result)
 {
+    #if ENABLE_RUNTIME_DEBUG
+
     if(result < 0)
     {
         switch(result)
@@ -81,4 +84,6 @@ void checkError(VkResult result)
 
         assert(0 && "Vulkan Runtime Error");
     }
+
+    #endif // ENABLE_DEBUG
 }

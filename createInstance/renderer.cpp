@@ -12,8 +12,6 @@
 
 #endif
 
-PFN_vkCreateDebugReportCallbackEXT _vkCreateDebugReportCallbackEXT = VK_NULL_HANDLE;
-PFN_vkDestroyDebugReportCallbackEXT _vkDestroyDebugReportCallbackEXT = VK_NULL_HANDLE;
 
 Renderer::Renderer()
 {
@@ -30,8 +28,17 @@ Renderer::~Renderer()
     destroyInstance();
 }
 
+#if ENABLE_DEBUG
+
+PFN_vkCreateDebugReportCallbackEXT _vkCreateDebugReportCallbackEXT = VK_NULL_HANDLE;
+PFN_vkDestroyDebugReportCallbackEXT _vkDestroyDebugReportCallbackEXT = VK_NULL_HANDLE;
+
+#endif
+
 VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t sourceObject, size_t location, int32_t messageCode, const char *layerPrefix, const char *message, void *userData)
 {
+    #if ENABLE_DEBUG
+
     std::ostringstream stream;
 
     if(flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
@@ -64,13 +71,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, 
         MessageBox(NULL, stream.str().c_str(), TEXT("Vulkan Error"), MB_OK | MB_ICONERROR);
     }
 
-    #endif
+    #endif // _WIN32
+
+    #endif // ENABLE_DEBUG
 
     return false;
 }
 
 void Renderer::setupDebugLayer()
 {
+    #if ENABLE_DEBUG
+
     debugReportCallbackInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
     debugReportCallbackInfo.pfnCallback = debugReportCallback;
     debugReportCallbackInfo.pNext = NULL;
@@ -97,10 +108,14 @@ void Renderer::setupDebugLayer()
     // deviceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
     // deviceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
     // deviceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
+
+    #endif // ENABLE_DEBUG
 }
 
 void Renderer::enableDebud()
 {
+    #if ENABLE_DEBUG
+
     _vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
     _vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
 
@@ -111,12 +126,18 @@ void Renderer::enableDebud()
     }
 
     _vkCreateDebugReportCallbackEXT(instance, &debugReportCallbackInfo, VK_NULL_HANDLE, &debugReport);
+
+    #endif // ENABLE_DEBUG
 }
 
 void Renderer::disableDebug()
 {
+    #if ENABLE_DEBUG
+
     _vkDestroyDebugReportCallbackEXT(instance, debugReport, VK_NULL_HANDLE);
     debugReport = VK_NULL_HANDLE;
+
+    #endif // ENABLE_DEBUG
 }
 
 void Renderer::initInstance()
