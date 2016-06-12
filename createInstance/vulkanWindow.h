@@ -2,12 +2,15 @@
 
 #include "platform.h"
 #include <string>
+#include <vector>
+
+class Renderer;
 
 class VulkanWindow
 {
 
 public:
-    VulkanWindow(uint32_t sizeX, uint32_t sizeY, std::string name);
+    VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, std::string name);
     ~VulkanWindow();
 
     void close();
@@ -18,11 +21,15 @@ private:
     uint32_t surfaceSizeX = 512;
     uint32_t surfaceSizeY = 512;
     std::string windowName;
+    Renderer *renderer = nullptr;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+    VkSurfaceFormatKHR surfaceFormat = {};
 
     #if VK_USE_PLATFORM_WIN32_KHR
 
-    HINSTANCE instance = NULL;
-    HWND window = NULL;
+    HINSTANCE hInstance = NULL;
+    HWND hWindow = NULL;
     std::string className;
     static uint64_t win32ClassIdCounter;
 
@@ -32,4 +39,8 @@ private:
     void destroyPlatformSpecificWindow();
     void updatePlatformSpecificWindow();
     void initPlatformSpecificSurface();
+    void destroyPlatformSpecificSurface();
+    void initSurface();
+    void destroySurface();
+    void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);
 };

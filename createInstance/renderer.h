@@ -14,8 +14,14 @@ public:
 
     VulkanWindow* createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name);
     bool run();
+    const VkInstance getVulkanInstance() const;
+    const VkPhysicalDevice getVulkanPhysicalDevice() const;
+    const VkDevice getVulkanDevice() const;
+    const VkQueue getVulkanQueue() const;
+    const VkPhysicalDeviceProperties& getVulkanPhysicalDeviceProperties() const;
+    const uint32_t getGraphicsFamilyIndex() const;
 
-// private:
+ private:
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
@@ -36,6 +42,7 @@ public:
 
     void out();
     void setupDebugLayer();
+    void setupLayersAndExtensions();
     void enableDebud();
     void disableDebug();
     void initInstance();

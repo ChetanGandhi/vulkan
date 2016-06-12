@@ -1,7 +1,9 @@
 #include "buildParam.h"
 #include "platform.h"
 #include "VulkanWindow.h"
+#include "Renderer.h"
 #include <assert.h>
+#include <iostream>
 
 #if VK_USE_PLATFORM_WIN32_KHR
 
@@ -12,7 +14,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
     switch(iMsg)
     {
         case WM_CLOSE:
-            window->close();
+        window->close();
         break;
 
         case WM_SIZE:
@@ -35,7 +37,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     assert(surfaceSizeX > 0);
     assert(surfaceSizeY > 0);
 
-    instance = GetModuleHandle(nullptr);
+    hInstance = GetModuleHandle(nullptr);
     className = windowName + "_" + std::to_string(win32ClassIdCounter);
     win32ClassIdCounter++;
 
@@ -44,7 +46,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     wndclassex.cbClsExtra = 0;
     wndclassex.cbWndExtra = 0;
     wndclassex.lpfnWndProc = WndProc;
-    wndclassex.hInstance = instance;
+    wndclassex.hInstance = hInstance;
     wndclassex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wndclassex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wndclassex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
@@ -65,7 +67,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     RECT windowRect = {0, 0, LONG(surfaceSizeX), LONG(surfaceSizeY)};
     AdjustWindowRectEx(&windowRect, style, FALSE, styleExtra);
 
-    window = CreateWindowEx(0,
+    hWindow = CreateWindowEx(0,
         className.c_str(),
         windowName.c_str(),
         style,
@@ -75,36 +77,53 @@ void VulkanWindow::initPlatformSpecificWindow()
         windowRect.bottom - windowRect.top,
         NULL,
         NULL,
-        instance,
+        hInstance,
         NULL);
 
-    if(!window)
+    if(!hWindow)
     {
         assert(0 && "Cannot create window.\n");
         fflush(stdout);
         std::exit(-1);
     }
 
-    SetWindowLongPtr(window, GWLP_USERDATA, (LONG_PTR)this);
-    ShowWindow(window, SW_SHOW);
-    SetForegroundWindow(window);
-    SetFocus(window);
+    SetWindowLongPtr(hWindow, GWLP_USERDATA, (LONG_PTR)this);
+    ShowWindow(hWindow, SW_SHOW);
+    SetForegroundWindow(hWindow);
+    SetFocus(hWindow);
 }
 
 void VulkanWindow::destroyPlatformSpecificWindow()
 {
-    DestroyWindow(window);
-    UnregisterClass(className.c_str(), instance);
+    DestroyWindow(hWindow);
+    UnregisterClass(className.c_str(), hInstance);
 }
 
 void VulkanWindow::updatePlatformSpecificWindow()
 {
     MSG msg;
-    if(PeekMessage(&msg, window, 0, 0, PM_REMOVE))
+    if(PeekMessage(&msg, hWindow, 0, 0, PM_REMOVE))
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+}
+
+void VulkanWindow::initPlatformSpecificSurface()
+{
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo {};
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.pNext = NULL;
+    surfaceCreateInfo.flags = 0;
+    surfaceCreateInfo.hinstance = hInstance;
+    surfaceCreateInfo.hwnd = hWindow;
+
+    vkCreateWin32SurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
+}
+
+void VulkanWindow::destroyPlatformSpecificSurface()
+{
+    vkDestroySurfaceKHR(renderer->getVulkanInstance(), surface, nullptr);
 }
 
 #endif // VK_USE_PLATFORM_WIN32_KHR

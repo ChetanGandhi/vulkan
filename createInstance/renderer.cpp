@@ -11,6 +11,7 @@
 Renderer::Renderer()
 {
     setupDebugLayer();
+    setupLayersAndExtensions();
     initInstance();
     enableDebud(); // After initInstance as we need instance :P
     initDevice();
@@ -136,9 +137,38 @@ void Renderer::disableDebug()
     #endif // ENABLE_DEBUG
 }
 
+const VkInstance Renderer::getVulkanInstance() const
+{
+    return instance;
+}
+
+const VkPhysicalDevice Renderer::getVulkanPhysicalDevice() const
+{
+    return gpu;
+}
+
+const VkDevice Renderer::getVulkanDevice() const
+{
+    return device;
+}
+const VkQueue Renderer::getVulkanQueue() const
+{
+    return queue;
+}
+
+const VkPhysicalDeviceProperties& Renderer::getVulkanPhysicalDeviceProperties() const
+{
+    return gpuProperties;
+}
+
+const uint32_t Renderer::getGraphicsFamilyIndex() const
+{
+    return graphicsFamilyIndex;
+}
+
 VulkanWindow* Renderer::createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name)
 {
-    vulkanWindow = new VulkanWindow(sizeX, sizeY, name);
+    vulkanWindow = new VulkanWindow(this, sizeX, sizeY, name);
     return vulkanWindow;
 }
 
@@ -149,6 +179,12 @@ bool Renderer::run()
         return vulkanWindow->update();
     }
     return true;
+}
+
+void Renderer::setupLayersAndExtensions()
+{
+    instanceExtensionList.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    instanceExtensionList.push_back(PLATFORM_SURFACE_EXTENSION_NAME);
 }
 
 void Renderer::initInstance()
