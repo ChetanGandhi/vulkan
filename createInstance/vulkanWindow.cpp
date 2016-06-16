@@ -48,6 +48,12 @@ void VulkanWindow::initSurface()
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &surfaceCapabilities);
 
+    if(surfaceCapabilities.currentExtent.width < UINT32_MAX)
+    {
+        surfaceSizeX = surfaceCapabilities.currentExtent.width;
+        surfaceSizeY = surfaceCapabilities.currentExtent.height;
+    }
+
     {
         uint32_t formatCount = 0;
         vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, nullptr);
