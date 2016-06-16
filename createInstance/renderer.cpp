@@ -185,6 +185,8 @@ void Renderer::setupLayersAndExtensions()
 {
     instanceExtensionList.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
     instanceExtensionList.push_back(PLATFORM_SURFACE_EXTENSION_NAME);
+
+    deviceExtensionList.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
 void Renderer::initInstance()

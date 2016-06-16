@@ -1,6 +1,7 @@
 #include "vulkanWindow.h"
 #include "buildParam.h"
 #include "Renderer.h"
+#include "utils.h"
 #include <iostream>
 #include <assert.h>
 
@@ -12,10 +13,12 @@ VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, s
     windowName = name;
     initPlatformSpecificWindow();
     initSurface();
+    initSwapchain();
 }
 
 VulkanWindow::~VulkanWindow()
 {
+    destroySwapchain();
     destroySurface();
     destroyPlatformSpecificWindow();
 }
@@ -86,6 +89,89 @@ void VulkanWindow::destroySurface()
     destroyPlatformSpecificSurface();
 }
 
+void VulkanWindow::initSwapchain()
+{
+    if(swapchainImageCount < surfaceCapabilities.minImageCount + 1)
+    {
+        swapchainImageCount = surfaceCapabilities.minImageCount + 1;
+    }
+
+    if(swapchainImageCount > surfaceCapabilities.maxImageCount)
+    {
+        swapchainImageCount = surfaceCapabilities.maxImageCount;
+    }
+
+    printSwapChainImageCount(surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount, swapchainImageCount);
+
+    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    VkResult result = VK_SUCCESS;
+
+    {
+        uint32_t presentModeCount = 0;
+        result = vkGetPhysicalDeviceSurfacePresentModesKHR(renderer->getVulkanPhysicalDevice(), surface, &presentModeCount, nullptr);
+        checkError(result);
+        std::vector<VkPresentModeKHR> presentModeList(presentModeCount);
+        result = vkGetPhysicalDeviceSurfacePresentModesKHR(renderer->getVulkanPhysicalDevice(), surface, &presentModeCount, presentModeList.data());
+        checkError(result);
+
+        for(VkPresentModeKHR nextPresentMode : presentModeList)
+        {
+            if(nextPresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            {
+                presentMode = nextPresentMode;
+            }
+        }
+
+        #if ENABLE_DEBUG
+
+        std::cout<<"\n---------- Presentation Mode ----------\n";
+        if(presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            std::cout<<"\nMode: MAILBOX ["<<presentMode<<"]\n";
+        }
+        else
+        {
+            std::cout<<"\nMode: "<<presentMode<<"\n";
+        }
+        std::cout<<"\n---------- Presentation Mode End----------\n\n";
+
+        #endif // ENABLE_DEBUG
+
+    }
+
+    VkSwapchainCreateInfoKHR swapchainCreateInfo {};
+    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchainCreateInfo.pNext = NULL;
+    swapchainCreateInfo.flags = 0;
+    swapchainCreateInfo.surface = surface;
+    swapchainCreateInfo.minImageCount = swapchainImageCount;
+    swapchainCreateInfo.imageFormat = surfaceFormat.format;
+    swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
+    swapchainCreateInfo.imageExtent.width = surfaceSizeX;
+    swapchainCreateInfo.imageExtent.height = surfaceSizeY;
+    swapchainCreateInfo.imageArrayLayers = 1;
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchainCreateInfo.queueFamilyIndexCount = 0; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+    swapchainCreateInfo.pQueueFamilyIndices = nullptr; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+    swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchainCreateInfo.presentMode = presentMode;
+    swapchainCreateInfo.clipped = VK_TRUE;
+    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    result = vkCreateSwapchainKHR(renderer->getVulkanDevice(), &swapchainCreateInfo, nullptr, &swapchain);
+    checkError(result);
+
+    result = vkGetSwapchainImagesKHR(renderer->getVulkanDevice(), swapchain, &swapchainImageCount, nullptr);
+    checkError(result);
+}
+
+void VulkanWindow::destroySwapchain()
+{
+    vkDestroySwapchainKHR(renderer->getVulkanDevice(), swapchain, nullptr);
+}
+
 void VulkanWindow::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats)
 {
     #if ENABLE_DEBUG
@@ -101,5 +187,19 @@ void VulkanWindow::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> su
     std::cout<<"\n---------- Surface Formats Details End ["<<surfaceFormats.size()<<"] ----------\n\n";
 
     #endif // ENABLE_DEBUG
+}
 
+
+void VulkanWindow::printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount)
+{
+    #if ENABLE_DEBUG
+
+    std::cout<<"\n---------- Swapchain Image Count ----------\n";
+    std::cout<<"Min\t: "<<minImageCount<<"\n";
+    std::cout<<"Max\t: "<<maxImageCount<<"\n";
+    std::cout<<"Current\t: "<<currentImageCount<<"\n";
+
+    std::cout<<"\n---------- Swapchain Image Count End ----------\n\n";
+
+    #endif // ENABLE_DEBUG
 }

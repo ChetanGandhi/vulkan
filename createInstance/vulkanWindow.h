@@ -18,11 +18,17 @@ public:
 
 private:
     bool isRunning = true;
+
     uint32_t surfaceSizeX = 512;
     uint32_t surfaceSizeY = 512;
+    uint32_t swapchainImageCount = 2;
+
     std::string windowName;
+
     Renderer *renderer = nullptr;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
 
@@ -30,7 +36,9 @@ private:
 
     HINSTANCE hInstance = NULL;
     HWND hWindow = NULL;
+
     std::string className;
+
     static uint64_t win32ClassIdCounter;
 
     #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -42,5 +50,8 @@ private:
     void destroyPlatformSpecificSurface();
     void initSurface();
     void destroySurface();
+    void initSwapchain();
+    void destroySwapchain();
     void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);
+    void printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount);
 };
