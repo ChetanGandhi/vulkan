@@ -14,10 +14,12 @@ VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, s
     initPlatformSpecificWindow();
     initSurface();
     initSwapchain();
+    initSwapchainImages();
 }
 
 VulkanWindow::~VulkanWindow()
 {
+    destroySwapchainImages();
     destroySwapchain();
     destroySurface();
     destroyPlatformSpecificWindow();
@@ -91,12 +93,16 @@ void VulkanWindow::destroySurface()
 
 void VulkanWindow::initSwapchain()
 {
+
+    // surfaceCapabilities.maxImageCount can be 0.
+    // In this case the implementation supports unlimited amount of swap-chain images, limited by memory.
+    // The amount of swap-chain images can also be fixed.
     if(swapchainImageCount < surfaceCapabilities.minImageCount + 1)
     {
         swapchainImageCount = surfaceCapabilities.minImageCount + 1;
     }
 
-    if(swapchainImageCount > surfaceCapabilities.maxImageCount)
+    if(swapchainImageCount > 0 && swapchainImageCount > surfaceCapabilities.maxImageCount)
     {
         swapchainImageCount = surfaceCapabilities.maxImageCount;
     }
@@ -136,7 +142,6 @@ void VulkanWindow::initSwapchain()
         std::cout<<"\n---------- Presentation Mode End----------\n\n";
 
         #endif // ENABLE_DEBUG
-
     }
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo {};
@@ -170,6 +175,45 @@ void VulkanWindow::initSwapchain()
 void VulkanWindow::destroySwapchain()
 {
     vkDestroySwapchainKHR(renderer->getVulkanDevice(), swapchain, nullptr);
+}
+
+void VulkanWindow::initSwapchainImages()
+{
+    swapchainImages.resize(swapchainImageCount);
+    swapchainImageViews.resize(swapchainImageCount);
+    VkResult result = vkGetSwapchainImagesKHR(renderer->getVulkanDevice(), swapchain, &swapchainImageCount, swapchainImages.data());
+    checkError(result);
+
+    for(uint32_t counter = 0; counter < swapchainImageCount; ++counter)
+    {
+        VkImageViewCreateInfo imageViewCreateInfo = {};
+        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        imageViewCreateInfo.pNext = NULL;
+        imageViewCreateInfo.flags = 0;
+        imageViewCreateInfo.image = swapchainImages[counter];
+        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        imageViewCreateInfo.format = surfaceFormat.format;
+        imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+        imageViewCreateInfo.subresourceRange.levelCount = 1;
+        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+        imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+        result = vkCreateImageView(renderer->getVulkanDevice(), &imageViewCreateInfo, nullptr, &swapchainImageViews[counter]);
+        checkError(result);
+    }
+}
+
+void VulkanWindow::destroySwapchainImages()
+{
+    for(VkImageView imageView: swapchainImageViews)
+    {
+        vkDestroyImageView(renderer->getVulkanDevice(), imageView, nullptr);
+    }
 }
 
 void VulkanWindow::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats)

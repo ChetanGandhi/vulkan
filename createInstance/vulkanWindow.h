@@ -32,6 +32,9 @@ private:
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
 
+    std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapchainImageViews;
+
     #if VK_USE_PLATFORM_WIN32_KHR
 
     HINSTANCE hInstance = NULL;
@@ -52,6 +55,8 @@ private:
     void destroySurface();
     void initSwapchain();
     void destroySwapchain();
+    void initSwapchainImages();
+    void destroySwapchainImages();
     void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);
     void printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount);
 };
