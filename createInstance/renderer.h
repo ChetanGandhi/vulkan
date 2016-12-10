@@ -49,7 +49,7 @@ public:
     void destroyInstance();
     void initDevice();
     void destroyDevice();
-    void printGpuProperties(VkPhysicalDeviceProperties *properties);
+    void printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount);
     void printInstanceLayerProperties(std::vector<VkLayerProperties> properties);
     void printDeviceLayerProperties(std::vector<VkLayerProperties> properties);
 };

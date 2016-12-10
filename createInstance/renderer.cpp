@@ -178,6 +178,7 @@ bool Renderer::run()
     {
         return vulkanWindow->update();
     }
+
     return true;
 }
 
@@ -222,40 +223,43 @@ void Renderer::destroyInstance()
 
 void Renderer::initDevice()
 {
+    bool found = false;
+
     {
         uint32_t gpuCount = 0;
         vkEnumeratePhysicalDevices(instance, &gpuCount, VK_NULL_HANDLE);
         std::vector<VkPhysicalDevice> gpuList(gpuCount);
         vkEnumeratePhysicalDevices(instance, &gpuCount, gpuList.data());
-        gpu = gpuList[0];
 
-        vkGetPhysicalDeviceProperties(gpu, &gpuProperties);
-        printGpuProperties(&gpuProperties);
-    }
-
-    {
-        uint32_t familyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, VK_NULL_HANDLE);
-        std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
-
-        bool found = false;
-
-        for(uint32_t counter = 0; counter < familyCount; ++counter)
+        for(uint32_t counter = 0; counter < gpuCount; ++counter)
         {
-            if(familyPropertiesList[counter].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            VkPhysicalDevice nextGpu = gpuList[counter];
+            VkPhysicalDeviceProperties nextGpuProperties {};
+
+            vkGetPhysicalDeviceProperties(nextGpu, &nextGpuProperties);
+            printGpuProperties(&nextGpuProperties, counter, gpuCount);
+
+            uint32_t familyCount = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(nextGpu, &familyCount, VK_NULL_HANDLE);
+            std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
+            vkGetPhysicalDeviceQueueFamilyProperties(nextGpu, &familyCount, familyPropertiesList.data());
+
+            for(uint32_t familyCounter = 0; familyCounter < familyCount; ++familyCounter)
             {
-                found = true;
-                graphicsFamilyIndex = counter;
+                if(familyPropertiesList[familyCounter].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                {
+                    found = true;
+                    graphicsFamilyIndex = familyCounter;
+                    gpu = nextGpu;
+                }
             }
         }
+    }
 
-
-        if(!found)
-        {
-            assert(0 && "Vulkan Error: Queue family supporting graphics not found.");
-            std::exit(-1);
-        }
+    if(!found)
+    {
+        assert(0 && "Vulkan Error: Queue family supporting graphics not found.");
+        std::exit(-1);
     }
 
     {
@@ -308,7 +312,7 @@ void Renderer::destroyDevice()
     device = VK_NULL_HANDLE;
 }
 
-void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties)
+void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount)
 {
     if(!properties)
     {
@@ -316,7 +320,7 @@ void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties)
         return;
     }
 
-    std::cout<<"\n---------- GPU Properties ----------\n";
+    std::cout<<"\n---------- GPU Properties ["<<currentGpuIndex<<"/"<<totalGpuCount<<"]----------\n";
     std::cout<<"Device Name\t\t: "<<properties->deviceName<<"\n";
     std::cout<<"Vendor Id\t\t: "<<properties->vendorID<<"\n";
     std::cout<<"Device Id\t\t: "<<properties->deviceID<<"\n";
