@@ -29,16 +29,16 @@ private:
     Renderer *renderer = nullptr;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    VkImage depthStencilImage = VK_NULL_HANDLE;
+    VkImageView depthStencilImageView = VK_NULL_HANDLE;
+    VkDeviceMemory depthStencilImageMemory = VK_NULL_HANDLE;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
 
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
-
-    VkImage depthStencilImage = VK_NULL_HANDLE;
-    VkImageView depthStencilImageView = VK_NULL_HANDLE;
-    VkDeviceMemory depthStencilImageMemory = VK_NULL_HANDLE;
 
     VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
@@ -72,6 +72,11 @@ private:
 
     void initDepthStencilImage();
     void destoryDepthStencilImage();
+
+    void initRenderPass();
+    void destroyRenderPass();
+
+    // Debug methods
 
     void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);
     void printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount);
