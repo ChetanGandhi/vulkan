@@ -156,9 +156,14 @@ const VkQueue Renderer::getVulkanQueue() const
     return queue;
 }
 
-const VkPhysicalDeviceProperties& Renderer::getVulkanPhysicalDeviceProperties() const
+const VkPhysicalDeviceProperties &Renderer::getVulkanPhysicalDeviceProperties() const
 {
     return gpuProperties;
+}
+
+const VkPhysicalDeviceMemoryProperties &Renderer::getVulkanPhysicalDeviceMemoryProperties() const
+{
+    return gpuMemoryProperties;
 }
 
 const uint32_t Renderer::getGraphicsFamilyIndex() const
@@ -235,8 +240,12 @@ void Renderer::initDevice()
         {
             VkPhysicalDevice nextGpu = gpuList[counter];
             VkPhysicalDeviceProperties nextGpuProperties {};
+            VkPhysicalDeviceMemoryProperties nextGpuMemoryProperties {};
 
             vkGetPhysicalDeviceProperties(nextGpu, &nextGpuProperties);
+            vkGetPhysicalDeviceMemoryProperties(nextGpu, &nextGpuMemoryProperties);
+
+            // printGpuMemoryProperties();
             printGpuProperties(&nextGpuProperties, counter, gpuCount);
 
             uint32_t familyCount = 0;
@@ -251,6 +260,8 @@ void Renderer::initDevice()
                     found = true;
                     graphicsFamilyIndex = familyCounter;
                     gpu = nextGpu;
+                    gpuProperties = nextGpuProperties;
+                    gpuMemoryProperties = nextGpuMemoryProperties;
                 }
             }
         }
@@ -311,6 +322,8 @@ void Renderer::destroyDevice()
     vkDestroyDevice(device, VK_NULL_HANDLE);
     device = VK_NULL_HANDLE;
 }
+
+// Debug methods
 
 void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount)
 {

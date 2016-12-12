@@ -5,3 +5,5 @@
 #include <iostream>
 
 void checkError(VkResult result);
+
+uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *memoryRequirements, const VkMemoryPropertyFlags memoryPropertyFlags);

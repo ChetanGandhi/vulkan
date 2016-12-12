@@ -13,12 +13,16 @@ public:
     ~Renderer();
 
     VulkanWindow* createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name);
+
     bool run();
+
     const VkInstance getVulkanInstance() const;
     const VkPhysicalDevice getVulkanPhysicalDevice() const;
     const VkDevice getVulkanDevice() const;
     const VkQueue getVulkanQueue() const;
-    const VkPhysicalDeviceProperties& getVulkanPhysicalDeviceProperties() const;
+    const VkPhysicalDeviceProperties &getVulkanPhysicalDeviceProperties() const;
+    const VkPhysicalDeviceMemoryProperties &getVulkanPhysicalDeviceMemoryProperties() const;
+
     const uint32_t getGraphicsFamilyIndex() const;
 
  private:
@@ -26,7 +30,10 @@ public:
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
     VkQueue queue = VK_NULL_HANDLE;
-    VkPhysicalDeviceProperties gpuProperties {};
+
+    VkPhysicalDeviceProperties gpuProperties = {};
+    VkPhysicalDeviceMemoryProperties gpuMemoryProperties = {};
+
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
 
@@ -49,6 +56,9 @@ public:
     void destroyInstance();
     void initDevice();
     void destroyDevice();
+
+    // Debug methods
+
     void printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount);
     void printInstanceLayerProperties(std::vector<VkLayerProperties> properties);
     void printDeviceLayerProperties(std::vector<VkLayerProperties> properties);

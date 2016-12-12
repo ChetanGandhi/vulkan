@@ -11,14 +11,17 @@ VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, s
     surfaceSizeX = sizeX;
     surfaceSizeY = sizeY;
     windowName = name;
+
     initPlatformSpecificWindow();
     initSurface();
     initSwapchain();
     initSwapchainImages();
+    initDepthStencilImage();
 }
 
 VulkanWindow::~VulkanWindow()
 {
+    destoryDepthStencilImage();
     destroySwapchainImages();
     destroySwapchain();
     destroySurface();
@@ -215,6 +218,115 @@ void VulkanWindow::destroySwapchainImages()
         vkDestroyImageView(renderer->getVulkanDevice(), imageView, nullptr);
     }
 }
+
+void VulkanWindow::initDepthStencilImage()
+{
+    {
+        std::vector<VkFormat> formatsToTry
+        {
+            VK_FORMAT_D32_SFLOAT_S8_UINT,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_FORMAT_D16_UNORM_S8_UINT,
+            VK_FORMAT_D32_SFLOAT,
+            VK_FORMAT_D16_UNORM
+        };
+
+        for(VkFormat nextFormat : formatsToTry)
+        {
+            VkFormatProperties formatProperties {};
+            vkGetPhysicalDeviceFormatProperties(renderer->getVulkanPhysicalDevice(), nextFormat, &formatProperties);
+
+            if(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+            {
+                depthStencilFormat = nextFormat;
+                break;
+            }
+
+            if(depthStencilFormat == VK_FORMAT_UNDEFINED)
+            {
+                assert(0 && "Depth stencil format not selected.");
+                std::exit(-1);
+            }
+
+            stencilAvailable = (depthStencilFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || depthStencilFormat == VK_FORMAT_D24_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_D16_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_D32_SFLOAT || depthStencilFormat == VK_FORMAT_D16_UNORM);
+        }
+    }
+
+    VkImageCreateInfo imageCreateInfo {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.pNext = nullptr;
+    imageCreateInfo.flags = 0;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = depthStencilFormat;
+    imageCreateInfo.extent.width = surfaceSizeX;
+    imageCreateInfo.extent.height = surfaceSizeY;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.mipLevels = 1;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.queueFamilyIndexCount = VK_QUEUE_FAMILY_IGNORED;
+    imageCreateInfo.pQueueFamilyIndices = nullptr;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkResult result = vkCreateImage(renderer->getVulkanDevice(), &imageCreateInfo, nullptr, &depthStencilImage);
+
+    checkError(result);
+
+    VkMemoryRequirements imageMemoryRequirements {};
+    vkGetImageMemoryRequirements(renderer->getVulkanDevice(), depthStencilImage, &imageMemoryRequirements);
+
+    VkPhysicalDeviceMemoryProperties gpuMemoryProperties = renderer->getVulkanPhysicalDeviceMemoryProperties();
+    VkMemoryPropertyFlagBits requiredMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    uint32_t memoryIndex = findMemoryTypeIndex(&gpuMemoryProperties, &imageMemoryRequirements, requiredMemoryProperties);
+
+    VkMemoryAllocateInfo memoryAllocationInfo {};
+    memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocationInfo.pNext = NULL;
+    memoryAllocationInfo.allocationSize = imageMemoryRequirements.size;
+    memoryAllocationInfo.memoryTypeIndex = memoryIndex;
+
+    result = vkAllocateMemory(renderer->getVulkanDevice(), &memoryAllocationInfo, nullptr, &depthStencilImageMemory);
+
+    checkError(result);
+
+    result = vkBindImageMemory(renderer->getVulkanDevice(), depthStencilImage, depthStencilImageMemory, 0);
+
+    checkError(result);
+
+    VkImageViewCreateInfo imageViewCreateInfo {};
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.pNext = NULL;
+    imageViewCreateInfo.flags = 0;
+    imageViewCreateInfo.image = depthStencilImage;
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.format = depthStencilFormat;
+    imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | (stencilAvailable ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+    result = vkCreateImageView(renderer->getVulkanDevice(), &imageViewCreateInfo, nullptr, &depthStencilImageView);
+
+    checkError(result);
+}
+
+void VulkanWindow::destoryDepthStencilImage()
+{
+    vkDestroyImageView(renderer->getVulkanDevice(), depthStencilImageView, nullptr);
+    vkFreeMemory(renderer->getVulkanDevice(), depthStencilImageMemory, nullptr);
+    vkDestroyImage(renderer->getVulkanDevice(), depthStencilImage, nullptr);
+}
+
+// Debug methods.
 
 void VulkanWindow::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats)
 {
