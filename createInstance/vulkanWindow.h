@@ -39,6 +39,7 @@ private:
 
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkFramebuffer> framebuffers;
 
     VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
@@ -75,6 +76,9 @@ private:
 
     void initRenderPass();
     void destroyRenderPass();
+
+    void initFrameBuffers();
+    void destroyFrameBuffers();
 
     // Debug methods
 
