@@ -14,20 +14,20 @@ int main()
     // VkFenceCreateInfo fenceCreateInfo {};
     // fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     // fenceCreateInfo.flags = 0;
-    // fenceCreateInfo.pNext = NULL;
+    // fenceCreateInfo.pNext = nullptr;
 
     // vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);
 
     VkSemaphoreCreateInfo semaphoreCreateInfo {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphoreCreateInfo.pNext = NULL;
+    semaphoreCreateInfo.pNext = nullptr;
     semaphoreCreateInfo.flags = 0;
 
     vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
 
     VkCommandPoolCreateInfo commandPoolCreateInfo {};
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolCreateInfo.pNext = NULL;
+    commandPoolCreateInfo.pNext = nullptr;
     commandPoolCreateInfo.queueFamilyIndex = renderer.graphicsFamilyIndex;
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
@@ -38,7 +38,7 @@ int main()
     commandBufferAllocateInfo.commandPool = commandPool;
     commandBufferAllocateInfo.commandBufferCount = sizeof(commandBuffers)/sizeof(commandBuffers[0]);
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferAllocateInfo.pNext = NULL;
+    commandBufferAllocateInfo.pNext = nullptr;
 
     vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers);
 
@@ -46,7 +46,7 @@ int main()
         VkCommandBufferBeginInfo commandBufferBeginInfo {};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         commandBufferBeginInfo.flags = 0;
-        commandBufferBeginInfo.pNext = NULL;
+        commandBufferBeginInfo.pNext = nullptr;
         commandBufferBeginInfo.pInheritanceInfo = NULL;
 
         vkBeginCommandBuffer(commandBuffers[0], &commandBufferBeginInfo);
@@ -74,7 +74,7 @@ int main()
     {
         VkCommandBufferBeginInfo commandBufferBeginInfo {};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        commandBufferBeginInfo.pNext = NULL;
+        commandBufferBeginInfo.pNext = nullptr;
         commandBufferBeginInfo.flags = 0;
         commandBufferBeginInfo.pInheritanceInfo = NULL;
 
@@ -95,7 +95,7 @@ int main()
     {
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.pNext = NULL;
+        submitInfo.pNext = nullptr;
         submitInfo.waitSemaphoreCount = 0;
         submitInfo.pWaitSemaphores = NULL;
         submitInfo.pWaitDstStageMask = NULL;
@@ -111,7 +111,7 @@ int main()
         VkPipelineStageFlags pipelineStageFlags[] {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.pNext = NULL;
+        submitInfo.pNext = nullptr;
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = &semaphore;
         submitInfo.pWaitDstStageMask = pipelineStageFlags;

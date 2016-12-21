@@ -154,7 +154,7 @@ void VulkanWindow::initSwapchain()
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo {};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.pNext = NULL;
+    swapchainCreateInfo.pNext = nullptr;
     swapchainCreateInfo.flags = 0;
     swapchainCreateInfo.surface = surface;
     swapchainCreateInfo.minImageCount = swapchainImageCount;
@@ -196,7 +196,7 @@ void VulkanWindow::initSwapchainImages()
     {
         VkImageViewCreateInfo imageViewCreateInfo = {};
         imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.pNext = NULL;
+        imageViewCreateInfo.pNext = nullptr;
         imageViewCreateInfo.flags = 0;
         imageViewCreateInfo.image = swapchainImages[counter];
         imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -290,7 +290,7 @@ void VulkanWindow::initDepthStencilImage()
 
     VkMemoryAllocateInfo memoryAllocationInfo {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocationInfo.pNext = NULL;
+    memoryAllocationInfo.pNext = nullptr;
     memoryAllocationInfo.allocationSize = imageMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
@@ -304,7 +304,7 @@ void VulkanWindow::initDepthStencilImage()
 
     VkImageViewCreateInfo imageViewCreateInfo {};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewCreateInfo.pNext = NULL;
+    imageViewCreateInfo.pNext = nullptr;
     imageViewCreateInfo.flags = 0;
     imageViewCreateInfo.image = depthStencilImage;
     imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -376,7 +376,7 @@ void VulkanWindow::initRenderPass()
 
     VkRenderPassCreateInfo renderPassCreateInfo {};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.pNext = NULL;
+    renderPassCreateInfo.pNext = nullptr;
     renderPassCreateInfo.flags = 0;
     renderPassCreateInfo.attachmentCount = attachments.size();
     renderPassCreateInfo.pAttachments = attachments.data();

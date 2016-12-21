@@ -12,7 +12,7 @@ int main()
     memset(&instanceCreateInfo, 0, sizeof(instanceCreateInfo));
 
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pNext = NULL;
+    instanceCreateInfo.pNext = nullptr;
     instanceCreateInfo.flags = 0; // Must be 0 as per documentation.
     instanceCreateInfo.pApplicationInfo = NULL;
     instanceCreateInfo.enabledLayerCount = 0;
