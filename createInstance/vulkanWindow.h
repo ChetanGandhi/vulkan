@@ -16,6 +16,13 @@ public:
     void close();
     bool update();
 
+    void beginRendering();
+    void endRendering(std::vector<VkSemaphore> waitSemaphores);
+
+    VkRenderPass getVulkanRenderPass();
+    VkFramebuffer getVulkanActiveFramebuffer();
+    VkExtent2D getVulkanSurfaceSize();
+
 private:
     bool isRunning = true;
     bool stencilAvailable = false;
@@ -23,16 +30,19 @@ private:
     uint32_t surfaceSizeX = 512;
     uint32_t surfaceSizeY = 512;
     uint32_t swapchainImageCount = 2;
+    uint32_t activeSwapchainImageId = UINT32_MAX;
 
     std::string windowName;
 
     Renderer *renderer = nullptr;
+
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkImage depthStencilImage = VK_NULL_HANDLE;
     VkImageView depthStencilImageView = VK_NULL_HANDLE;
     VkDeviceMemory depthStencilImageMemory = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkFence swapchainImageAvailable = VK_NULL_HANDLE;
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
@@ -79,6 +89,9 @@ private:
 
     void initFrameBuffers();
     void destroyFrameBuffers();
+
+    void initSynchronizations();
+    void destroySynchronizations();
 
     // Debug methods
 

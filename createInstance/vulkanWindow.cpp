@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <array>
 
+// Constructor
+
 VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, std::string name)
 {
     this->renderer = renderer;
@@ -20,10 +22,15 @@ VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, s
     initDepthStencilImage();
     initRenderPass();
     initFrameBuffers();
+    initSynchronizations();
 }
+
+// Destructor
 
 VulkanWindow::~VulkanWindow()
 {
+    vkQueueWaitIdle(renderer->getVulkanQueue());
+    destroySynchronizations();
     destroyFrameBuffers();
     destroyRenderPass();
     destoryDepthStencilImage();
@@ -32,6 +39,8 @@ VulkanWindow::~VulkanWindow()
     destroySurface();
     destroyPlatformSpecificWindow();
 }
+
+// Public methods
 
 void VulkanWindow::close()
 {
@@ -43,6 +52,66 @@ bool VulkanWindow::update()
     updatePlatformSpecificWindow();
     return isRunning;
 }
+
+void VulkanWindow::beginRendering()
+{
+    VkResult result = vkAcquireNextImageKHR(renderer->getVulkanDevice(), swapchain, UINT64_MAX, VK_NULL_HANDLE, swapchainImageAvailable, &activeSwapchainImageId);
+
+    checkError(result);
+
+    result = vkWaitForFences(renderer->getVulkanDevice(), 1, &swapchainImageAvailable, VK_TRUE, UINT64_MAX);
+
+    checkError(result);
+
+    result = vkResetFences(renderer->getVulkanDevice(), 1, &swapchainImageAvailable);
+
+    checkError(result);
+
+    result = vkQueueWaitIdle(renderer->getVulkanQueue());
+
+    checkError(result);
+}
+
+void VulkanWindow::endRendering(std::vector<VkSemaphore> waitSemaphores)
+{
+    VkResult presentResult = VkResult::VK_RESULT_MAX_ENUM;
+
+    VkPresentInfoKHR presentInfo {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.waitSemaphoreCount = waitSemaphores.size();
+    presentInfo.pWaitSemaphores = waitSemaphores.data();
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &swapchain;
+    presentInfo.pImageIndices = &activeSwapchainImageId;
+    presentInfo.pResults = &presentResult;
+
+    VkResult result = vkQueuePresentKHR(renderer->getVulkanQueue(), &presentInfo);
+
+    checkError(result);
+    checkError(presentResult);
+}
+
+VkRenderPass VulkanWindow::getVulkanRenderPass()
+{
+    return renderPass;
+}
+
+VkFramebuffer VulkanWindow::getVulkanActiveFramebuffer()
+{
+    return framebuffers[activeSwapchainImageId];
+}
+
+VkExtent2D VulkanWindow::getVulkanSurfaceSize()
+{
+    VkExtent2D extent {};
+    extent.width = surfaceSizeX;
+    extent.height = surfaceSizeY;
+
+    return extent;
+}
+
+// Private methods
 
 void VulkanWindow::initSurface()
 {
@@ -154,7 +223,7 @@ void VulkanWindow::initSwapchain()
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo {};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.pNext = NULL;
+    swapchainCreateInfo.pNext = nullptr;
     swapchainCreateInfo.flags = 0;
     swapchainCreateInfo.surface = surface;
     swapchainCreateInfo.minImageCount = swapchainImageCount;
@@ -196,7 +265,7 @@ void VulkanWindow::initSwapchainImages()
     {
         VkImageViewCreateInfo imageViewCreateInfo = {};
         imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.pNext = NULL;
+        imageViewCreateInfo.pNext = nullptr;
         imageViewCreateInfo.flags = 0;
         imageViewCreateInfo.image = swapchainImages[counter];
         imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -290,7 +359,7 @@ void VulkanWindow::initDepthStencilImage()
 
     VkMemoryAllocateInfo memoryAllocationInfo {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocationInfo.pNext = NULL;
+    memoryAllocationInfo.pNext = nullptr;
     memoryAllocationInfo.allocationSize = imageMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
@@ -304,7 +373,7 @@ void VulkanWindow::initDepthStencilImage()
 
     VkImageViewCreateInfo imageViewCreateInfo {};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewCreateInfo.pNext = NULL;
+    imageViewCreateInfo.pNext = nullptr;
     imageViewCreateInfo.flags = 0;
     imageViewCreateInfo.image = depthStencilImage;
     imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -376,7 +445,7 @@ void VulkanWindow::initRenderPass()
 
     VkRenderPassCreateInfo renderPassCreateInfo {};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.pNext = NULL;
+    renderPassCreateInfo.pNext = nullptr;
     renderPassCreateInfo.flags = 0;
     renderPassCreateInfo.attachmentCount = attachments.size();
     renderPassCreateInfo.pAttachments = attachments.data();
@@ -428,6 +497,23 @@ void VulkanWindow::destroyFrameBuffers()
     {
         vkDestroyFramebuffer(renderer->getVulkanDevice(), nextFrameuffer, nullptr);
     }
+}
+
+void VulkanWindow::initSynchronizations()
+{
+    VkFenceCreateInfo fenceCreateInfo {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.pNext = nullptr;
+    fenceCreateInfo.flags = 0;
+
+    VkResult result = vkCreateFence(renderer->getVulkanDevice(), &fenceCreateInfo, nullptr, &swapchainImageAvailable);
+
+    checkError(result);
+}
+
+void VulkanWindow::destroySynchronizations()
+{
+    vkDestroyFence(renderer->getVulkanDevice(), swapchainImageAvailable, nullptr);
 }
 
 // Debug methods.

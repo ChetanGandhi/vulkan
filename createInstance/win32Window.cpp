@@ -113,7 +113,7 @@ void VulkanWindow::initPlatformSpecificSurface()
 {
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.pNext = NULL;
+    surfaceCreateInfo.pNext = nullptr;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.hinstance = hInstance;
     surfaceCreateInfo.hwnd = hWindow;
