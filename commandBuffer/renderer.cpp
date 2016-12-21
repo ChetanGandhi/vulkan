@@ -73,7 +73,7 @@ void Renderer::setupDebugLayer()
 {
     debugReportCallbackInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
     debugReportCallbackInfo.pfnCallback = debugReportCallback;
-    debugReportCallbackInfo.pNext = NULL;
+    debugReportCallbackInfo.pNext = nullptr;
     debugReportCallbackInfo.pUserData = NULL;
     debugReportCallbackInfo.flags = 0
     | (VK_DEBUG_REPORT_INFORMATION_BIT_EXT & ENABLE_DEBUG_REPORT_INFORMATION_BIT)
@@ -123,7 +123,7 @@ void Renderer::initInstance()
 {
     VkApplicationInfo applicationInfo {};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.pNext = NULL;
+    applicationInfo.pNext = nullptr;
     applicationInfo.apiVersion = VK_MAKE_VERSION(1, 0, 3);
     applicationInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     applicationInfo.pApplicationName = "Vulkan - Ceate Instance";
@@ -208,7 +208,7 @@ void Renderer::initDevice()
 
     VkDeviceQueueCreateInfo deviceQueueCreateInfo {};
     deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    deviceQueueCreateInfo.pNext = NULL;
+    deviceQueueCreateInfo.pNext = nullptr;
     deviceQueueCreateInfo.flags = 0;
     deviceQueueCreateInfo.queueFamilyIndex = graphicsFamilyIndex;
     deviceQueueCreateInfo.queueCount = 1;
@@ -216,7 +216,7 @@ void Renderer::initDevice()
 
     VkDeviceCreateInfo deviceCreateInfo {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pNext = NULL;
+    deviceCreateInfo.pNext = nullptr;
     deviceCreateInfo.flags = 0;
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
