@@ -3,8 +3,10 @@
 #include "renderer.h"
 #include "utils.h"
 #include "vulkanWindow.h"
-#include <assert.h>
+
 #include <cstdlib>
+#include <assert.h>
+#include <vector>
 #include <iostream>
 #include <sstream>
 
@@ -13,7 +15,7 @@ Renderer::Renderer()
     setupDebugLayer();
     setupLayersAndExtensions();
     initInstance();
-    enableDebud(); // After initInstance as we need instance :P
+    enableDebug(); // After initInstance as we need instance :P
     initDevice();
 }
 
@@ -109,7 +111,7 @@ void Renderer::setupDebugLayer()
     #endif // ENABLE_DEBUG
 }
 
-void Renderer::enableDebud()
+void Renderer::enableDebug()
 {
     #if ENABLE_DEBUG
 

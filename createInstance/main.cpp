@@ -1,5 +1,6 @@
 #include <array>
 #include <chrono>
+#include <iostream>
 
 #include "renderer.h"
 #include "vulkanWindow.h"
@@ -19,33 +20,27 @@ int main()
     VulkanWindow *window = renderer.createVulkanVindow(800, 600, "Vulkan Window");
 
     VkCommandPool commandPool = VK_NULL_HANDLE;
-
     VkCommandPoolCreateInfo commandPoolCreateInfo {};
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolCreateInfo.pNext = nullptr;
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolCreateInfo.queueFamilyIndex = renderer.getGraphicsFamilyIndex();
-
     vkCreateCommandPool(renderer.getVulkanDevice(), &commandPoolCreateInfo, nullptr, &commandPool);
 
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-
     VkCommandBufferAllocateInfo commandBufferAllocateInfo {};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     commandBufferAllocateInfo.pNext = nullptr;
     commandBufferAllocateInfo.commandPool = commandPool;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = 1;
-
     vkAllocateCommandBuffers(renderer.getVulkanDevice(), &commandBufferAllocateInfo, &commandBuffer);
 
     VkSemaphore renderingCompleteSemaphore = VK_NULL_HANDLE;
-
     VkSemaphoreCreateInfo semaphoreCreateInfo {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphoreCreateInfo.pNext = nullptr;
     semaphoreCreateInfo.flags = 0;
-
     vkCreateSemaphore(renderer.getVulkanDevice(), &semaphoreCreateInfo, nullptr, &renderingCompleteSemaphore);
 
     float colorRotator = 0.0f;
@@ -69,11 +64,9 @@ int main()
         }
 
         // Begin rendering
-
         window->beginRendering();
 
         // Record command buffer
-
         VkCommandBufferBeginInfo commandBufferBeginInfo {};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         commandBufferBeginInfo.pNext = nullptr;
@@ -92,8 +85,6 @@ int main()
         std::array<VkClearValue, 2> clearValue {};
         clearValue[0].depthStencil.depth = 0.0f;
         clearValue[0].depthStencil.stencil = 0;
-
-        // TODO: Check format and set values.
         clearValue[1].color.float32[0] = std::sin( colorRotator + CIRCLE_THIRD_1 ) * 0.5 + 0.5;
         clearValue[1].color.float32[1] = std::sin( colorRotator + CIRCLE_THIRD_2 ) * 0.5 + 0.5;
         clearValue[1].color.float32[2] = std::sin( colorRotator + CIRCLE_THIRD_3 ) * 0.5 + 0.5;
@@ -109,11 +100,12 @@ int main()
         renderPassBeginInfo.pClearValues = clearValue.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
         vkCmdEndRenderPass(commandBuffer);
+
         vkEndCommandBuffer(commandBuffer);
 
         // Submit command buffer
-
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.pNext = nullptr;

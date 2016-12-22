@@ -41,16 +41,14 @@ public:
 
     uint32_t graphicsFamilyIndex = 0;
 
-    std::vector<const char*> v;
     std::vector<const char*> instanceLayerList;
     std::vector<const char*> deviceLayerList;
     std::vector<const char*> instanceExtensionList;
     std::vector<const char*> deviceExtensionList;
 
-    void out();
     void setupDebugLayer();
     void setupLayersAndExtensions();
-    void enableDebud();
+    void enableDebug();
     void disableDebug();
     void initInstance();
     void destroyInstance();
