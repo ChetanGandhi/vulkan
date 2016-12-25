@@ -307,8 +307,8 @@ void Renderer::initDevice()
     deviceCreateInfo.flags = 0;
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
-    deviceCreateInfo.enabledLayerCount = deviceLayerList.size();
-    deviceCreateInfo.ppEnabledLayerNames = deviceLayerList.data();
+    deviceCreateInfo.enabledLayerCount = deviceLayerList.size(); // Deprecated but still good for old API
+    deviceCreateInfo.ppEnabledLayerNames = deviceLayerList.data(); // Deprecated but still good for old API
     deviceCreateInfo.enabledExtensionCount = deviceExtensionList.size();
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensionList.data();
     deviceCreateInfo.pEnabledFeatures = nullptr;

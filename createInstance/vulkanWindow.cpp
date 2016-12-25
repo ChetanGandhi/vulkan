@@ -315,15 +315,15 @@ void VulkanWindow::initDepthStencilImage()
                 depthStencilFormat = nextFormat;
                 break;
             }
-
-            if(depthStencilFormat == VK_FORMAT_UNDEFINED)
-            {
-                assert(0 && "Depth stencil format not selected.");
-                std::exit(-1);
-            }
-
-            stencilAvailable = (depthStencilFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || depthStencilFormat == VK_FORMAT_D24_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_D16_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_D32_SFLOAT || depthStencilFormat == VK_FORMAT_D16_UNORM);
         }
+
+        if(depthStencilFormat == VK_FORMAT_UNDEFINED)
+        {
+            assert(0 && "Depth stencil format not selected.");
+            std::exit(-1);
+        }
+
+        stencilAvailable = (depthStencilFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || depthStencilFormat == VK_FORMAT_D24_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_D16_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_S8_UINT) || false;
     }
 
     VkImageCreateInfo imageCreateInfo {};
