@@ -1,6 +1,6 @@
 #include "vulkanWindow.h"
 #include "buildParam.h"
-#include "Renderer.h"
+#include "renderer.h"
 #include "utils.h"
 #include <iostream>
 #include <assert.h>
@@ -8,11 +8,11 @@
 
 // Constructor
 
-VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, std::string name)
+VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name)
 {
     this->renderer = renderer;
-    surfaceSizeX = sizeX;
-    surfaceSizeY = sizeY;
+    surfaceSize.width = width;
+    surfaceSize.height = height;
     windowName = name;
 
     initPlatformSpecificWindow();
@@ -105,8 +105,8 @@ VkFramebuffer VulkanWindow::getVulkanActiveFramebuffer()
 VkExtent2D VulkanWindow::getVulkanSurfaceSize()
 {
     VkExtent2D extent {};
-    extent.width = surfaceSizeX;
-    extent.height = surfaceSizeY;
+    extent.width = surfaceSize.width;
+    extent.height = surfaceSize.height;
 
     return extent;
 }
@@ -132,8 +132,8 @@ void VulkanWindow::initSurface()
 
     if(surfaceCapabilities.currentExtent.width < UINT32_MAX)
     {
-        surfaceSizeX = surfaceCapabilities.currentExtent.width;
-        surfaceSizeY = surfaceCapabilities.currentExtent.height;
+        surfaceSize.width = surfaceCapabilities.currentExtent.width;
+        surfaceSize.height = surfaceCapabilities.currentExtent.height;
     }
 
     {
@@ -229,8 +229,8 @@ void VulkanWindow::initSwapchain()
     swapchainCreateInfo.minImageCount = swapchainImageCount;
     swapchainCreateInfo.imageFormat = surfaceFormat.format;
     swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
-    swapchainCreateInfo.imageExtent.width = surfaceSizeX;
-    swapchainCreateInfo.imageExtent.height = surfaceSizeY;
+    swapchainCreateInfo.imageExtent.width = surfaceSize.width;
+    swapchainCreateInfo.imageExtent.height = surfaceSize.height;
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -332,8 +332,8 @@ void VulkanWindow::initDepthStencilImage()
     imageCreateInfo.flags = 0;
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = depthStencilFormat;
-    imageCreateInfo.extent.width = surfaceSizeX;
-    imageCreateInfo.extent.height = surfaceSizeY;
+    imageCreateInfo.extent.width = surfaceSize.width;
+    imageCreateInfo.extent.height = surfaceSize.height;
     imageCreateInfo.extent.depth = 1;
     imageCreateInfo.mipLevels = 1;
     imageCreateInfo.arrayLayers = 1;
@@ -481,8 +481,8 @@ void VulkanWindow::initFrameBuffers()
         framebufferCreateInfo.renderPass = renderPass;
         framebufferCreateInfo.attachmentCount = attachments.size();
         framebufferCreateInfo.pAttachments = attachments.data();
-        framebufferCreateInfo.width = surfaceSizeX;
-        framebufferCreateInfo.height = surfaceSizeY;
+        framebufferCreateInfo.width = surfaceSize.width;
+        framebufferCreateInfo.height = surfaceSize.height;
         framebufferCreateInfo.layers = 1;
 
         VkResult result = vkCreateFramebuffer(renderer->getVulkanDevice(), &framebufferCreateInfo, nullptr, &framebuffers[swapchainImageCounter]);

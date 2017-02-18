@@ -1,7 +1,7 @@
 #include "buildParam.h"
 #include "platform.h"
-#include "VulkanWindow.h"
-#include "Renderer.h"
+#include "vulkanWindow.h"
+#include "renderer.h"
 #include <assert.h>
 #include <iostream>
 
@@ -34,8 +34,8 @@ void VulkanWindow::initPlatformSpecificWindow()
 {
     WNDCLASSEX wndclassex {};
 
-    assert(surfaceSizeX > 0);
-    assert(surfaceSizeY > 0);
+    assert(surfaceSize.width > 0);
+    assert(surfaceSize.height > 0);
 
     hInstance = GetModuleHandle(nullptr);
     className = windowName + "_" + std::to_string(win32ClassIdCounter);
@@ -64,7 +64,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     DWORD styleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
     DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
-    RECT windowRect = {0, 0, LONG(surfaceSizeX), LONG(surfaceSizeY)};
+    RECT windowRect = {0, 0, LONG(surfaceSize.width), LONG(surfaceSize.height)};
     AdjustWindowRectEx(&windowRect, style, FALSE, styleExtra);
 
     hWindow = CreateWindowEx(0,

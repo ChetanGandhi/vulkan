@@ -10,7 +10,7 @@ class VulkanWindow
 {
 
 public:
-    VulkanWindow(Renderer *renderer, uint32_t sizeX, uint32_t sizeY, std::string name);
+    VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name);
     ~VulkanWindow();
 
     void close();
@@ -27,8 +27,11 @@ private:
     bool isRunning = true;
     bool stencilAvailable = false;
 
-    uint32_t surfaceSizeX = 512;
-    uint32_t surfaceSizeY = 512;
+    struct {
+        uint32_t width = 512;
+        uint32_t height = 512;
+    } surfaceSize;
+
     uint32_t swapchainImageCount = 2;
     uint32_t activeSwapchainImageId = UINT32_MAX;
 
