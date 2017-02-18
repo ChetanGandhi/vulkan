@@ -1,3 +1,4 @@
+#include "buildParam.h"
 #include <array>
 #include <chrono>
 #include <iostream>
@@ -53,6 +54,8 @@ int main()
     {
         // CPU Logic
 
+        #if ENABLE_FPS
+
         ++frameCounter;
 
         if(lastTime + std::chrono::seconds(1) < timer.now())
@@ -62,6 +65,8 @@ int main()
             frameCounter  = 0;
             std::cout<<"FPS: "<<fps<<std::endl;
         }
+
+        #endif // ENABLE_FPS
 
         // Begin rendering
         window->beginRendering();

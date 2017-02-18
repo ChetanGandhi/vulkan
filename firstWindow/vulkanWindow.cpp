@@ -345,12 +345,12 @@ void VulkanWindow::initDepthStencilImage()
     imageCreateInfo.pQueueFamilyIndices = nullptr;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkResult result = vkCreateImage(renderer->getVulkanDevice(), &imageCreateInfo, nullptr, &depthStencilImage);
+    VkResult result = vkCreateImage(renderer->getVulkanDevice(), &imageCreateInfo, nullptr, &depthStencil.image);
 
     checkError(result);
 
     VkMemoryRequirements imageMemoryRequirements {};
-    vkGetImageMemoryRequirements(renderer->getVulkanDevice(), depthStencilImage, &imageMemoryRequirements);
+    vkGetImageMemoryRequirements(renderer->getVulkanDevice(), depthStencil.image, &imageMemoryRequirements);
 
     VkPhysicalDeviceMemoryProperties gpuMemoryProperties = renderer->getVulkanPhysicalDeviceMemoryProperties();
     VkMemoryPropertyFlagBits requiredMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -363,11 +363,11 @@ void VulkanWindow::initDepthStencilImage()
     memoryAllocationInfo.allocationSize = imageMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
-    result = vkAllocateMemory(renderer->getVulkanDevice(), &memoryAllocationInfo, nullptr, &depthStencilImageMemory);
+    result = vkAllocateMemory(renderer->getVulkanDevice(), &memoryAllocationInfo, nullptr, &depthStencil.imageMemory);
 
     checkError(result);
 
-    result = vkBindImageMemory(renderer->getVulkanDevice(), depthStencilImage, depthStencilImageMemory, 0);
+    result = vkBindImageMemory(renderer->getVulkanDevice(), depthStencil.image, depthStencil.imageMemory, 0);
 
     checkError(result);
 
@@ -375,7 +375,7 @@ void VulkanWindow::initDepthStencilImage()
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     imageViewCreateInfo.pNext = nullptr;
     imageViewCreateInfo.flags = 0;
-    imageViewCreateInfo.image = depthStencilImage;
+    imageViewCreateInfo.image = depthStencil.image;
     imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     imageViewCreateInfo.format = depthStencilFormat;
     imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -388,16 +388,16 @@ void VulkanWindow::initDepthStencilImage()
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-    result = vkCreateImageView(renderer->getVulkanDevice(), &imageViewCreateInfo, nullptr, &depthStencilImageView);
+    result = vkCreateImageView(renderer->getVulkanDevice(), &imageViewCreateInfo, nullptr, &depthStencil.imageView);
 
     checkError(result);
 }
 
 void VulkanWindow::destoryDepthStencilImage()
 {
-    vkDestroyImageView(renderer->getVulkanDevice(), depthStencilImageView, nullptr);
-    vkFreeMemory(renderer->getVulkanDevice(), depthStencilImageMemory, nullptr);
-    vkDestroyImage(renderer->getVulkanDevice(), depthStencilImage, nullptr);
+    vkDestroyImageView(renderer->getVulkanDevice(), depthStencil.imageView, nullptr);
+    vkFreeMemory(renderer->getVulkanDevice(), depthStencil.imageMemory, nullptr);
+    vkDestroyImage(renderer->getVulkanDevice(), depthStencil.image, nullptr);
 }
 
 void VulkanWindow::initRenderPass()
@@ -471,7 +471,7 @@ void VulkanWindow::initFrameBuffers()
     for(uint32_t swapchainImageCounter = 0; swapchainImageCounter < swapchainImageCount; ++swapchainImageCounter)
     {
         std::array<VkImageView, 2> attachments {};
-        attachments[0] = depthStencilImageView;
+        attachments[0] = depthStencil.imageView;
         attachments[1] = swapchainImageViews[swapchainImageCounter];
 
         VkFramebufferCreateInfo framebufferCreateInfo {};

@@ -41,11 +41,15 @@ private:
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    VkImage depthStencilImage = VK_NULL_HANDLE;
-    VkImageView depthStencilImageView = VK_NULL_HANDLE;
-    VkDeviceMemory depthStencilImageMemory = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkFence swapchainImageAvailable = VK_NULL_HANDLE;
+
+    struct {
+        VkImage image = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkDeviceMemory imageMemory = VK_NULL_HANDLE;
+    } depthStencil;
+
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
