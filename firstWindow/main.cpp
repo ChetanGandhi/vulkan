@@ -123,7 +123,7 @@ int main()
         submitInfo.pSignalSemaphores = &renderingCompleteSemaphore;
 
         VkResult result = vkQueueSubmit(renderer.getVulkanQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        checkError(result);
+        checkError(result, __FILE__, __LINE__);
 
         // End rendering
 

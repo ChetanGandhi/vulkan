@@ -348,7 +348,7 @@ void VulkanWindow::initDepthStencilImage()
 
     VkResult result = vkCreateImage(renderer->getVulkanDevice(), &imageCreateInfo, nullptr, &depthStencil.image);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     VkMemoryRequirements imageMemoryRequirements {};
     vkGetImageMemoryRequirements(renderer->getVulkanDevice(), depthStencil.image, &imageMemoryRequirements);
@@ -366,11 +366,11 @@ void VulkanWindow::initDepthStencilImage()
 
     result = vkAllocateMemory(renderer->getVulkanDevice(), &memoryAllocationInfo, nullptr, &depthStencil.imageMemory);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     result = vkBindImageMemory(renderer->getVulkanDevice(), depthStencil.image, depthStencil.imageMemory, 0);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     VkImageViewCreateInfo imageViewCreateInfo {};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -391,7 +391,7 @@ void VulkanWindow::initDepthStencilImage()
 
     result = vkCreateImageView(renderer->getVulkanDevice(), &imageViewCreateInfo, nullptr, &depthStencil.imageView);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 }
 
 void VulkanWindow::destoryDepthStencilImage()
@@ -457,7 +457,7 @@ void VulkanWindow::initRenderPass()
 
     VkResult result = vkCreateRenderPass(renderer->getVulkanDevice(), &renderPassCreateInfo, nullptr, &renderPass);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 }
 
 void VulkanWindow::destroyRenderPass()
@@ -488,7 +488,7 @@ void VulkanWindow::initFrameBuffers()
 
         VkResult result = vkCreateFramebuffer(renderer->getVulkanDevice(), &framebufferCreateInfo, nullptr, &framebuffers[swapchainImageCounter]);
 
-        checkError(result);
+        checkError(result, __FILE__, __LINE__);
     }
 }
 
@@ -509,7 +509,7 @@ void VulkanWindow::initSynchronizations()
 
     VkResult result = vkCreateFence(renderer->getVulkanDevice(), &fenceCreateInfo, nullptr, &swapchainImageAvailable);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 }
 
 void VulkanWindow::destroySynchronizations()

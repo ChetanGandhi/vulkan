@@ -219,7 +219,7 @@ void Renderer::initInstance()
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensionList.data();
 
     VkResult result = vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &instance);
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 }
 
 void Renderer::destroyInstance()
@@ -238,6 +238,7 @@ void Renderer::initDevice()
         std::vector<VkPhysicalDevice> gpuList(gpuCount);
         vkEnumeratePhysicalDevices(instance, &gpuCount, gpuList.data());
 
+        for(uint32_t counter = 0; counter < gpuCount && !found; ++counter)
         {
             VkPhysicalDevice nextGpu = gpuList[counter];
             VkPhysicalDeviceProperties nextGpuProperties {};
@@ -277,6 +278,7 @@ void Renderer::initDevice()
     std::cout<<"\n---------- Selected GPU Properties ----------\n";
     printGpuProperties(&gpuProperties, 0, 0);
     std::cout<<"\n---------- Selected GPU Properties End ----------\n";
+
     {
         uint32_t layerCount = 0;
         vkEnumerateInstanceLayerProperties(&layerCount, VK_NULL_HANDLE);
@@ -316,7 +318,7 @@ void Renderer::initDevice()
     deviceCreateInfo.pEnabledFeatures = nullptr;
 
     VkResult result = vkCreateDevice(gpu, &deviceCreateInfo, VK_NULL_HANDLE, &device);
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     vkGetDeviceQueue(device, graphicsFamilyIndex, 0, &queue);
 }
