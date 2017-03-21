@@ -238,7 +238,6 @@ void Renderer::initDevice()
         std::vector<VkPhysicalDevice> gpuList(gpuCount);
         vkEnumeratePhysicalDevices(instance, &gpuCount, gpuList.data());
 
-        for(uint32_t counter = 0; counter < gpuCount; ++counter)
         {
             VkPhysicalDevice nextGpu = gpuList[counter];
             VkPhysicalDeviceProperties nextGpuProperties {};
@@ -255,7 +254,7 @@ void Renderer::initDevice()
             std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
             vkGetPhysicalDeviceQueueFamilyProperties(nextGpu, &familyCount, familyPropertiesList.data());
 
-            for(uint32_t familyCounter = 0; familyCounter < familyCount; ++familyCounter)
+            for(uint32_t familyCounter = 0; familyCounter < familyCount && !found; ++familyCounter)
             {
                 if(familyPropertiesList[familyCounter].queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 {
@@ -275,6 +274,9 @@ void Renderer::initDevice()
         std::exit(-1);
     }
 
+    std::cout<<"\n---------- Selected GPU Properties ----------\n";
+    printGpuProperties(&gpuProperties, 0, 0);
+    std::cout<<"\n---------- Selected GPU Properties End ----------\n";
     {
         uint32_t layerCount = 0;
         vkEnumerateInstanceLayerProperties(&layerCount, VK_NULL_HANDLE);
