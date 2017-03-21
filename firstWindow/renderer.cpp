@@ -173,9 +173,9 @@ const uint32_t Renderer::getGraphicsFamilyIndex() const
     return graphicsFamilyIndex;
 }
 
-VulkanWindow* Renderer::createVulkanVindow(uint32_t width, uint32_t height, std::string name)
+VulkanWindow* Renderer::createVulkanVindow(uint32_t width, uint32_t height, std::string name, std::string title)
 {
-    vulkanWindow = new VulkanWindow(this, width, height, name);
+    vulkanWindow = new VulkanWindow(this, width, height, name, title);
     return vulkanWindow;
 }
 

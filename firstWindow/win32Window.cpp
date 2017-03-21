@@ -69,7 +69,7 @@ void VulkanWindow::initPlatformSpecificWindow()
 
     hWindow = CreateWindowEx(0,
         className.c_str(),
-        windowName.c_str(),
+        windowTitle.c_str(),
         style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,

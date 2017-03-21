@@ -10,7 +10,7 @@ class VulkanWindow
 {
 
 public:
-    VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name);
+    VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name, std::string title);
     ~VulkanWindow();
 
     void close();
@@ -36,6 +36,7 @@ private:
     uint32_t activeSwapchainImageId = UINT32_MAX;
 
     std::string windowName;
+    std::string windowTitle;
 
     Renderer *renderer = nullptr;
 

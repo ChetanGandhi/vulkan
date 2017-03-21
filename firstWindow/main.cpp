@@ -18,7 +18,7 @@ int main()
 {
     Renderer renderer;
 
-    VulkanWindow *window = renderer.createVulkanVindow(800, 600, "Vulkan Window");
+    VulkanWindow *window = renderer.createVulkanVindow(800, 600, "VulkanWindow", "Vulkan Window");
 
     VkCommandPool commandPool = VK_NULL_HANDLE;
     VkCommandPoolCreateInfo commandPoolCreateInfo {};
@@ -63,7 +63,7 @@ int main()
             lastTime = timer.now();
             fps = frameCounter;
             frameCounter  = 0;
-            std::cout<<"FPS: "<<fps<<std::endl;
+            std::cout<<"----- FPS: "<<fps<<" -----"<<std::endl;
         }
 
         #endif // ENABLE_FPS

@@ -2,6 +2,7 @@
 
 #include "platform.h"
 #include <vector>
+#include <string>
 
 class VulkanWindow;
 
@@ -12,7 +13,7 @@ public:
     Renderer();
     ~Renderer();
 
-    VulkanWindow* createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name);
+    VulkanWindow* createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name, std::string title);
 
     bool run();
 

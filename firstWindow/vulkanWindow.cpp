@@ -8,12 +8,13 @@
 
 // Constructor
 
-VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name)
+VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name, std::string title)
 {
     this->renderer = renderer;
     surfaceSize.width = width;
     surfaceSize.height = height;
     windowName = name;
+    windowTitle = title;
 
     initPlatformSpecificWindow();
     initSurface();
@@ -57,19 +58,19 @@ void VulkanWindow::beginRendering()
 {
     VkResult result = vkAcquireNextImageKHR(renderer->getVulkanDevice(), swapchain, UINT64_MAX, VK_NULL_HANDLE, swapchainImageAvailable, &activeSwapchainImageId);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     result = vkWaitForFences(renderer->getVulkanDevice(), 1, &swapchainImageAvailable, VK_TRUE, UINT64_MAX);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     result = vkResetFences(renderer->getVulkanDevice(), 1, &swapchainImageAvailable);
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     result = vkQueueWaitIdle(renderer->getVulkanQueue());
 
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 }
 
 void VulkanWindow::endRendering(std::vector<VkSemaphore> waitSemaphores)
@@ -88,8 +89,8 @@ void VulkanWindow::endRendering(std::vector<VkSemaphore> waitSemaphores)
 
     VkResult result = vkQueuePresentKHR(renderer->getVulkanQueue(), &presentInfo);
 
-    checkError(result);
-    checkError(presentResult);
+    checkError(result, __FILE__, __LINE__);
+    checkError(presentResult, __FILE__, __LINE__);
 }
 
 VkRenderPass VulkanWindow::getVulkanRenderPass()
@@ -192,10 +193,10 @@ void VulkanWindow::initSwapchain()
     {
         uint32_t presentModeCount = 0;
         result = vkGetPhysicalDeviceSurfacePresentModesKHR(renderer->getVulkanPhysicalDevice(), surface, &presentModeCount, nullptr);
-        checkError(result);
+        checkError(result, __FILE__, __LINE__);
         std::vector<VkPresentModeKHR> presentModeList(presentModeCount);
         result = vkGetPhysicalDeviceSurfacePresentModesKHR(renderer->getVulkanPhysicalDevice(), surface, &presentModeCount, presentModeList.data());
-        checkError(result);
+        checkError(result, __FILE__, __LINE__);
 
         for(VkPresentModeKHR nextPresentMode : presentModeList)
         {
@@ -243,10 +244,10 @@ void VulkanWindow::initSwapchain()
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
     result = vkCreateSwapchainKHR(renderer->getVulkanDevice(), &swapchainCreateInfo, nullptr, &swapchain);
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     result = vkGetSwapchainImagesKHR(renderer->getVulkanDevice(), swapchain, &swapchainImageCount, nullptr);
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 }
 
 void VulkanWindow::destroySwapchain()
@@ -259,7 +260,7 @@ void VulkanWindow::initSwapchainImages()
     swapchainImages.resize(swapchainImageCount);
     swapchainImageViews.resize(swapchainImageCount);
     VkResult result = vkGetSwapchainImagesKHR(renderer->getVulkanDevice(), swapchain, &swapchainImageCount, swapchainImages.data());
-    checkError(result);
+    checkError(result, __FILE__, __LINE__);
 
     for(uint32_t counter = 0; counter < swapchainImageCount; ++counter)
     {
@@ -281,7 +282,7 @@ void VulkanWindow::initSwapchainImages()
         imageViewCreateInfo.subresourceRange.layerCount = 1;
 
         result = vkCreateImageView(renderer->getVulkanDevice(), &imageViewCreateInfo, nullptr, &swapchainImageViews[counter]);
-        checkError(result);
+        checkError(result, __FILE__, __LINE__);
     }
 }
 
