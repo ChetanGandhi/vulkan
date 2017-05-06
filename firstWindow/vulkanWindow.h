@@ -27,7 +27,7 @@ private:
     bool isRunning = true;
     bool stencilAvailable = false;
 
-    struct {
+    struct SurfaceSize {
         uint32_t width = 512;
         uint32_t height = 512;
     } surfaceSize;
@@ -45,12 +45,11 @@ private:
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkFence swapchainImageAvailable = VK_NULL_HANDLE;
 
-    struct {
+    struct DepthStencil {
         VkImage image = VK_NULL_HANDLE;
         VkImageView imageView = VK_NULL_HANDLE;
         VkDeviceMemory imageMemory = VK_NULL_HANDLE;
     } depthStencil;
-
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};

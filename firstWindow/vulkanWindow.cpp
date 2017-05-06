@@ -126,7 +126,7 @@ void VulkanWindow::initSurface()
     if(!isWSISupported)
     {
         assert(0 && "WSI is not supported.");
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
     }
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &surfaceCapabilities);
@@ -144,7 +144,7 @@ void VulkanWindow::initSurface()
         if(formatCount == 0)
         {
             assert(0 && "Surface format missing.");
-            std::exit(-1);
+            std::exit(EXIT_FAILURE);
         }
 
         std::vector<VkSurfaceFormatKHR> surfaceFormatList(formatCount);
@@ -321,7 +321,7 @@ void VulkanWindow::initDepthStencilImage()
         if(depthStencilFormat == VK_FORMAT_UNDEFINED)
         {
             assert(0 && "Depth stencil format not selected.");
-            std::exit(-1);
+            std::exit(EXIT_FAILURE);
         }
 
         stencilAvailable = (depthStencilFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || depthStencilFormat == VK_FORMAT_D24_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_D16_UNORM_S8_UINT || depthStencilFormat == VK_FORMAT_S8_UINT) || false;

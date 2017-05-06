@@ -28,19 +28,21 @@ public:
 
  private:
     VkInstance instance = VK_NULL_HANDLE;
-    VkPhysicalDevice gpu = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
     VkQueue queue = VK_NULL_HANDLE;
 
-    VkPhysicalDeviceProperties gpuProperties = {};
-    VkPhysicalDeviceMemoryProperties gpuMemoryProperties = {};
+    struct GpuDetails {
+        VkPhysicalDevice gpu = VK_NULL_HANDLE;
+        VkPhysicalDeviceProperties properties = {};
+        VkPhysicalDeviceMemoryProperties memoryProperties = {};
+    } gpuDetails;
 
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
 
     VulkanWindow *vulkanWindow = nullptr;
 
-    uint32_t graphicsFamilyIndex = 0;
+    uint32_t graphicsFamilyIndex = UINT32_MAX;
 
     std::vector<const char*> instanceLayerList;
     std::vector<const char*> deviceLayerList;
@@ -49,10 +51,16 @@ public:
 
     void setupDebugLayer();
     void setupLayersAndExtensions();
+
     void enableDebug();
     void disableDebug();
+
     void initInstance();
     void destroyInstance();
+
+    void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
+    bool isDeviceSuitable(VkPhysicalDevice device);
+
     void initDevice();
     void destroyDevice();
 

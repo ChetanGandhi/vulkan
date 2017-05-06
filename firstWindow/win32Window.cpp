@@ -58,7 +58,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     {
         assert(1 && "Cannot register window class.\n");
         fflush(stdout);
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
     }
 
     DWORD styleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
@@ -84,7 +84,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     {
         assert(0 && "Cannot create window.\n");
         fflush(stdout);
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
     }
 
     SetWindowLongPtr(hWindow, GWLP_USERDATA, (LONG_PTR)this);
