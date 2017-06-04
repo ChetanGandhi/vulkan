@@ -17,13 +17,7 @@ VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, 
     windowTitle = title;
 
     initPlatformSpecificWindow();
-    initSurface();
-    initSwapchain();
-    initSwapchainImages();
-    initDepthStencilImage();
-    initRenderPass();
-    initFrameBuffers();
-    initSynchronizations();
+    initPlatformSpecificSurface();
 }
 
 // Destructor
@@ -42,6 +36,17 @@ VulkanWindow::~VulkanWindow()
 }
 
 // Public methods
+
+void VulkanWindow::doPostInit()
+{
+    initSurface();
+    initSwapchain();
+    initSwapchainImages();
+    initDepthStencilImage();
+    initRenderPass();
+    initFrameBuffers();
+    initSynchronizations();
+}
 
 void VulkanWindow::close()
 {
@@ -112,23 +117,16 @@ VkExtent2D VulkanWindow::getVulkanSurfaceSize()
     return extent;
 }
 
+VkSurfaceKHR VulkanWindow::getSurface()
+{
+    return surface;
+}
+
 // Private methods
 
 void VulkanWindow::initSurface()
 {
-    initPlatformSpecificSurface();
-
     VkPhysicalDevice gpu = renderer->getVulkanPhysicalDevice();
-
-    VkBool32 isWSISupported = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(gpu, renderer->getGraphicsFamilyIndex(), surface, &isWSISupported);
-
-    if(!isWSISupported)
-    {
-        assert(0 && "WSI is not supported.");
-        std::exit(EXIT_FAILURE);
-    }
-
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &surfaceCapabilities);
 
     if(surfaceCapabilities.currentExtent.width < UINT32_MAX)

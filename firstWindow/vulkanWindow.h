@@ -12,6 +12,7 @@ class VulkanWindow
 public:
     VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, std::string name, std::string title);
     ~VulkanWindow();
+    void doPostInit();
 
     void close();
     bool update();
@@ -22,6 +23,7 @@ public:
     VkRenderPass getVulkanRenderPass();
     VkFramebuffer getVulkanActiveFramebuffer();
     VkExtent2D getVulkanSurfaceSize();
+    VkSurfaceKHR getSurface();
 
 private:
     bool isRunning = true;

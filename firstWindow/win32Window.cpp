@@ -2,6 +2,7 @@
 #include "platform.h"
 #include "vulkanWindow.h"
 #include "renderer.h"
+#include "utils.h"
 #include <assert.h>
 #include <iostream>
 
@@ -118,7 +119,9 @@ void VulkanWindow::initPlatformSpecificSurface()
     surfaceCreateInfo.hinstance = hInstance;
     surfaceCreateInfo.hwnd = hWindow;
 
-    vkCreateWin32SurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
+    VkResult result = vkCreateWin32SurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
+
+    checkError(result, __FILE__, __LINE__);
 }
 
 void VulkanWindow::destroyPlatformSpecificSurface()

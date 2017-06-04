@@ -69,9 +69,11 @@ int main()
         #endif // ENABLE_FPS
 
         // Begin rendering
+
         window->beginRendering();
 
         // Record command buffer
+
         VkCommandBufferBeginInfo commandBufferBeginInfo {};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         commandBufferBeginInfo.pNext = nullptr;
@@ -105,12 +107,11 @@ int main()
         renderPassBeginInfo.pClearValues = clearValue.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
         vkCmdEndRenderPass(commandBuffer);
-
         vkEndCommandBuffer(commandBuffer);
 
         // Submit command buffer
+
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.pNext = nullptr;

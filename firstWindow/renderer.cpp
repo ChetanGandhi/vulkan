@@ -16,7 +16,6 @@ Renderer::Renderer()
     setupLayersAndExtensions();
     initInstance();
     enableDebug(); // After initInstance as we need instance :P
-    initDevice();
 }
 
 Renderer::~Renderer()
@@ -156,7 +155,7 @@ const VkDevice Renderer::getVulkanDevice() const
 
 const VkQueue Renderer::getVulkanQueue() const
 {
-    return queue;
+    return graphicsQueue;
 }
 
 const VkPhysicalDeviceProperties &Renderer::getVulkanPhysicalDeviceProperties() const
@@ -171,12 +170,17 @@ const VkPhysicalDeviceMemoryProperties &Renderer::getVulkanPhysicalDeviceMemoryP
 
 const uint32_t Renderer::getGraphicsFamilyIndex() const
 {
-    return graphicsFamilyIndex;
+    return queueFamilyIndices.graphicsFamilyIndex;
 }
 
 VulkanWindow* Renderer::createVulkanVindow(uint32_t width, uint32_t height, std::string name, std::string title)
 {
     vulkanWindow = new VulkanWindow(this, width, height, name, title);
+
+    initDevice();
+    initLogicalDevice();
+    vulkanWindow->doPostInit();
+
     return vulkanWindow;
 }
 
@@ -261,22 +265,65 @@ void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
 
 bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
 {
-    uint32_t familyCount = UINT32_MAX;
+    uint32_t familyCount = 0;
+    uint32_t graphicsFamilyIndex = UINT32_MAX;
+    uint32_t presentFamilyIndex = UINT32_MAX;
 
-    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, VK_NULL_HANDLE);
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
     std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
+    std::vector<VkBool32> supportsPresentQueue(familyCount);
+
+    for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
+    {
+        vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, vulkanWindow->getSurface(), &supportsPresentQueue.data()[queueCounter]);
+    }
 
     vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
 
-    for(uint32_t counter = 0; counter < familyCount && graphicsFamilyIndex == UINT32_MAX; ++counter)
+    for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
     {
-        if(familyPropertiesList[counter].queueCount > 0 && familyPropertiesList[counter].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        const VkQueueFamilyProperties nextFamilyProperties = familyPropertiesList[queueCounter];
+
+        if(nextFamilyProperties.queueCount > 0 && nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
-            graphicsFamilyIndex = counter;
+            graphicsFamilyIndex = queueCounter;
+        }
+
+        if(nextFamilyProperties.queueCount > 0 && supportsPresentQueue.data()[queueCounter] == VK_TRUE)
+        {
+            graphicsFamilyIndex = queueCounter;
+            presentFamilyIndex = queueCounter;
+            break;
         }
     }
 
-    return graphicsFamilyIndex != UINT32_MAX;
+    if(presentFamilyIndex == UINT32_MAX)
+    {
+        for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
+        {
+            if(supportsPresentQueue.data()[queueCounter] == VK_TRUE)
+            {
+                presentFamilyIndex = queueCounter;
+                break;
+            }
+        }
+    }
+
+    if(graphicsFamilyIndex == UINT32_MAX || presentFamilyIndex == UINT32_MAX)
+    {
+        return false;
+    }
+
+    queueFamilyIndices.graphicsFamilyIndex = graphicsFamilyIndex;
+    queueFamilyIndices.presentFamilyIndex = presentFamilyIndex;
+    queueFamilyIndices.hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
+
+    std::cout<<"\n---------- Queue Family Indices ----------\n";
+    std::cout<<"\nGraphics Family Index\t:"<<graphicsFamilyIndex<<"\n";
+    std::cout<<"\nPresent Family Index\t:"<<presentFamilyIndex<<"\n";
+    std::cout<<"\n---------- Queue Family Indices End ----------\n";
+
+    return true;
 }
 
 void Renderer::initDevice()
@@ -294,14 +341,19 @@ void Renderer::initDevice()
         {
             GpuDetails nextGpuDetails = gpuDetailsList[counter];
             printGpuProperties(&nextGpuDetails.properties, counter + 1, gpuCount);
+        }
 
-            if(gpuDetails.gpu == VK_NULL_HANDLE && isDeviceSuitable(nextGpuDetails.gpu))
+        for(uint32_t counter = 0; counter < gpuCount; ++counter)
+        {
+            GpuDetails nextGpuDetails = gpuDetailsList[counter];
+
+            if(isDeviceSuitable(nextGpuDetails.gpu))
             {
                 gpuDetails = nextGpuDetails;
                 selectedGpuIndex = counter;
+                break;
             }
         }
-
 
         if(gpuDetails.gpu == VK_NULL_HANDLE)
         {
@@ -329,33 +381,66 @@ void Renderer::initDevice()
         vkEnumerateDeviceLayerProperties(gpuDetails.gpu, &layerCount, layerPropertiesList.data());
         printDeviceLayerProperties(layerPropertiesList);
     }
+}
 
-    float queuePriorities[] {1.0f};
+void Renderer::initLogicalDevice()
+{
+    std::vector<float> queuePriorities = {0.0f};
+    std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos(0);
 
-    VkDeviceQueueCreateInfo deviceQueueCreateInfo {};
-    deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    deviceQueueCreateInfo.pNext = nullptr;
-    deviceQueueCreateInfo.flags = 0;
-    deviceQueueCreateInfo.queueFamilyIndex = graphicsFamilyIndex;
-    deviceQueueCreateInfo.queueCount = 1;
-    deviceQueueCreateInfo.pQueuePriorities = queuePriorities;
+    VkDeviceQueueCreateInfo deviceGraphicQueueCreateInfo = {};
+    deviceGraphicQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    deviceGraphicQueueCreateInfo.pNext = nullptr;
+    deviceGraphicQueueCreateInfo.flags = 0;
+    deviceGraphicQueueCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamilyIndex;
+    deviceGraphicQueueCreateInfo.queueCount = 1;
+    deviceGraphicQueueCreateInfo.pQueuePriorities = queuePriorities.data();
+
+    deviceQueueCreateInfos.push_back(deviceGraphicQueueCreateInfo);
+
+    if(queueFamilyIndices.hasSeparatePresentQueue)
+    {
+        VkDeviceQueueCreateInfo devicePresentQueueCreateInfo {};
+        devicePresentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        devicePresentQueueCreateInfo.pNext = nullptr;
+        devicePresentQueueCreateInfo.flags = 0;
+        devicePresentQueueCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamilyIndex;
+        devicePresentQueueCreateInfo.queueCount = 1;
+        devicePresentQueueCreateInfo.pQueuePriorities = queuePriorities.data();
+
+        deviceQueueCreateInfos.push_back(devicePresentQueueCreateInfo);
+    }
+
+    // This is not needed right now.
+    // This have many VkBool32 properties, leave it to VK_FALSE right now.
+    VkPhysicalDeviceFeatures deviceFeatures = {};
 
     VkDeviceCreateInfo deviceCreateInfo {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = nullptr;
     deviceCreateInfo.flags = 0;
-    deviceCreateInfo.queueCreateInfoCount = 1;
-    deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+    deviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfos.size();
+    deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
     deviceCreateInfo.enabledLayerCount = deviceLayerList.size(); // Deprecated but still good for old API
     deviceCreateInfo.ppEnabledLayerNames = deviceLayerList.data(); // Deprecated but still good for old API
     deviceCreateInfo.enabledExtensionCount = deviceExtensionList.size();
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensionList.data();
-    deviceCreateInfo.pEnabledFeatures = nullptr;
+    deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
     VkResult result = vkCreateDevice(gpuDetails.gpu, &deviceCreateInfo, VK_NULL_HANDLE, &device);
     checkError(result, __FILE__, __LINE__);
 
-    vkGetDeviceQueue(device, graphicsFamilyIndex, 0, &queue);
+    // Create the graphic queue using graphicsFamilyIndex for given physical device.
+    vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamilyIndex, 0, &graphicsQueue);
+
+    if(!queueFamilyIndices.hasSeparatePresentQueue)
+    {
+        presentQueue = graphicsQueue;
+    }
+    else
+    {
+        vkGetDeviceQueue(device, queueFamilyIndices.presentFamilyIndex, 0, &presentQueue);
+    }
 }
 
 void Renderer::destroyDevice()
