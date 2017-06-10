@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <set>
 
 Renderer::Renderer()
 {
@@ -153,7 +154,7 @@ const VkDevice Renderer::getVulkanDevice() const
     return device;
 }
 
-const VkQueue Renderer::getVulkanQueue() const
+const VkQueue Renderer::getVulkanGraphicsQueue() const
 {
     return graphicsQueue;
 }
@@ -265,6 +266,29 @@ void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
 
 bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
 {
+    QueueFamilyIndices indices = {};
+
+    bool suitableDeviceQueuesFound = findSuitableDeviceQueues(gpu, &indices);
+
+    if(suitableDeviceQueuesFound)
+    {
+        queueFamilyIndices.graphicsFamilyIndex = indices.graphicsFamilyIndex;
+        queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
+        queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
+
+        std::cout<<"\n---------- Queue Family Indices ----------\n";
+        std::cout<<"\nGraphics Family Index\t:"<<queueFamilyIndices.graphicsFamilyIndex<<"\n";
+        std::cout<<"\nPresent Family Index\t:"<<queueFamilyIndices.presentFamilyIndex<<"\n";
+        std::cout<<"\n---------- Queue Family Indices End ----------\n";
+    }
+
+    bool extensionSupported = checkDeviceExtensionSupport(gpu);
+
+    return (suitableDeviceQueuesFound && extensionSupported);
+}
+
+bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices)
+{
     uint32_t familyCount = 0;
     uint32_t graphicsFamilyIndex = UINT32_MAX;
     uint32_t presentFamilyIndex = UINT32_MAX;
@@ -314,16 +338,39 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
         return false;
     }
 
-    queueFamilyIndices.graphicsFamilyIndex = graphicsFamilyIndex;
-    queueFamilyIndices.presentFamilyIndex = presentFamilyIndex;
-    queueFamilyIndices.hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
-
-    std::cout<<"\n---------- Queue Family Indices ----------\n";
-    std::cout<<"\nGraphics Family Index\t:"<<graphicsFamilyIndex<<"\n";
-    std::cout<<"\nPresent Family Index\t:"<<presentFamilyIndex<<"\n";
-    std::cout<<"\n---------- Queue Family Indices End ----------\n";
+    queueFamilyIndices->graphicsFamilyIndex = graphicsFamilyIndex;
+    queueFamilyIndices->presentFamilyIndex = presentFamilyIndex;
+    queueFamilyIndices->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
 
     return true;
+}
+
+bool Renderer::checkDeviceExtensionSupport(VkPhysicalDevice gpu)
+{
+    uint32_t availableDeviceExtensionsCount = 0;
+
+    VkResult result = vkEnumerateDeviceExtensionProperties(gpu, nullptr, &availableDeviceExtensionsCount, nullptr);
+
+    checkError(result, __FILE__, __LINE__);
+
+    if(availableDeviceExtensionsCount == 0)
+    {
+        return false;
+    }
+
+    std::vector<VkExtensionProperties> availableDeviceExtensions(availableDeviceExtensionsCount);
+    result = vkEnumerateDeviceExtensionProperties(gpu, nullptr, &availableDeviceExtensionsCount, availableDeviceExtensions.data());
+
+    checkError(result, __FILE__, __LINE__);
+
+    std::set<std::string> requiredExtensions(deviceExtensionList.begin(), deviceExtensionList.end());
+
+    for(const VkExtensionProperties &nextExtensionProperties : availableDeviceExtensions)
+    {
+        requiredExtensions.erase(nextExtensionProperties.extensionName);
+    }
+
+    return requiredExtensions.empty();
 }
 
 void Renderer::initDevice()

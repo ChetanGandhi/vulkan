@@ -123,7 +123,7 @@ int main()
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = &renderingCompleteSemaphore;
 
-        VkResult result = vkQueueSubmit(renderer.getVulkanQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        VkResult result = vkQueueSubmit(renderer.getVulkanGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
         checkError(result, __FILE__, __LINE__);
 
         // End rendering
@@ -131,7 +131,7 @@ int main()
         window->endRendering({renderingCompleteSemaphore});
     }
 
-    vkQueueWaitIdle(renderer.getVulkanQueue());
+    vkQueueWaitIdle(renderer.getVulkanGraphicsQueue());
     vkDestroySemaphore(renderer.getVulkanDevice(), renderingCompleteSemaphore, nullptr);
     vkDestroyCommandPool(renderer.getVulkanDevice(), commandPool, nullptr);
 

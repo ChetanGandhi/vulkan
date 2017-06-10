@@ -24,7 +24,7 @@ VulkanWindow::VulkanWindow(Renderer *renderer, uint32_t width, uint32_t height, 
 
 VulkanWindow::~VulkanWindow()
 {
-    vkQueueWaitIdle(renderer->getVulkanQueue());
+    vkQueueWaitIdle(renderer->getVulkanGraphicsQueue());
     destroySynchronizations();
     destroyFrameBuffers();
     destroyRenderPass();
@@ -73,7 +73,7 @@ void VulkanWindow::beginRendering()
 
     checkError(result, __FILE__, __LINE__);
 
-    result = vkQueueWaitIdle(renderer->getVulkanQueue());
+    result = vkQueueWaitIdle(renderer->getVulkanGraphicsQueue());
 
     checkError(result, __FILE__, __LINE__);
 }
@@ -92,7 +92,7 @@ void VulkanWindow::endRendering(std::vector<VkSemaphore> waitSemaphores)
     presentInfo.pImageIndices = &activeSwapchainImageId;
     presentInfo.pResults = &presentResult;
 
-    VkResult result = vkQueuePresentKHR(renderer->getVulkanQueue(), &presentInfo);
+    VkResult result = vkQueuePresentKHR(renderer->getVulkanGraphicsQueue(), &presentInfo);
 
     checkError(result, __FILE__, __LINE__);
     checkError(presentResult, __FILE__, __LINE__);

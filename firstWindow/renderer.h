@@ -20,7 +20,7 @@ public:
     const VkInstance getVulkanInstance() const;
     const VkPhysicalDevice getVulkanPhysicalDevice() const;
     const VkDevice getVulkanDevice() const;
-    const VkQueue getVulkanQueue() const;
+    const VkQueue getVulkanGraphicsQueue() const;
     const VkPhysicalDeviceProperties &getVulkanPhysicalDeviceProperties() const;
     const VkPhysicalDeviceMemoryProperties &getVulkanPhysicalDeviceMemoryProperties() const;
 
@@ -65,7 +65,10 @@ public:
     void destroyInstance();
 
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
+
     bool isDeviceSuitable(VkPhysicalDevice device);
+    bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
     void initDevice();
     void initLogicalDevice();
