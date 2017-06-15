@@ -1,10 +1,9 @@
 #pragma once
 
 #include "platform.h"
+#include "common.h"
 #include <vector>
 #include <string>
-
-class VulkanWindow;
 
 class Renderer
 {
@@ -13,9 +12,35 @@ public:
     Renderer();
     ~Renderer();
 
-    VulkanWindow* createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name, std::string title);
+    void setSurface(VkSurfaceKHR surface);
 
-    bool run();
+    void initDevice();
+    void initLogicalDevice();
+    void destroyDevice();
+
+    void initSurface();
+    void destroySurface();
+
+    void initSwapchain();
+    void destroySwapchain();
+
+    void initSwapchainImages();
+    void destroySwapchainImages();
+
+    void initDepthStencilImage();
+    void destoryDepthStencilImage();
+
+    void initRenderPass();
+    void destroyRenderPass();
+
+    void initFrameBuffers();
+    void destroyFrameBuffers();
+
+    void initSynchronizations();
+    void destroySynchronizations();
+
+    void beginRendering();
+    void endRendering(std::vector<VkSemaphore> waitSemaphores);
 
     const VkInstance getVulkanInstance() const;
     const VkPhysicalDevice getVulkanPhysicalDevice() const;
@@ -23,17 +48,20 @@ public:
     const VkQueue getVulkanGraphicsQueue() const;
     const VkPhysicalDeviceProperties &getVulkanPhysicalDeviceProperties() const;
     const VkPhysicalDeviceMemoryProperties &getVulkanPhysicalDeviceMemoryProperties() const;
+    const QueueFamilyIndices getQueueFamilyIndices() const;
+    const VkRenderPass getVulkanRenderPass() const;
+    const VkFramebuffer getVulkanActiveFramebuffer() const;
 
-    const uint32_t getGraphicsFamilyIndex() const;
+private:
+   SurfaceSize surfaceSize;
 
- private:
-    VkInstance instance = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-    VkQueue presentQueue = VK_NULL_HANDLE;
+   VkInstance instance = VK_NULL_HANDLE;
+   VkDevice device = VK_NULL_HANDLE;
+   VkSurfaceKHR surface = VK_NULL_HANDLE;
+   VkQueue graphicsQueue = VK_NULL_HANDLE;
+   VkQueue presentQueue = VK_NULL_HANDLE;
 
-    struct GpuDetails {
+   struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties properties = {};
         VkPhysicalDeviceMemoryProperties memoryProperties = {};
@@ -42,18 +70,34 @@ public:
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
 
-    VulkanWindow *vulkanWindow = nullptr;
-
-    struct QueueFamilyIndices {
-        uint32_t graphicsFamilyIndex = UINT32_MAX;
-        uint32_t presentFamilyIndex = UINT32_MAX;
-        bool hasSeparatePresentQueue = false;
-    } queueFamilyIndices;
+    QueueFamilyIndices queueFamilyIndices;
 
     std::vector<const char*> instanceLayerList;
     std::vector<const char*> deviceLayerList;
     std::vector<const char*> instanceExtensionList;
     std::vector<const char*> deviceExtensionList;
+    std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkFramebuffer> framebuffers;
+
+    uint32_t swapchainImageCount = 2;
+    uint32_t activeSwapchainImageId = UINT32_MAX;
+
+    bool stencilAvailable = false;
+
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkFence swapchainImageAvailable = VK_NULL_HANDLE;
+
+    struct DepthStencil {
+        VkImage image = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkDeviceMemory imageMemory = VK_NULL_HANDLE;
+    } depthStencil;
+
+    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+    VkSurfaceFormatKHR surfaceFormat = {};
+    VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
     void setupDebugLayer();
     void setupLayersAndExtensions();
@@ -70,13 +114,11 @@ public:
     bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-    void initDevice();
-    void initLogicalDevice();
-    void destroyDevice();
-
-    // Debug methods
+// Debug methods
 
     void printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount);
     void printInstanceLayerProperties(std::vector<VkLayerProperties> properties);
     void printDeviceLayerProperties(std::vector<VkLayerProperties> properties);
+    void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);
+    void printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount);
 };
