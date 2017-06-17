@@ -276,8 +276,16 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
     }
 
     bool extensionSupported = checkDeviceExtensionSupport(gpu);
+    bool swapchainSupported = true;
 
-    return (suitableDeviceQueuesFound && extensionSupported);
+    if(extensionSupported)
+    {
+        SwapchainSupportDetails details = {};
+        querySwapchainSupportDetails(gpu, &details);
+        swapchainSupported = !details.surfaceFormats.empty() && !details.presentModes.empty();
+    }
+
+    return (suitableDeviceQueuesFound && extensionSupported && swapchainSupported);
 }
 
 bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices)
@@ -489,7 +497,34 @@ void Renderer::destroyDevice()
     device = VK_NULL_HANDLE;
 }
 
-void Renderer::initSurface()
+void Renderer::querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details)
+{
+    VkResult result = VK_SUCCESS;
+
+    uint32_t formatCount = 0;
+    uint32_t presentModeCount = 0;
+
+    result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &(details->surfaceCapabilities));
+    checkError(result, __FILE__, __LINE__);
+
+    result = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, nullptr);
+    checkError(result, __FILE__, __LINE__);
+
+    details->surfaceFormats.resize(formatCount);
+
+    result = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, details->surfaceFormats.data());
+    checkError(result, __FILE__, __LINE__);
+
+    result = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &presentModeCount, nullptr);
+    checkError(result, __FILE__, __LINE__);
+
+    details->presentModes.resize(presentModeCount);
+
+    result = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &presentModeCount, details->presentModes.data());
+    checkError(result, __FILE__, __LINE__);
+}
+
+void Renderer::initSurfaceFormat()
 {
     VkPhysicalDevice gpu = getVulkanPhysicalDevice();
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &surfaceCapabilities);
@@ -527,13 +562,9 @@ void Renderer::initSurface()
     }
 }
 
-void Renderer::destroySurface()
-{
-    // Nothing to do for now.
-}
-
 void Renderer::initSwapchain()
 {
+    initSurfaceFormat();
 
     // surfaceCapabilities.maxImageCount can be 0.
     // In this case the implementation supports unlimited amount of swap-chain images, limited by memory.

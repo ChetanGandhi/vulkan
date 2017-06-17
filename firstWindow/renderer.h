@@ -18,9 +18,6 @@ public:
     void initLogicalDevice();
     void destroyDevice();
 
-    void initSurface();
-    void destroySurface();
-
     void initSwapchain();
     void destroySwapchain();
 
@@ -95,6 +92,12 @@ private:
         VkDeviceMemory imageMemory = VK_NULL_HANDLE;
     } depthStencil;
 
+    struct SwapchainSupportDetails {
+        VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+        std::vector<VkSurfaceFormatKHR> surfaceFormats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
+
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
     VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
@@ -109,10 +112,12 @@ private:
     void destroyInstance();
 
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
+    void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
+    void initSurfaceFormat();
 
-    bool isDeviceSuitable(VkPhysicalDevice device);
+    bool isDeviceSuitable(VkPhysicalDevice gpu);
     bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+    bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
 
 // Debug methods
 
