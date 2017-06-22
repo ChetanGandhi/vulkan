@@ -9,7 +9,7 @@ class Renderer
 {
 
 public:
-    Renderer();
+    Renderer(SurfaceSize surfaceSize);
     ~Renderer();
 
     void setSurface(VkSurfaceKHR surface);
@@ -96,9 +96,8 @@ private:
         VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
         std::vector<VkSurfaceFormatKHR> surfaceFormats;
         std::vector<VkPresentModeKHR> presentModes;
-    };
+    } swapchainSupportDetails;
 
-    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     VkSurfaceFormatKHR surfaceFormat = {};
     VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
@@ -113,7 +112,10 @@ private:
 
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
     void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
-    void initSurfaceFormat();
+
+    VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
+    VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> presentModes);
+    void chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent);
 
     bool isDeviceSuitable(VkPhysicalDevice gpu);
     bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);

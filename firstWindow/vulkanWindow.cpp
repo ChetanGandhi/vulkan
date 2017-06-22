@@ -16,7 +16,7 @@ VulkanWindow::VulkanWindow(uint32_t width, uint32_t height, std::string name, st
 
     initPlatformSpecificWindow();
 
-    this->renderer = new Renderer();
+    this->renderer = new Renderer(surfaceSize);
 
     initPlatformSpecificSurface();
 

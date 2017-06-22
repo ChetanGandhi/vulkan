@@ -12,8 +12,9 @@
 #include <set>
 #include <array>
 
-Renderer::Renderer()
+Renderer::Renderer(SurfaceSize surfaceSize)
 {
+    this->surfaceSize = surfaceSize;
     setupDebugLayer();
     setupLayersAndExtensions();
     initInstance();
@@ -524,82 +525,121 @@ void Renderer::querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSuppo
     checkError(result, __FILE__, __LINE__);
 }
 
-void Renderer::initSurfaceFormat()
+VkSurfaceFormatKHR Renderer::chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats)
 {
-    VkPhysicalDevice gpu = getVulkanPhysicalDevice();
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &surfaceCapabilities);
+    printSurfaceFormatsDetails(surfaceFormats);
 
-    if(surfaceCapabilities.currentExtent.width < UINT32_MAX)
+    if(surfaceFormats.size() == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
     {
-        surfaceSize.width = surfaceCapabilities.currentExtent.width;
-        surfaceSize.height = surfaceCapabilities.currentExtent.height;
+
+        VkSurfaceFormatKHR surfaceFormat = {};
+        surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
+        surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        return surfaceFormat;
     }
 
+    for(const VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
     {
-        uint32_t formatCount = 0;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, nullptr);
-
-        if(formatCount == 0)
+        if(nextSurfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && nextSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
-            assert(0 && "Surface format missing.");
-            std::exit(EXIT_FAILURE);
+            return nextSurfaceFormat;
+        }
+    }
+
+    return surfaceFormats[0];
+}
+
+VkPresentModeKHR Renderer::choosePresentMode(const std::vector<VkPresentModeKHR> presentModes)
+{
+    VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    for(const VkPresentModeKHR &nextPresentMode : presentModes)
+    {
+        // If nextPresentMode is VK_PRESENT_MODE_MAILBOX_KHR then use this as this is the best.
+        if(nextPresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return nextPresentMode;
         }
 
-        std::vector<VkSurfaceFormatKHR> surfaceFormatList(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, surfaceFormatList.data());
-
-        printSurfaceFormatsDetails(surfaceFormatList);
-
-        if(surfaceFormatList[0].format == VK_FORMAT_UNDEFINED)
+        // If VK_PRESENT_MODE_MAILBOX_KHR was not found then use VK_PRESENT_MODE_IMMEDIATE_KHR.
+        if(nextPresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
         {
-            surfaceFormat.format = VK_FORMAT_B8G8R8_UNORM;
-            surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            defaultPresentMode = nextPresentMode;
         }
-        else
+    }
+
+    return defaultPresentMode;
+}
+
+void Renderer::chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent)
+{
+    if(surfaceCapabilities.currentExtent.width < UINT32_MAX)
+    {
+        initialSurfaceExtent->width = surfaceCapabilities.currentExtent.width;
+        initialSurfaceExtent->height = surfaceCapabilities.currentExtent.height;
+    }
+    else
+    {
+        if(initialSurfaceExtent->width > surfaceCapabilities.maxImageExtent.width)
         {
-            surfaceFormat = surfaceFormatList[0];
+            initialSurfaceExtent->width = surfaceCapabilities.maxImageExtent.width;
+        }
+
+        if(initialSurfaceExtent->width < surfaceCapabilities.minImageExtent.width)
+        {
+            initialSurfaceExtent->width = surfaceCapabilities.minImageExtent.width;
+        }
+
+        if(initialSurfaceExtent->height > surfaceCapabilities.maxImageExtent.height)
+        {
+            initialSurfaceExtent->height = surfaceCapabilities.maxImageExtent.height;
+        }
+
+        if(initialSurfaceExtent->height < surfaceCapabilities.minImageExtent.height)
+        {
+            initialSurfaceExtent->height = surfaceCapabilities.minImageExtent.height;
         }
     }
 }
 
 void Renderer::initSwapchain()
 {
-    initSurfaceFormat();
+    VkPhysicalDevice gpu = getVulkanPhysicalDevice();
+    VkDevice device = getVulkanDevice();
+
+    VkExtent2D initialSurfaceExtent = {};
+    initialSurfaceExtent.width = this->surfaceSize.width;
+    initialSurfaceExtent.height = this->surfaceSize.height;
+
+    querySwapchainSupportDetails(gpu, &swapchainSupportDetails);
+
+    if(!swapchainSupportDetails.surfaceFormats.size())
+    {
+        assert(0 && "Surface format missing.");
+        std::exit(EXIT_FAILURE);
+    }
+
+    surfaceFormat = chooseSurfaceFormat(swapchainSupportDetails.surfaceFormats);
+    chooseSurfaceExtent(swapchainSupportDetails.surfaceCapabilities, &initialSurfaceExtent);
+
+    VkPresentModeKHR presentMode = choosePresentMode(swapchainSupportDetails.presentModes);
 
     // surfaceCapabilities.maxImageCount can be 0.
     // In this case the implementation supports unlimited amount of swap-chain images, limited by memory.
     // The amount of swap-chain images can also be fixed.
-    if(swapchainImageCount < surfaceCapabilities.minImageCount + 1)
+    if(swapchainImageCount < swapchainSupportDetails.surfaceCapabilities.minImageCount + 1)
     {
-        swapchainImageCount = surfaceCapabilities.minImageCount + 1;
+        swapchainImageCount = swapchainSupportDetails.surfaceCapabilities.minImageCount + 1;
     }
 
-    if(swapchainImageCount > 0 && swapchainImageCount > surfaceCapabilities.maxImageCount)
+    if(swapchainImageCount > 0 && swapchainImageCount > swapchainSupportDetails.surfaceCapabilities.maxImageCount)
     {
-        swapchainImageCount = surfaceCapabilities.maxImageCount;
+        swapchainImageCount = swapchainSupportDetails.surfaceCapabilities.maxImageCount;
     }
 
-    printSwapChainImageCount(surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount, swapchainImageCount);
-
-    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    VkResult result = VK_SUCCESS;
+    printSwapChainImageCount(swapchainSupportDetails.surfaceCapabilities.minImageCount, swapchainSupportDetails.surfaceCapabilities.maxImageCount, swapchainImageCount);
 
     {
-        uint32_t presentModeCount = 0;
-        result = vkGetPhysicalDeviceSurfacePresentModesKHR(getVulkanPhysicalDevice(), surface, &presentModeCount, nullptr);
-        checkError(result, __FILE__, __LINE__);
-        std::vector<VkPresentModeKHR> presentModeList(presentModeCount);
-        result = vkGetPhysicalDeviceSurfacePresentModesKHR(getVulkanPhysicalDevice(), surface, &presentModeCount, presentModeList.data());
-        checkError(result, __FILE__, __LINE__);
-
-        for(VkPresentModeKHR nextPresentMode : presentModeList)
-        {
-            if(nextPresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-            {
-                presentMode = nextPresentMode;
-            }
-        }
-
         #if ENABLE_DEBUG
 
         std::cout<<"\n---------- Presentation Mode ----------\n";
@@ -629,19 +669,36 @@ void Renderer::initSwapchain()
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchainCreateInfo.queueFamilyIndexCount = 0; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
-    swapchainCreateInfo.pQueueFamilyIndices = nullptr; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
-    swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+    swapchainCreateInfo.preTransform = swapchainSupportDetails.surfaceCapabilities.currentTransform;
     swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchainCreateInfo.presentMode = presentMode;
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    result = vkCreateSwapchainKHR(getVulkanDevice(), &swapchainCreateInfo, nullptr, &swapchain);
+    if(queueFamilyIndices.hasSeparatePresentQueue)
+    {
+        uint32_t indices[] = {queueFamilyIndices.graphicsFamilyIndex, queueFamilyIndices.presentFamilyIndex};
+
+        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swapchainCreateInfo.queueFamilyIndexCount = 2; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+        swapchainCreateInfo.pQueueFamilyIndices = indices;
+    }
+    else
+    {
+        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchainCreateInfo.queueFamilyIndexCount = 0; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+        swapchainCreateInfo.pQueueFamilyIndices = nullptr; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+    }
+
+    VkResult result = vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkGetSwapchainImagesKHR(getVulkanDevice(), swapchain, &swapchainImageCount, nullptr);
+    result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr);
+    checkError(result, __FILE__, __LINE__);
+
+    swapchainImages.resize(swapchainImageCount);
+    result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data());
     checkError(result, __FILE__, __LINE__);
 }
 
@@ -652,8 +709,7 @@ void Renderer::destroySwapchain()
 
 void Renderer::initSwapchainImages()
 {
-    swapchainImages.resize(swapchainImageCount);
-    swapchainImageViews.resize(swapchainImageCount);
+    swapchainImageViews.resize(swapchainImages.size());
     VkResult result = vkGetSwapchainImagesKHR(getVulkanDevice(), swapchain, &swapchainImageCount, swapchainImages.data());
     checkError(result, __FILE__, __LINE__);
 
