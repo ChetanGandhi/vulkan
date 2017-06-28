@@ -1,5 +1,6 @@
 #include "buildParam.h"
 #include "utils.h"
+#include <fstream>
 
 void checkError(VkResult result, std::string file, uint32_t lineNumber)
 {
@@ -88,7 +89,6 @@ void checkError(VkResult result, std::string file, uint32_t lineNumber)
     #endif // ENABLE_DEBUG
 }
 
-
 uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *imageMemoryRequirements, const VkMemoryPropertyFlags requiredMemoryProperties)
 {
     for(uint32_t memoryTypeCounter = 0; memoryTypeCounter < gpuMemoryProperties->memoryTypeCount; ++memoryTypeCounter)
@@ -107,3 +107,22 @@ uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryPr
     return UINT32_MAX;
 }
 
+bool readFile(const std::string &fileName, std::vector<char> *data)
+{
+    std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+    if(!file.is_open())
+    {
+        std::cout<<"Onable to open file: "<<fileName<<"\n";
+        return false;
+    }
+
+    size_t fileSize = (size_t) file.tellg();
+    data->resize(fileSize);
+
+    file.seekg(0);
+    file.read(data->data(), fileSize);
+    file.close();
+
+    return true;
+}

@@ -745,6 +745,69 @@ void Renderer::destroySwapchainImages()
     }
 }
 
+VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
+{
+    VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
+    shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    shaderModuleCreateInfo.pNext = nullptr;
+    shaderModuleCreateInfo.flags = 0;
+    shaderModuleCreateInfo.codeSize = code.size();
+    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    VkShaderModule shaderModule;
+    VkResult result = vkCreateShaderModule(getVulkanDevice(), &shaderModuleCreateInfo, nullptr, &shaderModule);
+    checkError(result, __FILE__, __LINE__);
+
+    return shaderModule;
+}
+
+void Renderer::initGraphicsPipline()
+{
+    std::vector<char> vertexShaderCode;
+    std::vector<char> fragmentShaderCode;
+
+    if(!readFile("shaders/vert.spv", &vertexShaderCode))
+    {
+        assert(0 && "Cannot open vertex shader.");
+    }
+
+    if(!readFile("shaders/frag.spv", &fragmentShaderCode))
+    {
+        assert(0 && "Cannot open fragment shader.");
+    }
+
+    VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
+    VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
+
+    VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
+    vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexShaderStageCreateInfo.pNext = nullptr;
+    vertexShaderStageCreateInfo.flags = 0;
+    vertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertexShaderStageCreateInfo.module = vertexShaderModule;
+    vertexShaderStageCreateInfo.pName = "main";
+    vertexShaderStageCreateInfo.pSpecializationInfo = nullptr;
+
+    VkPipelineShaderStageCreateInfo fragmentShaderStageCreateInfo = {};
+    fragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragmentShaderStageCreateInfo.pNext = nullptr;
+    fragmentShaderStageCreateInfo.flags = 0;
+    fragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragmentShaderStageCreateInfo.module = fragmentShaderModule;
+    fragmentShaderStageCreateInfo.pName = "main";
+    fragmentShaderStageCreateInfo.pSpecializationInfo = nullptr;
+
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
+
+    vkDestroyShaderModule(getVulkanDevice(), fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(getVulkanDevice(), vertexShaderModule, nullptr);
+}
+
+void Renderer::destroyGraphicsPipline()
+{
+    // Nothing to do for now.
+}
+
 void Renderer::initDepthStencilImage()
 {
     {

@@ -24,6 +24,9 @@ public:
     void initSwapchainImages();
     void destroySwapchainImages();
 
+    void initGraphicsPipline();
+    void destroyGraphicsPipline();
+
     void initDepthStencilImage();
     void destoryDepthStencilImage();
 
@@ -120,6 +123,8 @@ private:
     bool isDeviceSuitable(VkPhysicalDevice gpu);
     bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
     bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
+
+    VkShaderModule createShaderModule(const std::vector<char>& code);
 
 // Debug methods
 
