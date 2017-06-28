@@ -60,6 +60,7 @@ private:
    VkSurfaceKHR surface = VK_NULL_HANDLE;
    VkQueue graphicsQueue = VK_NULL_HANDLE;
    VkQueue presentQueue = VK_NULL_HANDLE;
+   VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
    struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
