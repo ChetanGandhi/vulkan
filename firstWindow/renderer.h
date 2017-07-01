@@ -24,14 +24,14 @@ public:
     void initSwapchainImages();
     void destroySwapchainImages();
 
+    void initRenderPass();
+    void destroyRenderPass();
+
     void initGraphicsPipline();
     void destroyGraphicsPipline();
 
-    void initDepthStencilImage();
-    void destoryDepthStencilImage();
-
-    void initRenderPass();
-    void destroyRenderPass();
+    // void initDepthStencilImage();
+    // void destoryDepthStencilImage();
 
     void initFrameBuffers();
     void destroyFrameBuffers();
@@ -60,7 +60,6 @@ private:
    VkSurfaceKHR surface = VK_NULL_HANDLE;
    VkQueue graphicsQueue = VK_NULL_HANDLE;
    VkQueue presentQueue = VK_NULL_HANDLE;
-   VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
    struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
@@ -88,13 +87,15 @@ private:
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
     VkFence swapchainImageAvailable = VK_NULL_HANDLE;
 
-    struct DepthStencil {
-        VkImage image = VK_NULL_HANDLE;
-        VkImageView imageView = VK_NULL_HANDLE;
-        VkDeviceMemory imageMemory = VK_NULL_HANDLE;
-    } depthStencil;
+    // struct DepthStencil {
+    //     VkImage image = VK_NULL_HANDLE;
+    //     VkImageView imageView = VK_NULL_HANDLE;
+    //     VkDeviceMemory imageMemory = VK_NULL_HANDLE;
+    // } depthStencil;
 
     struct SwapchainSupportDetails {
         VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
@@ -103,7 +104,7 @@ private:
     } swapchainSupportDetails;
 
     VkSurfaceFormatKHR surfaceFormat = {};
-    VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
+    // VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
     void setupDebugLayer();
     void setupLayersAndExtensions();
