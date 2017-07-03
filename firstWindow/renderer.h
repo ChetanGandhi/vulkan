@@ -22,17 +22,17 @@ public:
     void initSwapchain();
     void destroySwapchain();
 
-    void initSwapchainImages();
-    void destroySwapchainImages();
+    void initSwapchainImageViews();
+    void destroySwapchainImageViews();
+
+    // void initDepthStencilImage();
+    // void destoryDepthStencilImage();
 
     void initRenderPass();
     void destroyRenderPass();
 
     void initGraphicsPipline();
     void destroyGraphicsPipline();
-
-    // void initDepthStencilImage();
-    // void destoryDepthStencilImage();
 
     void initFrameBuffers();
     void destroyFrameBuffers();
@@ -49,13 +49,6 @@ public:
     void render();
 
     const VkInstance getVulkanInstance() const;
-    const VkPhysicalDevice getVulkanPhysicalDevice() const;
-    const VkDevice getVulkanDevice() const;
-    const VkQueue getVulkanGraphicsQueue() const;
-    const VkPhysicalDeviceProperties &getVulkanPhysicalDeviceProperties() const;
-    const VkPhysicalDeviceMemoryProperties &getVulkanPhysicalDeviceMemoryProperties() const;
-    const QueueFamilyIndices getQueueFamilyIndices() const;
-    const VkRenderPass getVulkanRenderPass() const;
 
 private:
    SurfaceSize surfaceSize;

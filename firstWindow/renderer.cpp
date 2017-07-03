@@ -149,41 +149,6 @@ const VkInstance Renderer::getVulkanInstance() const
     return instance;
 }
 
-const VkPhysicalDevice Renderer::getVulkanPhysicalDevice() const
-{
-    return gpuDetails.gpu;
-}
-
-const VkDevice Renderer::getVulkanDevice() const
-{
-    return device;
-}
-
-const VkQueue Renderer::getVulkanGraphicsQueue() const
-{
-    return graphicsQueue;
-}
-
-const VkPhysicalDeviceProperties &Renderer::getVulkanPhysicalDeviceProperties() const
-{
-    return gpuDetails.properties;
-}
-
-const VkPhysicalDeviceMemoryProperties &Renderer::getVulkanPhysicalDeviceMemoryProperties() const
-{
-    return gpuDetails.memoryProperties;
-}
-
-const QueueFamilyIndices Renderer::getQueueFamilyIndices() const
-{
-    return queueFamilyIndices;
-}
-
-const VkRenderPass Renderer::getVulkanRenderPass() const
-{
-    return renderPass;
-}
-
 void Renderer::setupLayersAndExtensions()
 {
     instanceExtensionList.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -612,14 +577,11 @@ void Renderer::chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities,
 
 void Renderer::initSwapchain()
 {
-    VkPhysicalDevice gpu = getVulkanPhysicalDevice();
-    VkDevice device = getVulkanDevice();
-
     VkExtent2D initialSurfaceExtent = {};
     initialSurfaceExtent.width = this->surfaceSize.width;
     initialSurfaceExtent.height = this->surfaceSize.height;
 
-    querySwapchainSupportDetails(gpu, &swapchainSupportDetails);
+    querySwapchainSupportDetails(gpuDetails.gpu, &swapchainSupportDetails);
 
     if(!swapchainSupportDetails.surfaceFormats.size())
     {
@@ -687,11 +649,11 @@ void Renderer::initSwapchain()
 
     if(queueFamilyIndices.hasSeparatePresentQueue)
     {
-        uint32_t indices[] = {queueFamilyIndices.graphicsFamilyIndex, queueFamilyIndices.presentFamilyIndex};
+        std::vector<uint32_t> indices = {queueFamilyIndices.graphicsFamilyIndex, queueFamilyIndices.presentFamilyIndex};
 
         swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        swapchainCreateInfo.queueFamilyIndexCount = 2; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
-        swapchainCreateInfo.pQueueFamilyIndices = indices;
+        swapchainCreateInfo.queueFamilyIndexCount = indices.size(); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+        swapchainCreateInfo.pQueueFamilyIndices = indices.data();
     }
     else
     {
@@ -713,15 +675,12 @@ void Renderer::initSwapchain()
 
 void Renderer::destroySwapchain()
 {
-    vkDestroySwapchainKHR(getVulkanDevice(), swapchain, nullptr);
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
-void Renderer::initSwapchainImages()
+void Renderer::initSwapchainImageViews()
 {
     swapchainImageViews.resize(swapchainImageCount);
-
-    VkResult result = vkGetSwapchainImagesKHR(getVulkanDevice(), swapchain, &swapchainImageCount, swapchainImages.data());
-    checkError(result, __FILE__, __LINE__);
 
     for(uint32_t counter = 0; counter < swapchainImageCount; ++counter)
     {
@@ -742,16 +701,16 @@ void Renderer::initSwapchainImages()
         imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
         imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-        result = vkCreateImageView(getVulkanDevice(), &imageViewCreateInfo, nullptr, &swapchainImageViews[counter]);
+        VkResult result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &swapchainImageViews[counter]);
         checkError(result, __FILE__, __LINE__);
     }
 }
 
-void Renderer::destroySwapchainImages()
+void Renderer::destroySwapchainImageViews()
 {
     for(VkImageView imageView: swapchainImageViews)
     {
-        vkDestroyImageView(getVulkanDevice(), imageView, nullptr);
+        vkDestroyImageView(device, imageView, nullptr);
     }
 }
 
@@ -765,7 +724,7 @@ VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
     shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule shaderModule;
-    VkResult result = vkCreateShaderModule(getVulkanDevice(), &shaderModuleCreateInfo, nullptr, &shaderModule);
+    VkResult result = vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule);
     checkError(result, __FILE__, __LINE__);
 
     return shaderModule;
@@ -920,7 +879,7 @@ void Renderer::initGraphicsPipline()
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
     pipelineLayoutCreateInfo.pPushConstantRanges = 0;
 
-    VkResult result = vkCreatePipelineLayout(getVulkanDevice(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+    VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
     checkError(result, __FILE__, __LINE__);
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
@@ -944,18 +903,19 @@ void Renderer::initGraphicsPipline()
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
 
-    result = vkCreateGraphicsPipelines(getVulkanDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
+    result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
     checkError(result, __FILE__, __LINE__);
 
-    vkDestroyShaderModule(getVulkanDevice(), fragmentShaderModule, nullptr);
-    vkDestroyShaderModule(getVulkanDevice(), vertexShaderModule, nullptr);
+    vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(device, vertexShaderModule, nullptr);
 }
 
 void Renderer::destroyGraphicsPipline()
 {
-    vkDestroyPipeline(getVulkanDevice(), pipeline, nullptr);
-    vkDestroyPipelineLayout(getVulkanDevice(), pipelineLayout, nullptr);
+    vkDestroyPipeline(device, pipeline, nullptr);
+    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }
+
 
 // void Renderer::initDepthStencilImage()
 // {
@@ -1128,14 +1088,13 @@ void Renderer::initRenderPass()
     renderPassCreateInfo.dependencyCount = 1;
     renderPassCreateInfo.pDependencies = &subpassDependency;
 
-    VkResult result = vkCreateRenderPass(getVulkanDevice(), &renderPassCreateInfo, nullptr, &renderPass);
-
+    VkResult result = vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass);
     checkError(result, __FILE__, __LINE__);
 }
 
 void Renderer::destroyRenderPass()
 {
-    vkDestroyRenderPass(getVulkanDevice(), renderPass, nullptr);
+    vkDestroyRenderPass(device, renderPass, nullptr);
 }
 
 void Renderer::initFrameBuffers()
@@ -1159,8 +1118,7 @@ void Renderer::initFrameBuffers()
         framebufferCreateInfo.height = surfaceSize.height;
         framebufferCreateInfo.layers = 1;
 
-        VkResult result = vkCreateFramebuffer(getVulkanDevice(), &framebufferCreateInfo, nullptr, &framebuffers[swapchainImageCounter]);
-
+        VkResult result = vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &framebuffers[swapchainImageCounter]);
         checkError(result, __FILE__, __LINE__);
     }
 }
@@ -1169,7 +1127,7 @@ void Renderer::destroyFrameBuffers()
 {
     for(VkFramebuffer nextFrameuffer :framebuffers)
     {
-        vkDestroyFramebuffer(getVulkanDevice(), nextFrameuffer, nullptr);
+        vkDestroyFramebuffer(device, nextFrameuffer, nullptr);
     }
 }
 
@@ -1181,13 +1139,13 @@ void Renderer::initCommandPool()
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamilyIndex;
 
-    VkResult result = vkCreateCommandPool(getVulkanDevice(), &commandPoolCreateInfo, nullptr, &commandPool);
+    VkResult result = vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool);
     checkError(result, __FILE__, __LINE__);
 }
 
 void Renderer::destroyCommandPool()
 {
-    vkDestroyCommandPool(getVulkanDevice(), commandPool, nullptr);
+    vkDestroyCommandPool(device, commandPool, nullptr);
 }
 
 void Renderer::initCommandBuffers()
@@ -1201,7 +1159,7 @@ void Renderer::initCommandBuffers()
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = commandBuffers.size();
 
-    VkResult result = vkAllocateCommandBuffers(getVulkanDevice(), &commandBufferAllocateInfo, commandBuffers.data());
+    VkResult result = vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data());
     checkError(result, __FILE__, __LINE__);
 
     for(uint32_t counter = 0; counter < commandBuffers.size(); ++counter)
@@ -1259,17 +1217,17 @@ void Renderer::initSynchronizations()
     semaphoreCreateInfo.pNext = nullptr;
     semaphoreCreateInfo.flags = 0;
 
-    VkResult result = vkCreateSemaphore(getVulkanDevice(), &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
+    VkResult result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkCreateSemaphore(getVulkanDevice(), &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore);
+    result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore);
     checkError(result, __FILE__, __LINE__);
 }
 
 void Renderer::destroySynchronizations()
 {
-    vkDestroySemaphore(getVulkanDevice(), imageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(getVulkanDevice(), renderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 }
 
 void Renderer::render()
@@ -1279,7 +1237,7 @@ void Renderer::render()
     VkResult result = vkQueueWaitIdle(graphicsQueue);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkAcquireNextImageKHR(getVulkanDevice(), swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &activeSwapchainImageId);
+    result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &activeSwapchainImageId);
     checkError(result, __FILE__, __LINE__);
 
     std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};

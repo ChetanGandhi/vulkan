@@ -24,7 +24,7 @@ VulkanWindow::VulkanWindow(uint32_t width, uint32_t height, std::string name, st
     this->renderer->initDevice();
     this->renderer->initLogicalDevice();
     this->renderer->initSwapchain();
-    this->renderer->initSwapchainImages();
+    this->renderer->initSwapchainImageViews();
     // this->renderer->initDepthStencilImage();
     this->renderer->initRenderPass();
     this->renderer->initGraphicsPipline();
@@ -46,7 +46,7 @@ VulkanWindow::~VulkanWindow()
     this->renderer->destroyGraphicsPipline();
     this->renderer->destroyRenderPass();
     // this->renderer->destoryDepthStencilImage();
-    this->renderer->destroySwapchainImages();
+    this->renderer->destroySwapchainImageViews();
     this->renderer->destroySwapchain();
 
     this->destroyPlatformSpecificSurface();
