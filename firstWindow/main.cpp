@@ -18,30 +18,6 @@ int main()
 {
     VulkanWindow *window = new VulkanWindow(800, 600, "VulkanWindow", "Vulkan Window");
 
-    // VkCommandPool commandPool = VK_NULL_HANDLE;
-    // VkCommandPoolCreateInfo commandPoolCreateInfo {};
-    // commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    // commandPoolCreateInfo.pNext = nullptr;
-    // commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    // commandPoolCreateInfo.queueFamilyIndex = renderer.getQueueFamilyIndices();
-    // vkCreateCommandPool(renderer.getVulkanDevice(), &commandPoolCreateInfo, nullptr, &commandPool);
-
-    // VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    // VkCommandBufferAllocateInfo commandBufferAllocateInfo {};
-    // commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    // commandBufferAllocateInfo.pNext = nullptr;
-    // commandBufferAllocateInfo.commandPool = commandPool;
-    // commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    // commandBufferAllocateInfo.commandBufferCount = 1;
-    // vkAllocateCommandBuffers(renderer.getVulkanDevice(), &commandBufferAllocateInfo, &commandBuffer);
-
-    // VkSemaphore renderingCompleteSemaphore = VK_NULL_HANDLE;
-    // VkSemaphoreCreateInfo semaphoreCreateInfo {};
-    // semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    // semaphoreCreateInfo.pNext = nullptr;
-    // semaphoreCreateInfo.flags = 0;
-    // vkCreateSemaphore(renderer.getVulkanDevice(), &semaphoreCreateInfo, nullptr, &renderingCompleteSemaphore);
-
     // float colorRotator = 0.0f;
     // auto timer = std::chrono::steady_clock();
     // auto lastTime = timer.now();
@@ -50,88 +26,28 @@ int main()
 
     while(window->run())
     {
-    //     // CPU Logic
+        // CPU Logic
 
-    //     #if ENABLE_FPS
+        // #if ENABLE_FPS
 
-    //     ++frameCounter;
+        // ++frameCounter;
 
-    //     if(lastTime + std::chrono::seconds(1) < timer.now())
-    //     {
-    //         lastTime = timer.now();
-    //         fps = frameCounter;
-    //         frameCounter  = 0;
-    //         std::cout<<"----- FPS: "<<fps<<" -----"<<std::endl;
-    //     }
+        // if(lastTime + std::chrono::seconds(1) < timer.now())
+        // {
+        //     lastTime = timer.now();
+        //     fps = frameCounter;
+        //     frameCounter  = 0;
+        //     std::cout<<"----- FPS: "<<fps<<" -----"<<std::endl;
+        // }
 
-    //     #endif // ENABLE_FPS
+        // #endif // ENABLE_FPS
 
-    //     // Begin rendering
+        // colorRotator += 0.001;
 
-    //     window->beginRendering();
+        // Begin rendering
 
-    //     // Record command buffer
-
-    //     VkCommandBufferBeginInfo commandBufferBeginInfo {};
-    //     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    //     commandBufferBeginInfo.pNext = nullptr;
-    //     commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    //     commandBufferBeginInfo.pInheritanceInfo = nullptr;
-
-    //     vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
-
-    //     VkRect2D renderArea {};
-    //     renderArea.offset.x = 0;
-    //     renderArea.offset.y = 0;
-    //     renderArea.extent = window->getVulkanSurfaceSize();
-
-    //     colorRotator += 0.001;
-
-    //     std::array<VkClearValue, 2> clearValue {};
-    //     clearValue[0].depthStencil.depth = 0.0f;
-    //     clearValue[0].depthStencil.stencil = 0;
-    //     clearValue[1].color.float32[0] = std::sin( colorRotator + CIRCLE_THIRD_1 ) * 0.5 + 0.5;
-    //     clearValue[1].color.float32[1] = std::sin( colorRotator + CIRCLE_THIRD_2 ) * 0.5 + 0.5;
-    //     clearValue[1].color.float32[2] = std::sin( colorRotator + CIRCLE_THIRD_3 ) * 0.5 + 0.5;
-    //     clearValue[1].color.float32[3] = 1.0f;
-
-    //     VkRenderPassBeginInfo renderPassBeginInfo {};
-    //     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    //     renderPassBeginInfo.pNext = nullptr;
-    //     renderPassBeginInfo.renderPass = window->getVulkanRenderPass();
-    //     renderPassBeginInfo.framebuffer = window->getVulkanActiveFramebuffer();
-    //     renderPassBeginInfo.renderArea = renderArea;
-    //     renderPassBeginInfo.clearValueCount = clearValue.size();
-    //     renderPassBeginInfo.pClearValues = clearValue.data();
-
-    //     vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    //     vkCmdEndRenderPass(commandBuffer);
-    //     vkEndCommandBuffer(commandBuffer);
-
-    //     // Submit command buffer
-
-    //     VkSubmitInfo submitInfo {};
-    //     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    //     submitInfo.pNext = nullptr;
-    //     submitInfo.waitSemaphoreCount = 0;
-    //     submitInfo.pWaitSemaphores = nullptr;
-    //     submitInfo.pWaitDstStageMask = nullptr;
-    //     submitInfo.commandBufferCount = 1;
-    //     submitInfo.pCommandBuffers = &commandBuffer;
-    //     submitInfo.signalSemaphoreCount = 1;
-    //     submitInfo.pSignalSemaphores = &renderingCompleteSemaphore;
-
-    //     VkResult result = vkQueueSubmit(renderer.getVulkanGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    //     checkError(result, __FILE__, __LINE__);
-
-    //     // End rendering
-
-    //     window->endRendering({renderingCompleteSemaphore});
+        window->render();
     }
-
-    // vkQueueWaitIdle(renderer.getVulkanGraphicsQueue());
-    // vkDestroySemaphore(renderer.getVulkanDevice(), renderingCompleteSemaphore, nullptr);
-    // vkDestroyCommandPool(renderer.getVulkanDevice(), commandPool, nullptr);
 
     delete window;
 

@@ -17,8 +17,7 @@ public:
     bool update();
 
     void close();
-    void beginRendering();
-    void endRendering(std::vector<VkSemaphore> waitSemaphores);
+    void render();
 
     VkExtent2D getVulkanSurfaceSize();
 
@@ -44,8 +43,6 @@ private:
     static uint64_t win32ClassIdCounter;
 
     #endif // VK_USE_PLATFORM_WIN32_KHR
-
-    void createVulkanVindow(uint32_t sizeX, uint32_t sizeY, std::string name, std::string title);
 
     void initPlatformSpecificWindow();
     void destroyPlatformSpecificWindow();

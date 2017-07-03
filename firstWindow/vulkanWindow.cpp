@@ -18,7 +18,7 @@ VulkanWindow::VulkanWindow(uint32_t width, uint32_t height, std::string name, st
 
     this->renderer = new Renderer(surfaceSize);
 
-    initPlatformSpecificSurface();
+    this->initPlatformSpecificSurface();
 
     this->renderer->setSurface(surface);
     this->renderer->initDevice();
@@ -29,6 +29,8 @@ VulkanWindow::VulkanWindow(uint32_t width, uint32_t height, std::string name, st
     this->renderer->initRenderPass();
     this->renderer->initGraphicsPipline();
     this->renderer->initFrameBuffers();
+    this->renderer->initCommandPool();
+    this->renderer->initCommandBuffers();
     this->renderer->initSynchronizations();
 }
 
@@ -36,15 +38,18 @@ VulkanWindow::VulkanWindow(uint32_t width, uint32_t height, std::string name, st
 
 VulkanWindow::~VulkanWindow()
 {
-    vkQueueWaitIdle(this->renderer->getVulkanGraphicsQueue());
+    this->renderer->waitForIdle();
     this->renderer->destroySynchronizations();
+    this->renderer->destroyCommandBuffers();
+    this->renderer->destroyCommandPool();
     this->renderer->destroyFrameBuffers();
     this->renderer->destroyGraphicsPipline();
     this->renderer->destroyRenderPass();
     // this->renderer->destoryDepthStencilImage();
     this->renderer->destroySwapchainImages();
     this->renderer->destroySwapchain();
-    destroyPlatformSpecificSurface();
+
+    this->destroyPlatformSpecificSurface();
 
     this->renderer->destroyDevice();
     delete this->renderer;
@@ -70,14 +75,9 @@ bool VulkanWindow::update()
     return isRunning;
 }
 
-void VulkanWindow::beginRendering()
+void VulkanWindow::render()
 {
-    renderer->beginRendering();
-}
-
-void VulkanWindow::endRendering(std::vector<VkSemaphore> waitSemaphores)
-{
-    renderer->endRendering(waitSemaphores);
+    renderer->render();
 }
 
 VkExtent2D VulkanWindow::getVulkanSurfaceSize()

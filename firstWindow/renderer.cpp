@@ -184,11 +184,6 @@ const VkRenderPass Renderer::getVulkanRenderPass() const
     return renderPass;
 }
 
-const VkFramebuffer Renderer::getVulkanActiveFramebuffer() const
-{
-    return framebuffers[activeSwapchainImageId];
-}
-
 void Renderer::setupLayersAndExtensions()
 {
     instanceExtensionList.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -226,6 +221,18 @@ void Renderer::destroyInstance()
 {
     vkDestroyInstance(instance, VK_NULL_HANDLE);
     instance = VK_NULL_HANDLE;
+}
+
+void Renderer::waitForIdle()
+{
+    vkQueueWaitIdle(graphicsQueue);
+
+    if(queueFamilyIndices.hasSeparatePresentQueue)
+    {
+        vkQueueWaitIdle(presentQueue);
+    }
+
+    vkDeviceWaitIdle(device);
 }
 
 void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
@@ -271,8 +278,9 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
         queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
 
         std::cout<<"\n---------- Queue Family Indices ----------\n";
-        std::cout<<"\nGraphics Family Index\t:"<<queueFamilyIndices.graphicsFamilyIndex<<"\n";
-        std::cout<<"\nPresent Family Index\t:"<<queueFamilyIndices.presentFamilyIndex<<"\n";
+        std::cout<<"\nGraphics Family Index\t\t: "<<queueFamilyIndices.graphicsFamilyIndex;
+        std::cout<<"\nPresent Family Index\t\t: "<<queueFamilyIndices.presentFamilyIndex;
+        std::cout<<"\nHas Separate Present Queue\t: "<<queueFamilyIndices.hasSeparatePresentQueue<<"\n";
         std::cout<<"\n---------- Queue Family Indices End ----------\n";
     }
 
@@ -671,8 +679,6 @@ void Renderer::initSwapchain()
     swapchainCreateInfo.imageExtent.height = surfaceSize.height;
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-
     swapchainCreateInfo.preTransform = swapchainSupportDetails.surfaceCapabilities.currentTransform;
     swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchainCreateInfo.presentMode = presentMode;
@@ -712,7 +718,8 @@ void Renderer::destroySwapchain()
 
 void Renderer::initSwapchainImages()
 {
-    swapchainImageViews.resize(swapchainImages.size());
+    swapchainImageViews.resize(swapchainImageCount);
+
     VkResult result = vkGetSwapchainImagesKHR(getVulkanDevice(), swapchain, &swapchainImageCount, swapchainImages.data());
     checkError(result, __FILE__, __LINE__);
 
@@ -878,9 +885,9 @@ void Renderer::initGraphicsPipline()
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
-     | VK_COLOR_COMPONENT_G_BIT
-     | VK_COLOR_COMPONENT_B_BIT
-     | VK_COLOR_COMPONENT_A_BIT;
+    | VK_COLOR_COMPONENT_G_BIT
+    | VK_COLOR_COMPONENT_B_BIT
+    | VK_COLOR_COMPONENT_A_BIT;
 
     VkPipelineColorBlendStateCreateInfo colorBlendingStateCreateInfo = {};
     colorBlendingStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -1102,6 +1109,14 @@ void Renderer::initRenderPass()
     subpasses[0].preserveAttachmentCount = 0;
     subpasses[0].pPreserveAttachments = nullptr;
 
+    VkSubpassDependency subpassDependency = {};
+    subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpassDependency.dstSubpass = 0;
+    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.srcAccessMask = 0;
+    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo renderPassCreateInfo {};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassCreateInfo.pNext = nullptr;
@@ -1110,8 +1125,8 @@ void Renderer::initRenderPass()
     renderPassCreateInfo.pAttachments = attachments.data();
     renderPassCreateInfo.subpassCount = subpasses.size();
     renderPassCreateInfo.pSubpasses = subpasses.data();
-    renderPassCreateInfo.dependencyCount = 0;
-    renderPassCreateInfo.pDependencies = nullptr;
+    renderPassCreateInfo.dependencyCount = 1;
+    renderPassCreateInfo.pDependencies = &subpassDependency;
 
     VkResult result = vkCreateRenderPass(getVulkanDevice(), &renderPassCreateInfo, nullptr, &renderPass);
 
@@ -1158,60 +1173,149 @@ void Renderer::destroyFrameBuffers()
     }
 }
 
+void Renderer::initCommandPool()
+{
+    VkCommandPoolCreateInfo commandPoolCreateInfo {};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.pNext = nullptr;
+    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamilyIndex;
+
+    VkResult result = vkCreateCommandPool(getVulkanDevice(), &commandPoolCreateInfo, nullptr, &commandPool);
+    checkError(result, __FILE__, __LINE__);
+}
+
+void Renderer::destroyCommandPool()
+{
+    vkDestroyCommandPool(getVulkanDevice(), commandPool, nullptr);
+}
+
+void Renderer::initCommandBuffers()
+{
+    commandBuffers.resize(framebuffers.size());
+
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo {};
+    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferAllocateInfo.pNext = nullptr;
+    commandBufferAllocateInfo.commandPool = commandPool;
+    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferAllocateInfo.commandBufferCount = commandBuffers.size();
+
+    VkResult result = vkAllocateCommandBuffers(getVulkanDevice(), &commandBufferAllocateInfo, commandBuffers.data());
+    checkError(result, __FILE__, __LINE__);
+
+    for(uint32_t counter = 0; counter < commandBuffers.size(); ++counter)
+    {
+        VkCommandBufferBeginInfo commandBufferBeginInfo {};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.pNext = nullptr;
+        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+        vkBeginCommandBuffer(commandBuffers[counter], &commandBufferBeginInfo);
+
+        VkRect2D renderArea {};
+        renderArea.offset.x = 0;
+        renderArea.offset.y = 0;
+        renderArea.extent.width = surfaceSize.width;
+        renderArea.extent.height = surfaceSize.height;
+
+        std::array<VkClearValue, 1> clearValue {};
+        // clearValue[0].depthStencil.depth = 0.0f;
+        // clearValue[0].depthStencil.stencil = 0;
+        clearValue[0].color.float32[0] = 0.0f;
+        clearValue[0].color.float32[1] = 0.0f;
+        clearValue[0].color.float32[2] = 0.0f;
+        clearValue[0].color.float32[3] = 1.0f;
+
+        VkRenderPassBeginInfo renderPassBeginInfo {};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassBeginInfo.pNext = nullptr;
+        renderPassBeginInfo.renderPass = renderPass;
+        renderPassBeginInfo.framebuffer = framebuffers[counter];
+        renderPassBeginInfo.renderArea = renderArea;
+        renderPassBeginInfo.clearValueCount = clearValue.size();
+        renderPassBeginInfo.pClearValues = clearValue.data();
+
+        vkCmdBeginRenderPass(commandBuffers[counter], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdDraw(commandBuffers[counter], 3, 1, 0, 0);
+        vkCmdEndRenderPass(commandBuffers[counter]);
+
+        VkResult result = vkEndCommandBuffer(commandBuffers[counter]);
+        checkError(result, __FILE__, __LINE__);
+    }
+}
+
+void Renderer::destroyCommandBuffers()
+{
+
+}
+
 void Renderer::initSynchronizations()
 {
-    VkFenceCreateInfo fenceCreateInfo {};
-    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceCreateInfo.pNext = nullptr;
-    fenceCreateInfo.flags = 0;
+    VkSemaphoreCreateInfo semaphoreCreateInfo {};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.pNext = nullptr;
+    semaphoreCreateInfo.flags = 0;
 
-    VkResult result = vkCreateFence(getVulkanDevice(), &fenceCreateInfo, nullptr, &swapchainImageAvailable);
+    VkResult result = vkCreateSemaphore(getVulkanDevice(), &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
+    checkError(result, __FILE__, __LINE__);
 
+    result = vkCreateSemaphore(getVulkanDevice(), &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore);
     checkError(result, __FILE__, __LINE__);
 }
 
 void Renderer::destroySynchronizations()
 {
-    vkDestroyFence(getVulkanDevice(), swapchainImageAvailable, nullptr);
+    vkDestroySemaphore(getVulkanDevice(), imageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(getVulkanDevice(), renderFinishedSemaphore, nullptr);
 }
 
-void Renderer::beginRendering()
+void Renderer::render()
 {
-    VkResult result = vkAcquireNextImageKHR(getVulkanDevice(), swapchain, UINT64_MAX, VK_NULL_HANDLE, swapchainImageAvailable, &activeSwapchainImageId);
+    uint32_t activeSwapchainImageId = UINT32_MAX;
 
+    VkResult result = vkQueueWaitIdle(graphicsQueue);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkWaitForFences(getVulkanDevice(), 1, &swapchainImageAvailable, VK_TRUE, UINT64_MAX);
-
+    result = vkAcquireNextImageKHR(getVulkanDevice(), swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &activeSwapchainImageId);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkResetFences(getVulkanDevice(), 1, &swapchainImageAvailable);
+    std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
+    std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphore};
+    std::vector<VkPipelineStageFlags> waitPipelineStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
+    VkSubmitInfo submitInfo {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = nullptr;
+    submitInfo.waitSemaphoreCount = waitSemaphores.size();
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitPipelineStages.data();
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffers[activeSwapchainImageId];
+    submitInfo.signalSemaphoreCount = signalSemaphores.size();
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+    result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkQueueWaitIdle(getVulkanGraphicsQueue());
-
-    checkError(result, __FILE__, __LINE__);
-}
-
-void Renderer::endRendering(std::vector<VkSemaphore> waitSemaphores)
-{
-    VkResult presentResult = VkResult::VK_RESULT_MAX_ENUM;
+    std::vector<VkSwapchainKHR> swapchains = {swapchain};
 
     VkPresentInfoKHR presentInfo {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pNext = nullptr;
-    presentInfo.waitSemaphoreCount = waitSemaphores.size();
-    presentInfo.pWaitSemaphores = waitSemaphores.data();
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &swapchain;
+    presentInfo.waitSemaphoreCount = signalSemaphores.size();
+    presentInfo.pWaitSemaphores = signalSemaphores.data();
+    presentInfo.swapchainCount = swapchains.size();
+    presentInfo.pSwapchains = swapchains.data();
     presentInfo.pImageIndices = &activeSwapchainImageId;
-    presentInfo.pResults = &presentResult;
+    presentInfo.pResults = nullptr;
 
-    VkResult result = vkQueuePresentKHR(getVulkanGraphicsQueue(), &presentInfo);
-
+    result = vkQueuePresentKHR(presentQueue, &presentInfo);
     checkError(result, __FILE__, __LINE__);
-    checkError(presentResult, __FILE__, __LINE__);
+
+    vkQueueWaitIdle(presentQueue);
 }
 
 // Debug methods

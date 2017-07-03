@@ -13,6 +13,7 @@ public:
     ~Renderer();
 
     void setSurface(VkSurfaceKHR surface);
+    void waitForIdle();
 
     void initDevice();
     void initLogicalDevice();
@@ -36,11 +37,16 @@ public:
     void initFrameBuffers();
     void destroyFrameBuffers();
 
+    void initCommandPool();
+    void destroyCommandPool();
+
+    void initCommandBuffers();
+    void destroyCommandBuffers();
+
     void initSynchronizations();
     void destroySynchronizations();
 
-    void beginRendering();
-    void endRendering(std::vector<VkSemaphore> waitSemaphores);
+    void render();
 
     const VkInstance getVulkanInstance() const;
     const VkPhysicalDevice getVulkanPhysicalDevice() const;
@@ -50,7 +56,6 @@ public:
     const VkPhysicalDeviceMemoryProperties &getVulkanPhysicalDeviceMemoryProperties() const;
     const QueueFamilyIndices getQueueFamilyIndices() const;
     const VkRenderPass getVulkanRenderPass() const;
-    const VkFramebuffer getVulkanActiveFramebuffer() const;
 
 private:
    SurfaceSize surfaceSize;
@@ -79,17 +84,19 @@ private:
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> framebuffers;
+    std::vector<VkCommandBuffer> commandBuffers;
 
     uint32_t swapchainImageCount = 2;
-    uint32_t activeSwapchainImageId = UINT32_MAX;
 
-    bool stencilAvailable = false;
+    // bool stencilAvailable = false;
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkFence swapchainImageAvailable = VK_NULL_HANDLE;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
+    VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
 
     // struct DepthStencil {
     //     VkImage image = VK_NULL_HANDLE;
