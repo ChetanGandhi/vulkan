@@ -19,8 +19,6 @@ public:
     void close();
     void render();
 
-    VkExtent2D getVulkanSurfaceSize();
-
 private:
     bool isRunning = true;
 

@@ -79,12 +79,3 @@ void VulkanWindow::render()
 {
     renderer->render();
 }
-
-VkExtent2D VulkanWindow::getVulkanSurfaceSize()
-{
-    VkExtent2D extent {};
-    extent.width = surfaceSize.width;
-    extent.height = surfaceSize.height;
-
-    return extent;
-}
