@@ -1,8 +1,9 @@
+#pragma once
+
 #include "buildParam.h"
 #include "platform.h"
 #include "renderer.h"
 #include "utils.h"
-#include "vulkanWindow.h"
 
 #include <cstdlib>
 #include <assert.h>
@@ -142,6 +143,11 @@ void Renderer::disableDebug()
 void Renderer::setSurface(VkSurfaceKHR surface)
 {
     this->surface = surface;
+}
+
+void Renderer::setSurfaceSize(SurfaceSize surfaceSize)
+{
+    this->surfaceSize = surfaceSize;
 }
 
 const VkInstance Renderer::getVulkanInstance() const
@@ -1207,7 +1213,7 @@ void Renderer::initCommandBuffers()
 
 void Renderer::destroyCommandBuffers()
 {
-
+    vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
 }
 
 void Renderer::initSynchronizations()
@@ -1230,6 +1236,31 @@ void Renderer::destroySynchronizations()
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 }
 
+void Renderer::recreateSwapChain()
+{
+    vkDeviceWaitIdle(device);
+    cleanupSwapChain();
+    initSwapchain();
+    initSwapchainImageViews();
+    // initDepthStencilImage();
+    initRenderPass();
+    initGraphicsPipline();
+    initFrameBuffers();
+    initCommandBuffers();
+}
+
+void Renderer::cleanupSwapChain()
+{
+    waitForIdle();
+    destroyCommandBuffers();
+    destroyFrameBuffers();
+    destroyGraphicsPipline();
+    destroyRenderPass();
+    // destoryDepthStencilImage();
+    destroySwapchainImageViews();
+    destroySwapchain();
+}
+
 void Renderer::render()
 {
     uint32_t activeSwapchainImageId = UINT32_MAX;
@@ -1238,6 +1269,15 @@ void Renderer::render()
     checkError(result, __FILE__, __LINE__);
 
     result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &activeSwapchainImageId);
+
+    // If result is VK_ERROR_OUT_OF_DATE_KHR than just recreate swap chain
+    // as current swap chain cannot be used with current surface.
+    if(result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        recreateSwapChain();
+        return;
+    }
+
     checkError(result, __FILE__, __LINE__);
 
     std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
@@ -1271,7 +1311,17 @@ void Renderer::render()
     presentInfo.pResults = nullptr;
 
     result = vkQueuePresentKHR(presentQueue, &presentInfo);
-    checkError(result, __FILE__, __LINE__);
+
+    // Recreate the swap chain if result is suboptimal,
+    // because we want the best possible result.
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        recreateSwapChain();
+    }
+    else
+    {
+        checkError(result, __FILE__, __LINE__);
+    }
 
     vkQueueWaitIdle(presentQueue);
 }

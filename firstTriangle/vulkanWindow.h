@@ -1,52 +1,52 @@
 #pragma once
 
-#include "platform.h"
-#include "Renderer.h"
-#include "common.h"
 #include <string>
 #include <vector>
+#include "platform.h"
+#include "renderer.h"
+#include "common.h"
 
-class VulkanWindow
-{
+int start();
 
-public:
-    VulkanWindow(uint32_t width, uint32_t height, std::string name, std::string title);
-    ~VulkanWindow();
+void initPlatformSpecificWindow();
+void destroyPlatformSpecificWindow();
 
-    bool run();
-    bool update();
+void initPlatformSpecificSurface();
+void destroyPlatformSpecificSurface();
 
-    void close();
-    void render();
+void initilizeVulkan();
+void cleanUp();
 
-private:
-    bool isRunning = true;
+int mainLoop();
 
-    SurfaceSize surfaceSize;
+void render();
+void resize(uint32_t width, uint32_t height);
+void toggleFullscreen(bool isFullscreen);
+void onEscapeKeyPressed();
 
-    std::string windowName;
-    std::string windowTitle;
+bool isRunning = true;
+bool isActive = false;
+bool isFullscreen = false;
+bool isEscapeKeyPressed = false;
 
-    Renderer *renderer = nullptr;
+std::string windowName;
+std::string windowTitle;
 
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
+Renderer *renderer = nullptr;
+SurfaceSize surfaceSize;
 
-    #if VK_USE_PLATFORM_WIN32_KHR
+VkSurfaceKHR surface = VK_NULL_HANDLE;
 
-    HINSTANCE hInstance = NULL;
-    HWND hWindow = NULL;
+#if VK_USE_PLATFORM_WIN32_KHR
 
-    std::string className;
+static uint64_t win32ClassIdCounter = 0;
+std::string className;
 
-    static uint64_t win32ClassIdCounter;
+HINSTANCE hInstance = NULL;
+HWND hWindow = NULL;
+DWORD dwStyle;
+WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
 
-    #endif // VK_USE_PLATFORM_WIN32_KHR
+LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 
-    void initPlatformSpecificWindow();
-    void destroyPlatformSpecificWindow();
-
-    void updatePlatformSpecificWindow();
-
-    void initPlatformSpecificSurface();
-    void destroyPlatformSpecificSurface();
-};
+#endif // VK_USE_PLATFORM_WIN32_KHR

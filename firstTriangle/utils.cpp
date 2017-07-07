@@ -1,5 +1,8 @@
+#pragma once
+
 #include "buildParam.h"
 #include "utils.h"
+
 #include <fstream>
 
 void checkError(VkResult result, std::string file, uint32_t lineNumber)

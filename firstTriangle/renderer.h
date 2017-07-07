@@ -2,6 +2,7 @@
 
 #include "platform.h"
 #include "common.h"
+
 #include <vector>
 #include <string>
 
@@ -12,6 +13,7 @@ public:
     Renderer(SurfaceSize surfaceSize);
     ~Renderer();
 
+    void setSurfaceSize(SurfaceSize surfaceSize);
     void setSurface(VkSurfaceKHR surface);
     void waitForIdle();
 
@@ -45,6 +47,9 @@ public:
 
     void initSynchronizations();
     void destroySynchronizations();
+
+    void recreateSwapChain();
+    void cleanupSwapChain();
 
     void render();
 

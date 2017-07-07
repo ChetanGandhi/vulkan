@@ -1,8 +1,10 @@
+#pragma once
+
 #include "buildParam.h"
 #include "platform.h"
 #include "vulkanWindow.h"
-#include "renderer.h"
 #include "utils.h"
+
 #include <assert.h>
 #include <iostream>
 
@@ -10,16 +12,37 @@
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-    VulkanWindow *window = reinterpret_cast<VulkanWindow*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
-
     switch(iMsg)
     {
-        case WM_CLOSE:
-        window->close();
+        case WM_DESTROY:
+            PostQuitMessage(0);
+        break;
+
+        case WM_ACTIVATE:
+            isActive = (HIWORD(wParam) == 0);
         break;
 
         case WM_SIZE:
-            // Not need for now.
+            resize(LOWORD(lParam), HIWORD(lParam));
+        break;
+
+        case WM_KEYDOWN:
+            switch(wParam)
+            {
+                case VK_ESCAPE:
+                    isEscapeKeyPressed = true;;
+                break;
+
+                // 0x46 is hex value for key 'F' or 'f'
+                case 0x46:
+                    isFullscreen = !isFullscreen;
+                    toggleFullscreen(isFullscreen);
+                break;
+
+                default:
+                break;
+            }
+
         break;
 
         default:
@@ -29,9 +52,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, iMsg, wParam, lParam);
 }
 
-uint64_t VulkanWindow::win32ClassIdCounter = 0;
+int start()
+{
+    windowName = "VulkanWindow";
+    windowTitle = "Vulkan Window";
 
-void VulkanWindow::initPlatformSpecificWindow()
+    surfaceSize.width = 800;
+    surfaceSize.height = 600;
+
+    initPlatformSpecificWindow();
+    initilizeVulkan();
+
+    int returnCode = mainLoop();
+
+    cleanUp();
+
+    return returnCode;
+}
+
+void initPlatformSpecificWindow()
 {
     WNDCLASSEX wndclassex {};
 
@@ -43,7 +82,7 @@ void VulkanWindow::initPlatformSpecificWindow()
     win32ClassIdCounter++;
 
     wndclassex.cbSize = sizeof(WNDCLASSEX);
-    wndclassex.style = CS_HREDRAW | CS_VREDRAW;
+    wndclassex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wndclassex.cbClsExtra = 0;
     wndclassex.cbWndExtra = 0;
     wndclassex.lpfnWndProc = WndProc;
@@ -62,16 +101,16 @@ void VulkanWindow::initPlatformSpecificWindow()
         std::exit(EXIT_FAILURE);
     }
 
-    DWORD styleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    DWORD dwStyleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+    dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 
     RECT windowRect = {0, 0, LONG(surfaceSize.width), LONG(surfaceSize.height)};
-    AdjustWindowRectEx(&windowRect, style, FALSE, styleExtra);
+    AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwStyleExtra);
 
-    hWindow = CreateWindowEx(0,
+    hWindow = CreateWindowEx(dwStyleExtra,
         className.c_str(),
         windowTitle.c_str(),
-        style,
+        dwStyle,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
         windowRect.right - windowRect.left,
@@ -88,29 +127,105 @@ void VulkanWindow::initPlatformSpecificWindow()
         std::exit(EXIT_FAILURE);
     }
 
-    SetWindowLongPtr(hWindow, GWLP_USERDATA, (LONG_PTR)this);
     ShowWindow(hWindow, SW_SHOW);
     SetForegroundWindow(hWindow);
     SetFocus(hWindow);
 }
 
-void VulkanWindow::destroyPlatformSpecificWindow()
+void destroyPlatformSpecificWindow()
 {
     DestroyWindow(hWindow);
     UnregisterClass(className.c_str(), hInstance);
 }
 
-void VulkanWindow::updatePlatformSpecificWindow()
+void initilizeVulkan()
 {
-    MSG msg;
-    if(PeekMessage(&msg, hWindow, 0, 0, PM_REMOVE))
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+    renderer = new Renderer(surfaceSize);
+
+    initPlatformSpecificSurface();
+
+    renderer->setSurface(surface);
+    renderer->initDevice();
+    renderer->initLogicalDevice();
+    renderer->initSwapchain();
+    renderer->initSwapchainImageViews();
+    // renderer->initDepthStencilImage();
+    renderer->initRenderPass();
+    renderer->initGraphicsPipline();
+    renderer->initFrameBuffers();
+    renderer->initCommandPool();
+    renderer->initCommandBuffers();
+    renderer->initSynchronizations();
 }
 
-void VulkanWindow::initPlatformSpecificSurface()
+void cleanUp()
+{
+    if(isFullscreen)
+    {
+        dwStyle = GetWindowLong(hWindow, GWL_STYLE);
+        SetWindowLong(hWindow, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hWindow, &wpPrev);
+        SetWindowPos(hWindow, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+        ShowCursor(TRUE);
+    }
+
+    renderer->waitForIdle();
+    renderer->destroySynchronizations();
+    renderer->destroyCommandBuffers();
+    renderer->destroyCommandPool();
+    renderer->destroyFrameBuffers();
+    renderer->destroyGraphicsPipline();
+    renderer->destroyRenderPass();
+    // renderer->destoryDepthStencilImage();
+    renderer->destroySwapchainImageViews();
+    renderer->destroySwapchain();
+
+    destroyPlatformSpecificSurface();
+
+    renderer->destroyDevice();
+    delete renderer;
+
+    destroyPlatformSpecificWindow();
+}
+
+int mainLoop()
+{
+    MSG msg;
+
+    while(isRunning)
+    {
+        if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            if(msg.message == WM_QUIT)
+            {
+                isRunning = false;
+            }
+            else
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+        else
+        {
+            if(isActive)
+            {
+                if(isEscapeKeyPressed)
+                {
+                    isRunning = false;
+                }
+                else
+                {
+                    renderer->render();
+                }
+            }
+        }
+    }
+
+    return (int)msg.wParam;
+}
+
+void initPlatformSpecificSurface()
 {
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -124,9 +239,60 @@ void VulkanWindow::initPlatformSpecificSurface()
     checkError(result, __FILE__, __LINE__);
 }
 
-void VulkanWindow::destroyPlatformSpecificSurface()
+void destroyPlatformSpecificSurface()
 {
     vkDestroySurfaceKHR(renderer->getVulkanInstance(), surface, nullptr);
+}
+
+void resize(uint32_t width, uint32_t height)
+{
+    if(width == 0 || height == 0)
+    {
+        return;
+    }
+
+    surfaceSize.width = width;
+    surfaceSize.height = height;
+
+    if(renderer != nullptr)
+    {
+        renderer->setSurfaceSize(surfaceSize);
+        renderer->recreateSwapChain();
+    }
+}
+
+void toggleFullscreen(bool isFullscreen)
+{
+    MONITORINFO monitorInfo;
+    dwStyle = GetWindowLong(hWindow, GWL_STYLE);
+
+    if(isFullscreen)
+    {
+        if(dwStyle & WS_OVERLAPPEDWINDOW)
+        {
+            monitorInfo = { sizeof(MONITORINFO) };
+
+            if(GetWindowPlacement(hWindow, &wpPrev) && GetMonitorInfo(MonitorFromWindow(hWindow, MONITORINFOF_PRIMARY), &monitorInfo))
+            {
+                SetWindowLong(hWindow, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+                SetWindowPos(hWindow, HWND_TOP, monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top, SWP_NOZORDER | SWP_FRAMECHANGED);
+            }
+        }
+
+        ShowCursor(FALSE);
+    }
+    else
+    {
+        SetWindowLong(hWindow, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hWindow, &wpPrev);
+        SetWindowPos(hWindow, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+        ShowCursor(TRUE);
+    }
+}
+
+void onEscapeKeyPressed()
+{
+    isRunning = false;
 }
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
