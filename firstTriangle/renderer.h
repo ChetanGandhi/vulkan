@@ -4,7 +4,9 @@
 #include "common.h"
 
 #include <vector>
+#include <array>
 #include <string>
+#include <glm/glm.hpp>
 
 class Renderer
 {
@@ -42,6 +44,9 @@ public:
     void initCommandPool();
     void destroyCommandPool();
 
+    void initVertexBuffer();
+    void destroyVertexBuffer();
+
     void initCommandBuffers();
     void destroyCommandBuffers();
 
@@ -56,19 +61,58 @@ public:
     const VkInstance getVulkanInstance() const;
 
 private:
-   SurfaceSize surfaceSize;
+    SurfaceSize surfaceSize;
 
-   VkInstance instance = VK_NULL_HANDLE;
-   VkDevice device = VK_NULL_HANDLE;
-   VkSurfaceKHR surface = VK_NULL_HANDLE;
-   VkQueue graphicsQueue = VK_NULL_HANDLE;
-   VkQueue presentQueue = VK_NULL_HANDLE;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkQueue presentQueue = VK_NULL_HANDLE;
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
 
-   struct GpuDetails {
+    struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties properties = {};
         VkPhysicalDeviceMemoryProperties memoryProperties = {};
     } gpuDetails;
+
+    struct Vertex {
+        glm::vec2 position;
+        glm::vec3 color;
+
+        static VkVertexInputBindingDescription getBindingDescription()
+        {
+            VkVertexInputBindingDescription bindingDescription = {};
+            bindingDescription.binding = 0;
+            bindingDescription.stride = sizeof(Vertex);
+            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+            return bindingDescription;
+        }
+
+        static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
+        {
+            std::array<VkVertexInputAttributeDescription, 2> attributeDescription = {};
+            attributeDescription[0].binding = 0;
+            attributeDescription[0].location = 0;
+            attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescription[0].offset = offsetof(Vertex, position);
+
+            attributeDescription[1].binding = 0;
+            attributeDescription[1].location = 1;
+            attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescription[1].offset = offsetof(Vertex, color);
+
+            return attributeDescription;
+        }
+    };
+
+    const std::vector<Vertex> vertices = {
+        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    };
 
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
@@ -133,7 +177,7 @@ private:
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
-// Debug methods
+    // Debug methods
 
     void printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount);
     void printInstanceLayerProperties(std::vector<VkLayerProperties> properties);

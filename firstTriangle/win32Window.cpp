@@ -55,7 +55,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 int start()
 {
     windowName = "VulkanWindow";
-    windowTitle = "Vulkan Window";
+    windowTitle = "Vulkan Window | First Triangle";
 
     surfaceSize.width = 800;
     surfaceSize.height = 600;
@@ -154,6 +154,7 @@ void initilizeVulkan()
     renderer->initGraphicsPipline();
     renderer->initFrameBuffers();
     renderer->initCommandPool();
+    renderer->initVertexBuffer();
     renderer->initCommandBuffers();
     renderer->initSynchronizations();
 }
@@ -172,6 +173,7 @@ void cleanUp()
     renderer->waitForIdle();
     renderer->destroySynchronizations();
     renderer->destroyCommandBuffers();
+    renderer->destroyVertexBuffer();
     renderer->destroyCommandPool();
     renderer->destroyFrameBuffers();
     renderer->destroyGraphicsPipline();

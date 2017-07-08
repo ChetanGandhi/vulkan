@@ -7,11 +7,9 @@
 
 #include <cstdlib>
 #include <assert.h>
-#include <vector>
 #include <iostream>
 #include <sstream>
 #include <set>
-#include <array>
 
 Renderer::Renderer(SurfaceSize surfaceSize)
 {
@@ -774,14 +772,17 @@ void Renderer::initGraphicsPipline()
 
     VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
+    VkVertexInputBindingDescription vertexBindingDescription = Vertex::getBindingDescription();
+    std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescription = Vertex::getAttributeDescription();
+
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputStateCreateInfo.pNext = nullptr;
     vertexInputStateCreateInfo.flags = 0;
-    vertexInputStateCreateInfo.vertexBindingDescriptionCount = 0;
-    vertexInputStateCreateInfo.pVertexBindingDescriptions = nullptr;
-    vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputStateCreateInfo.pVertexAttributeDescriptions = nullptr;
+    vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
+    vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexBindingDescription;
+    vertexInputStateCreateInfo.vertexAttributeDescriptionCount = vertexAttributeDescription.size();
+    vertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexAttributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
     inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1154,6 +1155,54 @@ void Renderer::destroyCommandPool()
     vkDestroyCommandPool(device, commandPool, nullptr);
 }
 
+void Renderer::initVertexBuffer()
+{
+    VkBufferCreateInfo bufferCreateInfo = {};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.pNext = nullptr;
+    bufferCreateInfo.flags = 0;
+    bufferCreateInfo.size = sizeof(vertices[0]) * vertices.size();
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferCreateInfo.queueFamilyIndexCount = 0;
+    bufferCreateInfo.pQueueFamilyIndices = nullptr; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
+
+    VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &vertexBuffer);
+    checkError(result, __FILE__, __LINE__);
+
+    VkMemoryRequirements bufferMemoryRequirements = {};
+    vkGetBufferMemoryRequirements(device, vertexBuffer, &bufferMemoryRequirements);
+
+    VkMemoryPropertyFlags requiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    uint32_t memoryIndex = findMemoryTypeIndex(&(gpuDetails.memoryProperties), &bufferMemoryRequirements, requiredMemoryProperties);
+
+    VkMemoryAllocateInfo memoryAllocationInfo {};
+    memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocationInfo.pNext = nullptr;
+    memoryAllocationInfo.allocationSize = bufferMemoryRequirements.size;
+    memoryAllocationInfo.memoryTypeIndex = memoryIndex;
+
+    result = vkAllocateMemory(device, &memoryAllocationInfo, nullptr, &vertexBufferMemory);
+    checkError(result, __FILE__, __LINE__);
+
+    result = vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+    checkError(result, __FILE__, __LINE__);
+
+    void *data = nullptr;
+    result = vkMapMemory(device, vertexBufferMemory, 0, bufferCreateInfo.size, 0, &data);
+    checkError(result, __FILE__, __LINE__);
+
+    memcpy(data, vertices.data(), (size_t) bufferCreateInfo.size);
+    vkUnmapMemory(device, vertexBufferMemory);
+}
+
+void Renderer::destroyVertexBuffer()
+{
+    vkDestroyBuffer(device, vertexBuffer, nullptr);
+    vkFreeMemory(device, vertexBufferMemory, nullptr);
+}
+
 void Renderer::initCommandBuffers()
 {
     commandBuffers.resize(framebuffers.size());
@@ -1203,7 +1252,12 @@ void Renderer::initCommandBuffers()
 
         vkCmdBeginRenderPass(commandBuffers[counter], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        vkCmdDraw(commandBuffers[counter], 3, 1, 0, 0);
+
+        std::vector<VkBuffer> vertexBuffers = {vertexBuffer};
+        std::vector<VkDeviceSize> offsets = {0};
+        vkCmdBindVertexBuffers(commandBuffers[counter], 0, 1, vertexBuffers.data(), offsets.data());
+
+        vkCmdDraw(commandBuffers[counter], vertices.size(), 1, 0, 0);
         vkCmdEndRenderPass(commandBuffers[counter]);
 
         VkResult result = vkEndCommandBuffer(commandBuffers[counter]);
