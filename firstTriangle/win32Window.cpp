@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include <chrono>
 
 #if VK_USE_PLATFORM_WIN32_KHR
 
@@ -193,6 +194,11 @@ void cleanUp()
 int mainLoop()
 {
     MSG msg;
+    auto timer = std::chrono::steady_clock();
+    auto lastTime = timer.now();
+    uint64_t frameCounter = 0;
+    uint64_t fps = 0;
+    TCHAR fpsTitle[50];
 
     while(isRunning)
     {
@@ -218,6 +224,17 @@ int mainLoop()
                 }
                 else
                 {
+                    ++frameCounter;
+
+                    if(lastTime + std::chrono::seconds(1) < timer.now())
+                    {
+                        lastTime = timer.now();
+                        fps = frameCounter;
+                        frameCounter = 0;
+                        wsprintf(fpsTitle, "Vulkan Window | First Triangle | FPS - %d", fps);
+                        SetWindowText(hWindow, fpsTitle);
+                    }
+
                     renderer->render();
                 }
             }
