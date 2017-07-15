@@ -1,15 +1,16 @@
 #pragma once
 
-#include "buildParam.h"
-#include "platform.h"
-#include "renderer.h"
-#include "utils.h"
-
 #include <cstdlib>
 #include <assert.h>
 #include <iostream>
 #include <sstream>
 #include <set>
+
+#include "buildParam.h"
+#include "platform.h"
+#include "renderer.h"
+#include "utils.h"
+#include "logger.h"
 
 Renderer::Renderer(SurfaceSize surfaceSize)
 {
@@ -59,8 +60,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, 
         stream<<"[DEBUG | ";
     }
 
-    stream<<layerPrefix<<"]: "<<message<<"\n";
-    std::cout<<stream.str();
+    stream<<layerPrefix<<"]: "<<message;
+    LOG(stream.str());
 
     #ifdef _WIN32
 
@@ -246,11 +247,11 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
         queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
         queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
 
-        std::cout<<"\n---------- Queue Family Indices ----------\n";
-        std::cout<<"\nGraphics Family Index\t\t: "<<queueFamilyIndices.graphicsFamilyIndex;
-        std::cout<<"\nPresent Family Index\t\t: "<<queueFamilyIndices.presentFamilyIndex;
-        std::cout<<"\nHas Separate Present Queue\t: "<<queueFamilyIndices.hasSeparatePresentQueue<<"\n";
-        std::cout<<"\n---------- Queue Family Indices End ----------\n";
+        LOG("---------- Queue Family Indices ----------");
+        LOGF("Graphics Family Index\t\t: %d", queueFamilyIndices.graphicsFamilyIndex);
+        LOGF("Present Family Index\t\t: %d", queueFamilyIndices.presentFamilyIndex);
+        LOGF("Has Separate Present Queue\t: %d", queueFamilyIndices.hasSeparatePresentQueue);
+        LOG("---------- Queue Family Indices End ----------");
     }
 
     bool extensionSupported = checkDeviceExtensionSupport(gpu);
@@ -361,7 +362,7 @@ void Renderer::initDevice()
         uint32_t gpuCount = gpuDetailsList.size();
         uint32_t selectedGpuIndex = 0;
 
-        std::cout<<"\n---------- Total GPU Found ["<<gpuCount<<"]----------\n";
+        LOGF("---------- Total GPU Found [%d]----------", gpuCount);
 
         for(uint32_t counter = 0; counter < gpuCount; ++counter)
         {
@@ -387,9 +388,9 @@ void Renderer::initDevice()
             std::exit(EXIT_FAILURE);
         }
 
-        std::cout<<"\n---------- Selected GPU Properties ----------\n";
+        LOG("---------- Selected GPU Properties ----------");
         printGpuProperties(&gpuDetails.properties, (selectedGpuIndex + 1), gpuCount);
-        std::cout<<"\n---------- Selected GPU Properties End ----------\n";
+        LOG("---------- Selected GPU Properties End ----------");
     }
 
     {
@@ -617,20 +618,18 @@ void Renderer::initSwapchain()
     printSwapChainImageCount(swapchainSupportDetails.surfaceCapabilities.minImageCount, swapchainSupportDetails.surfaceCapabilities.maxImageCount, swapchainImageCount);
 
     {
-        #if ENABLE_DEBUG
+        LOG("---------- Presentation Mode ----------");
 
-        std::cout<<"\n---------- Presentation Mode ----------\n";
         if(presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
         {
-            std::cout<<"\nMode: MAILBOX ["<<presentMode<<"]\n";
+            LOGF("Mode: MAILBOX [%d]", presentMode);
         }
         else
         {
-            std::cout<<"\nMode: "<<presentMode<<"\n";
+            LOGF("Mode: %d", presentMode);
         }
-        std::cout<<"\n---------- Presentation Mode End----------\n\n";
 
-        #endif // ENABLE_DEBUG
+        LOG("---------- Presentation Mode End----------");
     }
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo {};
@@ -1386,64 +1385,75 @@ void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32
 {
     if(!properties)
     {
-        std::cout<<"No GPU properties to show!!!"<<std::endl;
+        LOG("No GPU properties to show!!!");
         return;
     }
 
-    std::cout<<"\n---------- GPU Properties ["<<currentGpuIndex<<"/"<<totalGpuCount<<"]----------\n";
-    std::cout<<"Device Name\t\t: "<<properties->deviceName<<"\n";
-    std::cout<<"Vendor Id\t\t: "<<properties->vendorID<<"\n";
-    std::cout<<"Device Id\t\t: "<<properties->deviceID<<"\n";
-    std::cout<<"Device Type\t\t: "<<properties->deviceType<<"\n";
-    std::cout<<"API Version\t\t: "<<properties->apiVersion<<"\n";
-    std::cout<<"Driver Version\t\t: "<<properties->driverVersion<<"\n";
-    std::cout<<"Pipeline Cache UUID\t: "<<properties->pipelineCacheUUID<<"\n";
-    std::cout<<"\n---------- GPU Properties End ----------\n";
+    LOGF("---------- GPU Properties [%d/%d]----------", currentGpuIndex, totalGpuCount);
+    LOGF("Device Name\t\t: %s", properties->deviceName);
+    LOGF("Vendor Id\t\t: %d", properties->vendorID);
+    LOGF("Device Id\t\t: %d", properties->deviceID);
+    LOGF("Device Type\t\t: %d", properties->deviceType);
+    LOGF("API Version\t\t: %d", properties->apiVersion);
+    LOGF("Driver Version\t\t: %d", properties->driverVersion);
+    LOG_UUID("Pipeline Cache UUID\t: ", properties->pipelineCacheUUID);
+    LOGF("---------- GPU Properties End ----------");
 }
 
 void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)
 {
-    std::cout<<"\n---------- Instance Layer Properties ----------\n";
+    #if ENABLE_DEBUG
+
+    LOG("---------- Instance Layer Properties ----------");
+
     for(VkLayerProperties &nextProperty : properties)
     {
-        std::cout<<"Layer Name\t\t: "<<nextProperty.layerName<<"\n";
-        std::cout<<"Description\t\t: "<<nextProperty.description<<"\n";
-        std::cout<<"Spec Version\t\t: "<<nextProperty.specVersion<<"\n";
-        std::cout<<"Implementation Version\t: "<<nextProperty.implementationVersion<<"\n";
-        std::cout<<"------------------------------------------------------------\n";
+        LOGF("Layer Name\t\t: %s", nextProperty.layerName);
+        LOGF("Description\t\t: %s", nextProperty.description);
+        LOGF("Spec Version\t\t: %d", nextProperty.specVersion);
+        LOGF("Implementation Version\t: %d", nextProperty.implementationVersion);
+        LOG("------------------------------------------------------------");
     }
 
-    std::cout<<"\n---------- Instance Layer Properties End ["<<properties.size()<<"] ----------\n";
+    LOGF("---------- Instance Layer Properties End [%d] ----------", properties.size());
+
+    #endif // ENABLE_DEBUG
 }
 
 void Renderer::printDeviceLayerProperties(std::vector<VkLayerProperties> properties)
 {
-    std::cout<<"\n---------- Device Layer Properties ----------\n";
+    #if ENABLE_DEBUG
+
+    LOG("---------- Device Layer Properties ----------");
+
     for(VkLayerProperties &nextProperty : properties)
     {
-        std::cout<<"Layer Name\t\t: "<<nextProperty.layerName<<"\n";
-        std::cout<<"Description\t\t: "<<nextProperty.description<<"\n";
-        std::cout<<"Spec Version\t\t: "<<nextProperty.specVersion<<"\n";
-        std::cout<<"Implementation Version\t: "<<nextProperty.implementationVersion<<"\n";
-        std::cout<<"------------------------------------------------------------\n";
+        LOGF("Layer Name\t\t: %s", nextProperty.layerName);
+        LOGF("Description\t\t: %s", nextProperty.description);
+        LOGF("Spec Version\t\t: %d", nextProperty.specVersion);
+        LOGF("Implementation Version\t: %d", nextProperty.implementationVersion);
+        LOG("------------------------------------------------------------");
     }
 
-    std::cout<<"\n---------- Device Layer Properties End ["<<properties.size()<<"] ----------\n\n";
+    LOGF("---------- Device Layer Properties End [%d] ----------", properties.size());
+
+    #endif // ENABLE_DEBUG
 }
 
 void Renderer::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats)
 {
     #if ENABLE_DEBUG
 
-    std::cout<<"\n---------- Surface Formats ----------\n";
+    LOG("---------- Surface Formats ----------");
+
     for(VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
     {
-        std::cout<<"format\t\t: "<<nextSurfaceFormat.format<<"\n";
-        std::cout<<"colorSpace\t: "<<nextSurfaceFormat.colorSpace<<"\n";
-        std::cout<<"------------------------------------------------------------\n";
+        LOGF("format\t\t: %d", nextSurfaceFormat.format);
+        LOGF("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
+        LOG("------------------------------------------------------------");
     }
 
-    std::cout<<"\n---------- Surface Formats Details End ["<<surfaceFormats.size()<<"] ----------\n\n";
+    LOGF("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
 
     #endif // ENABLE_DEBUG
 }
@@ -1452,12 +1462,11 @@ void Renderer::printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImag
 {
     #if ENABLE_DEBUG
 
-    std::cout<<"\n---------- Swapchain Image Count ----------\n";
-    std::cout<<"Min\t: "<<minImageCount<<"\n";
-    std::cout<<"Max\t: "<<maxImageCount<<"\n";
-    std::cout<<"Current\t: "<<currentImageCount<<"\n";
-
-    std::cout<<"\n---------- Swapchain Image Count End ----------\n\n";
+    LOG("---------- Swapchain Image Count ----------");
+    LOGF("Min\t: %d", minImageCount);
+    LOGF("Max\t: %d", maxImageCount);
+    LOGF("Current\t: %d", currentImageCount);
+    LOG("---------- Swapchain Image Count End ----------");
 
     #endif // ENABLE_DEBUG
 }

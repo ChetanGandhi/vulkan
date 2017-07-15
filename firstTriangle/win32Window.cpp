@@ -53,13 +53,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, iMsg, wParam, lParam);
 }
 
-int start()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLine, int nCmdShow)
 {
+    Logger::init("debug.log");
+
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | First Triangle";
 
     surfaceSize.width = 800;
     surfaceSize.height = 600;
+
+    hGlobalInstance = hInstance;
 
     initPlatformSpecificWindow();
     initilizeVulkan();
@@ -67,6 +71,7 @@ int start()
     int returnCode = mainLoop();
 
     cleanUp();
+    Logger::close();
 
     return returnCode;
 }
@@ -78,7 +83,6 @@ void initPlatformSpecificWindow()
     assert(surfaceSize.width > 0);
     assert(surfaceSize.height > 0);
 
-    hInstance = GetModuleHandle(nullptr);
     className = windowName + "_" + std::to_string(win32ClassIdCounter);
     win32ClassIdCounter++;
 
@@ -87,7 +91,7 @@ void initPlatformSpecificWindow()
     wndclassex.cbClsExtra = 0;
     wndclassex.cbWndExtra = 0;
     wndclassex.lpfnWndProc = WndProc;
-    wndclassex.hInstance = hInstance;
+    wndclassex.hInstance = hGlobalInstance;
     wndclassex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wndclassex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wndclassex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
@@ -118,7 +122,7 @@ void initPlatformSpecificWindow()
         windowRect.bottom - windowRect.top,
         NULL,
         NULL,
-        hInstance,
+        hGlobalInstance,
         NULL);
 
     if(!hWindow)
@@ -136,7 +140,7 @@ void initPlatformSpecificWindow()
 void destroyPlatformSpecificWindow()
 {
     DestroyWindow(hWindow);
-    UnregisterClass(className.c_str(), hInstance);
+    UnregisterClass(className.c_str(), hGlobalInstance);
 }
 
 void initilizeVulkan()
@@ -250,7 +254,7 @@ void initPlatformSpecificSurface()
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.pNext = nullptr;
     surfaceCreateInfo.flags = 0;
-    surfaceCreateInfo.hinstance = hInstance;
+    surfaceCreateInfo.hinstance = hGlobalInstance;
     surfaceCreateInfo.hwnd = hWindow;
 
     VkResult result = vkCreateWin32SurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);

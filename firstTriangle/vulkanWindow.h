@@ -2,9 +2,11 @@
 
 #include <string>
 #include <vector>
+
 #include "platform.h"
 #include "renderer.h"
 #include "common.h"
+#include "logger.h"
 
 int start();
 
@@ -42,11 +44,12 @@ VkSurfaceKHR surface = VK_NULL_HANDLE;
 static uint64_t win32ClassIdCounter = 0;
 std::string className;
 
-HINSTANCE hInstance = NULL;
+HINSTANCE hGlobalInstance = NULL;
 HWND hWindow = NULL;
 DWORD dwStyle;
 WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLine, int nCmdShow);
 
 #endif // VK_USE_PLATFORM_WIN32_KHR

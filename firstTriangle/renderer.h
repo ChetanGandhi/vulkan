@@ -1,12 +1,12 @@
 #pragma once
 
-#include "platform.h"
-#include "common.h"
-
 #include <vector>
 #include <array>
 #include <string>
 #include <glm/glm.hpp>
+
+#include "platform.h"
+#include "common.h"
 
 class Renderer
 {
