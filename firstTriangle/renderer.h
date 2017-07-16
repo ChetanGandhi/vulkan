@@ -176,6 +176,7 @@ private:
     bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 
     // Debug methods
 

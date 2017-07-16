@@ -1154,27 +1154,25 @@ void Renderer::destroyCommandPool()
     vkDestroyCommandPool(device, commandPool, nullptr);
 }
 
-void Renderer::initVertexBuffer()
+void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
 {
     VkBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.pNext = nullptr;
     bufferCreateInfo.flags = 0;
-    bufferCreateInfo.size = sizeof(vertices[0]) * vertices.size();
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferCreateInfo.size = size;
+    bufferCreateInfo.usage = bufferUsage;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferCreateInfo.queueFamilyIndexCount = 0;
     bufferCreateInfo.pQueueFamilyIndices = nullptr; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
 
-    VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &vertexBuffer);
+    VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer);
     checkError(result, __FILE__, __LINE__);
 
     VkMemoryRequirements bufferMemoryRequirements = {};
-    vkGetBufferMemoryRequirements(device, vertexBuffer, &bufferMemoryRequirements);
+    vkGetBufferMemoryRequirements(device, buffer, &bufferMemoryRequirements);
 
-    VkMemoryPropertyFlags requiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    uint32_t memoryIndex = findMemoryTypeIndex(&(gpuDetails.memoryProperties), &bufferMemoryRequirements, requiredMemoryProperties);
+    uint32_t memoryIndex = findMemoryTypeIndex(&(gpuDetails.memoryProperties), &bufferMemoryRequirements, memoryProperties);
 
     VkMemoryAllocateInfo memoryAllocationInfo {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1182,17 +1180,26 @@ void Renderer::initVertexBuffer()
     memoryAllocationInfo.allocationSize = bufferMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
-    result = vkAllocateMemory(device, &memoryAllocationInfo, nullptr, &vertexBufferMemory);
+    result = vkAllocateMemory(device, &memoryAllocationInfo, nullptr, &bufferMemory);
     checkError(result, __FILE__, __LINE__);
 
-    result = vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+    result = vkBindBufferMemory(device, buffer, bufferMemory, 0);
     checkError(result, __FILE__, __LINE__);
+}
+
+void Renderer::initVertexBuffer()
+{
+    VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    createBuffer(size, bufferUsage, memoryProperties, vertexBuffer, vertexBufferMemory);
 
     void *data = nullptr;
-    result = vkMapMemory(device, vertexBufferMemory, 0, bufferCreateInfo.size, 0, &data);
+    VkResult result = vkMapMemory(device, vertexBufferMemory, 0, size, 0, &data);
     checkError(result, __FILE__, __LINE__);
 
-    memcpy(data, vertices.data(), (size_t) bufferCreateInfo.size);
+    memcpy(data, vertices.data(), (size_t) size);
     vkUnmapMemory(device, vertexBufferMemory);
 }
 
