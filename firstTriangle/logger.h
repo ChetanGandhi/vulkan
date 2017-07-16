@@ -6,7 +6,7 @@
 #include <string>
 #include <iomanip>
 
-#ifdef ENABLE_DEBUG
+#if defined (ENABLE_DEBUG)
 
 #define LOG(x) Logger::log(x)
 #define LOGF(x, ...) Logger::log(x, __VA_ARGS__)

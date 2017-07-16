@@ -7,7 +7,7 @@
 
 #include "platform.h"
 
-#ifdef ENABLE_DEBUG
+#if defined (ENABLE_DEBUG)
 
 #define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
 

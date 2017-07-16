@@ -63,7 +63,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, 
     stream<<layerPrefix<<"]: "<<message;
     LOG(stream.str());
 
-    #ifdef _WIN32
+    #if defined (_WIN32)
 
     if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
     {
