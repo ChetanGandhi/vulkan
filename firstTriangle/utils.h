@@ -9,7 +9,7 @@
 
 #ifdef ENABLE_DEBUG
 
-#define CHECK_ERROR(result) CHECK_ERROR(result)
+#define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
 
 #else
 
