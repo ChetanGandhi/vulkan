@@ -184,7 +184,7 @@ void Renderer::initInstance()
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensionList.data();
 
     VkResult result = vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &instance);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void Renderer::destroyInstance()
@@ -331,7 +331,7 @@ bool Renderer::checkDeviceExtensionSupport(VkPhysicalDevice gpu)
 
     VkResult result = vkEnumerateDeviceExtensionProperties(gpu, nullptr, &availableDeviceExtensionsCount, nullptr);
 
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     if(availableDeviceExtensionsCount == 0)
     {
@@ -341,7 +341,7 @@ bool Renderer::checkDeviceExtensionSupport(VkPhysicalDevice gpu)
     std::vector<VkExtensionProperties> availableDeviceExtensions(availableDeviceExtensionsCount);
     result = vkEnumerateDeviceExtensionProperties(gpu, nullptr, &availableDeviceExtensionsCount, availableDeviceExtensions.data());
 
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     std::set<std::string> requiredExtensions(deviceExtensionList.begin(), deviceExtensionList.end());
 
@@ -455,7 +455,7 @@ void Renderer::initLogicalDevice()
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
     VkResult result = vkCreateDevice(gpuDetails.gpu, &deviceCreateInfo, VK_NULL_HANDLE, &device);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     // Create the graphic queue using graphicsFamilyIndex for given physical device.
     vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamilyIndex, 0, &graphicsQueue);
@@ -484,23 +484,23 @@ void Renderer::querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSuppo
     uint32_t presentModeCount = 0;
 
     result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &(details->surfaceCapabilities));
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     result = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, nullptr);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     details->surfaceFormats.resize(formatCount);
 
     result = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &formatCount, details->surfaceFormats.data());
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     result = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &presentModeCount, nullptr);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     details->presentModes.resize(presentModeCount);
 
     result = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &presentModeCount, details->presentModes.data());
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 VkSurfaceFormatKHR Renderer::chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats)
@@ -666,14 +666,14 @@ void Renderer::initSwapchain()
     }
 
     VkResult result = vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     swapchainImages.resize(swapchainImageCount);
     result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data());
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void Renderer::destroySwapchain()
@@ -705,7 +705,7 @@ void Renderer::initSwapchainImageViews()
         imageViewCreateInfo.subresourceRange.layerCount = 1;
 
         VkResult result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &swapchainImageViews[counter]);
-        checkError(result, __FILE__, __LINE__);
+        CHECK_ERROR(result);
     }
 }
 
@@ -728,7 +728,7 @@ VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
 
     VkShaderModule shaderModule;
     VkResult result = vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     return shaderModule;
 }
@@ -886,7 +886,7 @@ void Renderer::initGraphicsPipline()
     pipelineLayoutCreateInfo.pPushConstantRanges = 0;
 
     VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -910,7 +910,7 @@ void Renderer::initGraphicsPipline()
     pipelineCreateInfo.basePipelineIndex = -1;
 
     result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
     vkDestroyShaderModule(device, vertexShaderModule, nullptr);
@@ -977,7 +977,7 @@ void Renderer::destroyGraphicsPipline()
 
 //     VkResult result = vkCreateImage(getVulkanDevice(), &imageCreateInfo, nullptr, &depthStencil.image);
 
-//     checkError(result, __FILE__, __LINE__);
+//     CHECK_ERROR(result);
 
 //     VkMemoryRequirements imageMemoryRequirements {};
 //     vkGetImageMemoryRequirements(getVulkanDevice(), depthStencil.image, &imageMemoryRequirements);
@@ -995,11 +995,11 @@ void Renderer::destroyGraphicsPipline()
 
 //     result = vkAllocateMemory(getVulkanDevice(), &memoryAllocationInfo, nullptr, &depthStencil.imageMemory);
 
-//     checkError(result, __FILE__, __LINE__);
+//     CHECK_ERROR(result);
 
 //     result = vkBindImageMemory(getVulkanDevice(), depthStencil.image, depthStencil.imageMemory, 0);
 
-//     checkError(result, __FILE__, __LINE__);
+//     CHECK_ERROR(result);
 
 //     VkImageViewCreateInfo imageViewCreateInfo {};
 //     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1020,7 +1020,7 @@ void Renderer::destroyGraphicsPipline()
 
 //     result = vkCreateImageView(getVulkanDevice(), &imageViewCreateInfo, nullptr, &depthStencil.imageView);
 
-//     checkError(result, __FILE__, __LINE__);
+//     CHECK_ERROR(result);
 // }
 
 // void Renderer::destoryDepthStencilImage()
@@ -1095,7 +1095,7 @@ void Renderer::initRenderPass()
     renderPassCreateInfo.pDependencies = &subpassDependency;
 
     VkResult result = vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void Renderer::destroyRenderPass()
@@ -1125,7 +1125,7 @@ void Renderer::initFrameBuffers()
         framebufferCreateInfo.layers = 1;
 
         VkResult result = vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &framebuffers[swapchainImageCounter]);
-        checkError(result, __FILE__, __LINE__);
+        CHECK_ERROR(result);
     }
 }
 
@@ -1146,7 +1146,7 @@ void Renderer::initCommandPool()
     commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamilyIndex;
 
     VkResult result = vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void Renderer::destroyCommandPool()
@@ -1167,7 +1167,7 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, V
     bufferCreateInfo.pQueueFamilyIndices = nullptr; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
 
     VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     VkMemoryRequirements bufferMemoryRequirements = {};
     vkGetBufferMemoryRequirements(device, buffer, &bufferMemoryRequirements);
@@ -1181,10 +1181,10 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, V
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
     result = vkAllocateMemory(device, &memoryAllocationInfo, nullptr, &bufferMemory);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     result = vkBindBufferMemory(device, buffer, bufferMemory, 0);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void Renderer::initVertexBuffer()
@@ -1197,7 +1197,7 @@ void Renderer::initVertexBuffer()
 
     void *data = nullptr;
     VkResult result = vkMapMemory(device, vertexBufferMemory, 0, size, 0, &data);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     memcpy(data, vertices.data(), (size_t) size);
     vkUnmapMemory(device, vertexBufferMemory);
@@ -1221,7 +1221,7 @@ void Renderer::initCommandBuffers()
     commandBufferAllocateInfo.commandBufferCount = commandBuffers.size();
 
     VkResult result = vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data());
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     for(uint32_t counter = 0; counter < commandBuffers.size(); ++counter)
     {
@@ -1267,7 +1267,7 @@ void Renderer::initCommandBuffers()
         vkCmdEndRenderPass(commandBuffers[counter]);
 
         VkResult result = vkEndCommandBuffer(commandBuffers[counter]);
-        checkError(result, __FILE__, __LINE__);
+        CHECK_ERROR(result);
     }
 }
 
@@ -1284,10 +1284,10 @@ void Renderer::initSynchronizations()
     semaphoreCreateInfo.flags = 0;
 
     VkResult result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void Renderer::destroySynchronizations()
@@ -1326,7 +1326,7 @@ void Renderer::render()
     uint32_t activeSwapchainImageId = UINT32_MAX;
 
     VkResult result = vkQueueWaitIdle(graphicsQueue);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &activeSwapchainImageId);
 
@@ -1338,7 +1338,7 @@ void Renderer::render()
         return;
     }
 
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
     std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphore};
@@ -1356,7 +1356,7 @@ void Renderer::render()
     submitInfo.pSignalSemaphores = signalSemaphores.data();
 
     result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 
     std::vector<VkSwapchainKHR> swapchains = {swapchain};
 
@@ -1380,7 +1380,7 @@ void Renderer::render()
     }
     else
     {
-        checkError(result, __FILE__, __LINE__);
+        CHECK_ERROR(result);
     }
 
     vkQueueWaitIdle(presentQueue);

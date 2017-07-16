@@ -7,6 +7,17 @@
 
 #include "platform.h"
 
+#ifdef ENABLE_DEBUG
+
+#define CHECK_ERROR(result) CHECK_ERROR(result)
+
+#else
+
+#define CHECK_ERROR(result)
+
+#endif
+
+
 void checkError(VkResult result, std::string file, uint32_t lineNumber);
 
 uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *memoryRequirements, const VkMemoryPropertyFlags memoryPropertyFlags);

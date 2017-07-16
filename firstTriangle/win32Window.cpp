@@ -259,7 +259,7 @@ void initPlatformSpecificSurface()
 
     VkResult result = vkCreateWin32SurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
 
-    checkError(result, __FILE__, __LINE__);
+    CHECK_ERROR(result);
 }
 
 void destroyPlatformSpecificSurface()

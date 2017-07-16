@@ -11,8 +11,6 @@
 
 void checkError(VkResult result, std::string file, uint32_t lineNumber)
 {
-    #if ENABLE_RUNTIME_DEBUG
-
     std::ostringstream stream;
 
     if(result < 0)
@@ -99,8 +97,6 @@ void checkError(VkResult result, std::string file, uint32_t lineNumber)
 
         assert(0 && "----- Vulkan Runtime Error -----");
     }
-
-    #endif // ENABLE_DEBUG
 }
 
 uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *imageMemoryRequirements, const VkMemoryPropertyFlags requiredMemoryProperties)
