@@ -13,7 +13,7 @@ void Logger::init(std::string fileName)
     if(logger == nullptr)
     {
         logger = new Logger();
-        logger->logfileOutStream.open(fileName.c_str(), std::ios::out | std::ios::app);
+        logger->logfileOutStream.open(fileName.c_str(), std::ios::out);
         logger->logfileOutStream<<"-----------------------------------\n";
         logger->logfileOutStream<<"| Logs start: "<<currentDateTime()<<" |\n";
         logger->logfileOutStream<<"-----------------------------------\n";
