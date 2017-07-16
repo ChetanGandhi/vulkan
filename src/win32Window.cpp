@@ -58,7 +58,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLi
     Logger::init("debug.log");
 
     windowName = "VulkanWindow";
-    windowTitle = "Vulkan Window | First Triangle";
+    windowTitle = "Vulkan Window";
 
     surfaceSize.width = 800;
     surfaceSize.height = 600;
@@ -160,6 +160,7 @@ void initilizeVulkan()
     renderer->initFrameBuffers();
     renderer->initCommandPool();
     renderer->initVertexBuffer();
+    renderer->initIndexBuffer();
     renderer->initCommandBuffers();
     renderer->initSynchronizations();
 }
@@ -178,6 +179,7 @@ void cleanUp()
     renderer->waitForIdle();
     renderer->destroySynchronizations();
     renderer->destroyCommandBuffers();
+    renderer->destroyIndexBuffer();
     renderer->destroyVertexBuffer();
     renderer->destroyCommandPool();
     renderer->destroyFrameBuffers();
@@ -235,7 +237,7 @@ int mainLoop()
                         lastTime = timer.now();
                         fps = frameCounter;
                         frameCounter = 0;
-                        wsprintf(fpsTitle, "Vulkan Window | First Triangle | FPS - %d", fps);
+                        wsprintf(fpsTitle, "Vulkan Window | FPS - %d", fps);
                         SetWindowText(hWindow, fpsTitle);
                     }
 

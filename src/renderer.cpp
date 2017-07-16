@@ -1270,6 +1270,39 @@ void Renderer::destroyVertexBuffer()
     vkFreeMemory(device, vertexBufferMemory, nullptr);
 }
 
+void Renderer::initIndexBuffer()
+{
+    VkDeviceSize size = sizeof(vertexIndices[0]) * vertexIndices.size();
+    VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
+
+    createBuffer(size, stagingBufferUsage, stagingMemoryProperties, stagingBuffer, stagingBufferMemory);
+
+    void *stagingBufferData = nullptr;
+    VkResult result = vkMapMemory(device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
+    CHECK_ERROR(result);
+
+    memcpy(stagingBufferData, vertexIndices.data(), (size_t)size);
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    VkBufferUsageFlags indexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkMemoryPropertyFlags indexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    createBuffer(size, indexBufferUsage, indexMemoryProperties, indexBuffer, indexBufferMemory);
+    copyBuffer(stagingBuffer, indexBuffer, size);
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void Renderer::destroyIndexBuffer()
+{
+    vkDestroyBuffer(device, indexBuffer, nullptr);
+    vkFreeMemory(device, indexBufferMemory, nullptr);
+}
+
 void Renderer::initCommandBuffers()
 {
     commandBuffers.resize(framebuffers.size());
@@ -1323,8 +1356,9 @@ void Renderer::initCommandBuffers()
         std::vector<VkBuffer> vertexBuffers = {vertexBuffer};
         std::vector<VkDeviceSize> offsets = {0};
         vkCmdBindVertexBuffers(commandBuffers[counter], 0, 1, vertexBuffers.data(), offsets.data());
+        vkCmdBindIndexBuffer(commandBuffers[counter], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDraw(commandBuffers[counter], vertices.size(), 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffers[counter], vertexIndices.size(), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[counter]);
 
         VkResult result = vkEndCommandBuffer(commandBuffers[counter]);
