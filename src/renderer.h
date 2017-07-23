@@ -35,6 +35,9 @@ public:
     void initRenderPass();
     void destroyRenderPass();
 
+    void initDescriptorSetLayout();
+    void destroyDescriptorSetLayout();
+
     void initGraphicsPipline();
     void destroyGraphicsPipline();
 
@@ -50,6 +53,9 @@ public:
     void initIndexBuffer();
     void destroyIndexBuffer();
 
+    void initUniformBuffer();
+    void destroyUniformBuffer();
+
     void initCommandBuffers();
     void destroyCommandBuffers();
 
@@ -60,6 +66,7 @@ public:
     void cleanupSwapChain();
 
     void render();
+    void updateUniformBuffer();
 
     const VkInstance getVulkanInstance() const;
 
@@ -75,12 +82,20 @@ private:
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
     VkBuffer indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer uniformBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory uniformBufferMemory = VK_NULL_HANDLE;
 
     struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties properties = {};
         VkPhysicalDeviceMemoryProperties memoryProperties = {};
     } gpuDetails;
+
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
 
     struct Vertex {
         glm::vec2 position;
@@ -142,6 +157,7 @@ private:
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkCommandPool commandPool = VK_NULL_HANDLE;

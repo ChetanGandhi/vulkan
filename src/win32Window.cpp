@@ -156,11 +156,13 @@ void initilizeVulkan()
     renderer->initSwapchainImageViews();
     // renderer->initDepthStencilImage();
     renderer->initRenderPass();
+    renderer->initDescriptorSetLayout();
     renderer->initGraphicsPipline();
     renderer->initFrameBuffers();
     renderer->initCommandPool();
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
+    renderer->initUniformBuffer();
     renderer->initCommandBuffers();
     renderer->initSynchronizations();
 }
@@ -179,11 +181,13 @@ void cleanUp()
     renderer->waitForIdle();
     renderer->destroySynchronizations();
     renderer->destroyCommandBuffers();
+    renderer->destroyUniformBuffer();
     renderer->destroyIndexBuffer();
     renderer->destroyVertexBuffer();
     renderer->destroyCommandPool();
     renderer->destroyFrameBuffers();
     renderer->destroyGraphicsPipline();
+    renderer->destroyDescriptorSetLayout();
     renderer->destroyRenderPass();
     // renderer->destoryDepthStencilImage();
     renderer->destroySwapchainImageViews();
@@ -241,6 +245,7 @@ int mainLoop()
                         SetWindowText(hWindow, fpsTitle);
                     }
 
+                    renderer->updateUniformBuffer();
                     renderer->render();
                 }
             }

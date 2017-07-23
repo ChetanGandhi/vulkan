@@ -1,10 +1,14 @@
 #pragma once
 
+#define GLM_FORCE_RADIANS
+
 #include <cstdlib>
 #include <assert.h>
 #include <iostream>
 #include <sstream>
 #include <set>
+#include <chrono>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "buildParam.h"
 #include "platform.h"
@@ -880,8 +884,8 @@ void Renderer::initGraphicsPipline()
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.pNext = nullptr;
     pipelineLayoutCreateInfo.flags = 0;
-    pipelineLayoutCreateInfo.setLayoutCount = 0;
-    pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+    pipelineLayoutCreateInfo.setLayoutCount = 1;
+    pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
     pipelineLayoutCreateInfo.pPushConstantRanges = 0;
 
@@ -1103,6 +1107,31 @@ void Renderer::destroyRenderPass()
     vkDestroyRenderPass(device, renderPass, nullptr);
 }
 
+void Renderer::initDescriptorSetLayout()
+{
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
+    descriptorSetLayoutBinding.binding = 0;
+    descriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorSetLayoutBinding.descriptorCount = 1;
+    descriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+    descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorSetLayoutCreateInfo.pNext = nullptr;
+    descriptorSetLayoutCreateInfo.flags = 0;
+    descriptorSetLayoutCreateInfo.bindingCount = 1;
+    descriptorSetLayoutCreateInfo.pBindings = &descriptorSetLayoutBinding;
+
+    VkResult result = vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
+    CHECK_ERROR(result);
+}
+
+void Renderer::destroyDescriptorSetLayout()
+{
+    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+}
+
 void Renderer::initFrameBuffers()
 {
     framebuffers.resize(swapchainImageCount);
@@ -1303,6 +1332,22 @@ void Renderer::destroyIndexBuffer()
     vkFreeMemory(device, indexBufferMemory, nullptr);
 }
 
+
+void Renderer::initUniformBuffer()
+{
+    VkDeviceSize size = sizeof(UniformBufferObject);
+    VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    createBuffer(size, uniformBufferUsage, uniformMemoryProperties, uniformBuffer, uniformBufferMemory);
+}
+
+void Renderer::destroyUniformBuffer()
+{
+    vkDestroyBuffer(device, uniformBuffer, nullptr);
+    vkFreeMemory(device, uniformBufferMemory, nullptr);
+}
+
 void Renderer::initCommandBuffers()
 {
     commandBuffers.resize(framebuffers.size());
@@ -1479,6 +1524,29 @@ void Renderer::render()
     }
 
     vkQueueWaitIdle(presentQueue);
+}
+
+void Renderer::updateUniformBuffer()
+{
+    static auto startTime =std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+
+    UniformBufferObject ubo = {};
+    ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.projection = glm::perspective(glm::radians(45.0f), (float)surfaceSize.width / (float)surfaceSize.height, 0.1f, 10.0f);
+
+    //The GLM is designed for OoenGL, where the Y coordinate of the clip coordinate is inverted.
+    // If we do not fix this then the image will be rendered upside-down.
+    // The easy way to fix this is to flip the sign on the scaling factor of Y axis
+    // in the projection matrix.
+    ubo.projection[1][1] *= -1;
+
+    void *data = nullptr;
+    vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+    memcpy(data, &ubo, sizeof(ubo));
+    vkUnmapMemory(device, uniformBufferMemory);
 }
 
 // Debug methods
