@@ -21,6 +21,7 @@ Open Visual Studio developer command prompt and use following command to compile
 cd shaders
 glslangValidator.exe -V shader.vert
 glslangValidator.exe -V shader.frag
+cd ..
 ```
 
 ###### Compile Code

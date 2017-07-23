@@ -163,6 +163,8 @@ void initilizeVulkan()
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffer();
+    renderer->initDescriptorPool();
+    renderer->initDescriptorSet();
     renderer->initCommandBuffers();
     renderer->initSynchronizations();
 }
@@ -181,6 +183,8 @@ void cleanUp()
     renderer->waitForIdle();
     renderer->destroySynchronizations();
     renderer->destroyCommandBuffers();
+    renderer->destroyDescriptorSet();
+    renderer->destroyDescriptorPool();
     renderer->destroyUniformBuffer();
     renderer->destroyIndexBuffer();
     renderer->destroyVertexBuffer();

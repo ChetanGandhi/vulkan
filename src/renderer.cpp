@@ -824,7 +824,7 @@ void Renderer::initGraphicsPipline()
     rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
     rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
     rasterizationStateCreateInfo.depthBiasClamp = 0.0f;
@@ -1348,6 +1348,77 @@ void Renderer::destroyUniformBuffer()
     vkFreeMemory(device, uniformBufferMemory, nullptr);
 }
 
+void Renderer::initDescriptorPool()
+{
+    VkDescriptorPoolSize poolSize = {};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo poolCreateInfo = {};
+    poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolCreateInfo.pNext = nullptr;
+    poolCreateInfo.flags = 0;
+    // If you want to explicitly destroy the descriptorSet, then set this bit
+    // else you will get runtime error while destroying the descriptorSet.
+    // We are not going to used this for now.
+    // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolCreateInfo.maxSets = 1;
+    poolCreateInfo.poolSizeCount = 1;
+    poolCreateInfo.pPoolSizes = &poolSize;
+
+    VkResult result = vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &descriptorPool);
+    CHECK_ERROR(result);
+}
+
+void Renderer::destroyDescriptorPool()
+{
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+}
+
+void Renderer::initDescriptorSet()
+{
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {descriptorSetLayout};
+
+    VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
+    descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorSetAllocateInfo.pNext = nullptr;
+    descriptorSetAllocateInfo.descriptorPool = descriptorPool;
+    descriptorSetAllocateInfo.descriptorSetCount = 1;
+    descriptorSetAllocateInfo.pSetLayouts = descriptorSetLayouts.data();
+
+    VkResult result = vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, &descriptorSet);
+    CHECK_ERROR(result);
+
+    VkDescriptorBufferInfo descriptorBufferInfo = {};
+    descriptorBufferInfo.buffer = uniformBuffer;
+    descriptorBufferInfo.offset = 0;
+    descriptorBufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet descriptorWrite = {};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.pNext = nullptr;
+    descriptorWrite.dstSet = descriptorSet;
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.pImageInfo = nullptr;
+    descriptorWrite.pBufferInfo = &descriptorBufferInfo;
+    descriptorWrite.pTexelBufferView = nullptr;
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+}
+
+void Renderer::destroyDescriptorSet()
+{
+    // If you want to explicitly destroy the descriptorSet, then set
+    // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
+    // bit in VkDescriptorPoolCreateInfo else you will get runtime error
+    // while destroying the descriptorSet.
+    // We are not going to used this for now.
+    // vkFreeDescriptorSets(device, descriptorPool, 1, &descriptorSet);
+}
+
 void Renderer::initCommandBuffers()
 {
     commandBuffers.resize(framebuffers.size());
@@ -1402,6 +1473,7 @@ void Renderer::initCommandBuffers()
         std::vector<VkDeviceSize> offsets = {0};
         vkCmdBindVertexBuffers(commandBuffers[counter], 0, 1, vertexBuffers.data(), offsets.data());
         vkCmdBindIndexBuffer(commandBuffers[counter], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindDescriptorSets(commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffers[counter], vertexIndices.size(), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[counter]);
