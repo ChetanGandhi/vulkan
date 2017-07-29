@@ -50,6 +50,12 @@ public:
     void initTextureImage();
     void destroyTextureImage();
 
+    void initTextureImageView();
+    void destroyTextureImageView();
+
+    void initTextureSampler();
+    void destoryTextureSampler();
+
     void initVertexBuffer();
     void destroyVertexBuffer();
 
@@ -103,9 +109,10 @@ private:
     VkDeviceMemory        uniformBufferMemory     = VK_NULL_HANDLE;
     VkDescriptorPool      descriptorPool          = VK_NULL_HANDLE;
     VkDescriptorSet       descriptorSet           = VK_NULL_HANDLE;
-
     VkImage               textureImage            = VK_NULL_HANDLE;
     VkDeviceMemory        textureImageMemory      = VK_NULL_HANDLE;
+    VkImageView           textureImageView        = VK_NULL_HANDLE;
+    VkSampler             textureSampler          = VK_NULL_HANDLE;
 
     struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
@@ -219,6 +226,7 @@ private:
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling imageTiling, VkImageUsageFlags imageUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+    void createImageView(VkImage image, VkFormat format, VkImageView &imageView);
     void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 

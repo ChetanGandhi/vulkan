@@ -161,6 +161,8 @@ void initilizeVulkan()
     renderer->initFrameBuffers();
     renderer->initCommandPool();
     renderer->initTextureImage();
+    renderer->initTextureImageView();
+    renderer->initTextureSampler();
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffer();
@@ -189,6 +191,8 @@ void cleanUp()
     renderer->destroyUniformBuffer();
     renderer->destroyIndexBuffer();
     renderer->destroyVertexBuffer();
+    renderer->destoryTextureSampler();
+    renderer->destroyTextureImageView();
     renderer->destroyTextureImage();
     renderer->destroyCommandPool();
     renderer->destroyFrameBuffers();
