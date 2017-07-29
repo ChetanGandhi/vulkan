@@ -2,6 +2,7 @@
 
 #define GLM_FORCE_RADIANS
 #define STB_IMAGE_IMPLEMENTATION
+#define CP_RESOURCE_PATH "resources/textures/cp.png"
 
 #include <cstdlib>
 #include <assert.h>
@@ -1249,7 +1250,7 @@ void Renderer::initTextureImage()
     int textureHeight = 0;
     int textureChannels = 0;
 
-    stbi_uc *pixels = stbi_load("resources/textures/cp.png", &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(CP_RESOURCE_PATH, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
     VkDeviceSize size = textureWidth * textureHeight * 4;
 
     if(!pixels)
