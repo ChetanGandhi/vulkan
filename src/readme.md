@@ -1,7 +1,7 @@
-First Triangle
-============
+Texture Mapping
+==============
 
-This base implementation show how to create a triangle with multi-color blending.
+This implementation extends the base implementation to map a image as a texture to the square.
 
 #### Setup
 
@@ -38,8 +38,8 @@ cl.exe /EHsc /Zi /Femain.exe /I %VK_SDK_PATH%\Include /I %GLM_PATH% *.cpp /link 
 
 ###### Preview
 
-![firstTriangle][firstTriangle-image]
+![textureMapping][textureMapping-image]
 
 <!-- Image declaration -->
 
-[firstTriangle-image]: ./preview/firstTriangle.png "First Triangle"
+[textureMapping-image]: ./preview/textureMapping.png "Texture Mapping"

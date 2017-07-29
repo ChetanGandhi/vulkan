@@ -172,10 +172,11 @@ private:
     };
 
     const std::vector<Vertex> vertices = {
-        {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{-0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+        // {{position.x, position.y}, {color.r, golor.g, color.b}, {textureCoordinates.x,textureCoordinates.y}}
+        {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}
     };
 
     const std::vector<uint32_t> vertexIndices = {0, 1, 2, 2, 3, 0};

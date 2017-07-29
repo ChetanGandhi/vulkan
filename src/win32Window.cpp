@@ -58,7 +58,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLi
     Logger::init("debug.log");
 
     windowName = "VulkanWindow";
-    windowTitle = "Vulkan Window";
+    windowTitle = "Vulkan Window | Texture Mapping";
 
     surfaceSize.width = 800;
     surfaceSize.height = 600;
@@ -251,7 +251,7 @@ int mainLoop()
                         lastTime = timer.now();
                         fps = frameCounter;
                         frameCounter = 0;
-                        wsprintf(fpsTitle, "Vulkan Window | FPS - %d", fps);
+                        wsprintf(fpsTitle, "%s | FPS - %d", windowTitle.c_str(), fps);
                         SetWindowText(hWindow, fpsTitle);
                     }
 
