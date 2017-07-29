@@ -764,7 +764,7 @@ void Renderer::initGraphicsPipline()
     VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
     VkVertexInputBindingDescription vertexBindingDescription = Vertex::getBindingDescription();
-    std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescription = Vertex::getAttributeDescription();
+    std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescription = Vertex::getAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
