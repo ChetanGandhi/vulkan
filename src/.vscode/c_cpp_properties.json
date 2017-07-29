@@ -46,9 +46,10 @@
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/ucrt",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/shared",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/winrt",
-                "%VK_SDK_PATH%/Include/*",
-                "%GLM_PATH%/*",
-                "${workspaceRoot}"
+                "${VK_SDK_PATH}/Include/*",
+                "${GLM_PATH}/*",
+                "${workspaceRoot}/lib/*",
+                "${workspaceRoot}/*"
             ],
             "defines": [
                 "_DEBUG",
@@ -62,8 +63,9 @@
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/ucrt",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/shared",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/winrt",
-                    "%VK_SDK_PATH%/Include/*",
-                    "%GLM_PATH%/*",
+                    "${VK_SDK_PATH}/Include/*",
+                    "${GLM_PATH}/*",
+                    "${workspaceRoot}/lib/*",
                     "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
