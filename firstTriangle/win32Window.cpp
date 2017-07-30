@@ -53,7 +53,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, iMsg, wParam, lParam);
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
     Logger::init("debug.log");
 
@@ -66,7 +66,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLi
     hGlobalInstance = hInstance;
 
     initPlatformSpecificWindow();
-    initilizeVulkan();
+    initializeVulkan();
 
     int returnCode = mainLoop();
 
@@ -143,7 +143,7 @@ void destroyPlatformSpecificWindow()
     UnregisterClass(className.c_str(), hGlobalInstance);
 }
 
-void initilizeVulkan()
+void initializeVulkan()
 {
     renderer = new Renderer(surfaceSize);
 
@@ -186,10 +186,10 @@ void cleanUp()
     // renderer->destoryDepthStencilImage();
     renderer->destroySwapchainImageViews();
     renderer->destroySwapchain();
+    renderer->destroyDevice();
 
     destroyPlatformSpecificSurface();
 
-    renderer->destroyDevice();
     delete renderer;
 
     destroyPlatformSpecificWindow();
