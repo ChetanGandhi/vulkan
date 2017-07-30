@@ -1205,7 +1205,7 @@ void Renderer::createImage(uint32_t width, uint32_t height, VkFormat format, VkI
     CHECK_ERROR(result);
 
     VkMemoryRequirements imageMemoryRequirements = {};
-    vkGetImageMemoryRequirements(device, textureImage, &imageMemoryRequirements);
+    vkGetImageMemoryRequirements(device, image, &imageMemoryRequirements);
 
     uint32_t memoryIndex = findMemoryTypeIndex(&(gpuDetails.memoryProperties), &imageMemoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
