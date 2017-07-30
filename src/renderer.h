@@ -29,9 +29,6 @@ public:
     void initSwapchainImageViews();
     void destroySwapchainImageViews();
 
-    // void initDepthStencilImage();
-    // void destoryDepthStencilImage();
-
     void initRenderPass();
     void destroyRenderPass();
 
@@ -46,6 +43,9 @@ public:
 
     void initCommandPool();
     void destroyCommandPool();
+
+    void initDepthStencilImage();
+    void destoryDepthStencilImage();
 
     void initTextureImage();
     void destroyTextureImage();
@@ -109,6 +109,9 @@ private:
     VkDeviceMemory        uniformBufferMemory     = VK_NULL_HANDLE;
     VkDescriptorPool      descriptorPool          = VK_NULL_HANDLE;
     VkDescriptorSet       descriptorSet           = VK_NULL_HANDLE;
+    VkImage               depthImage              = VK_NULL_HANDLE;
+    VkDeviceMemory        depthImageMemory        = VK_NULL_HANDLE;
+    VkImageView           depthImageView          = VK_NULL_HANDLE;
     VkImage               textureImage            = VK_NULL_HANDLE;
     VkDeviceMemory        textureImageMemory      = VK_NULL_HANDLE;
     VkImageView           textureImageView        = VK_NULL_HANDLE;
@@ -127,7 +130,7 @@ private:
     };
 
     struct Vertex {
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec3 color;
         glm::vec2 textureCoordinates;
 
@@ -146,7 +149,7 @@ private:
             VkVertexInputAttributeDescription positionAttributeDescription = {};
             positionAttributeDescription.binding = 0;
             positionAttributeDescription.location = 0;
-            positionAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
+            positionAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
             positionAttributeDescription.offset = offsetof(Vertex, position);
 
             VkVertexInputAttributeDescription colorAttributeDescription = {};
@@ -172,14 +175,22 @@ private:
     };
 
     const std::vector<Vertex> vertices = {
-        // {{position.x, position.y}, {color.r, golor.g, color.b}, {textureCoordinates.x,textureCoordinates.y}}
-        {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{-1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-        {{1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}
+        // {{position.x, position.y, position.z}, {color.r, golor.g, color.b}, {textureCoordinates.x,textureCoordinates.y}}
+        {{-1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+
+        {{-1.0f, 1.0f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-1.0f, -1.0f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{1.0f, -1.0f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{1.0f, 1.0f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}
     };
 
-    const std::vector<uint32_t> vertexIndices = {0, 1, 2, 2, 3, 0};
+    const std::vector<uint32_t> vertexIndices = {
+        0, 1, 2, 2, 3, 0,
+        4, 5, 6, 6, 7, 4
+    };
 
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
@@ -197,14 +208,6 @@ private:
 
     uint32_t swapchainImageCount = 2;
 
-    // bool stencilAvailable = false;
-
-    // struct DepthStencil {
-    //     VkImage image = VK_NULL_HANDLE;
-    //     VkImageView imageView = VK_NULL_HANDLE;
-    //     VkDeviceMemory imageMemory = VK_NULL_HANDLE;
-    // } depthStencil;
-
     struct SwapchainSupportDetails {
         VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
         std::vector<VkSurfaceFormatKHR> surfaceFormats;
@@ -212,7 +215,6 @@ private:
     } swapchainSupportDetails;
 
     VkSurfaceFormatKHR surfaceFormat = {};
-    // VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
     void setupDebugLayer();
     void setupLayersAndExtensions();
@@ -230,6 +232,8 @@ private:
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
     void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
 
+    VkFormat findSupportedFormat(VkPhysicalDevice gpu, const std::vector<VkFormat> &formatsToCheck, VkImageTiling imageTiling, VkFormatFeatureFlags formatFeatureFlags);
+    VkFormat findDepthFormat();
     VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
     VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> presentModes);
     void chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent);
@@ -237,11 +241,12 @@ private:
     bool isDeviceSuitable(VkPhysicalDevice gpu);
     bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
     bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
+    bool hasStencilComponent(VkFormat format);
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling imageTiling, VkImageUsageFlags imageUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
-    void createImageView(VkImage image, VkFormat format, VkImageView &imageView);
+    void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags);
     void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 

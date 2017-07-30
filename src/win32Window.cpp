@@ -155,12 +155,12 @@ void initilizeVulkan()
     renderer->initLogicalDevice();
     renderer->initSwapchain();
     renderer->initSwapchainImageViews();
-    // renderer->initDepthStencilImage();
     renderer->initRenderPass();
     renderer->initDescriptorSetLayout();
     renderer->initGraphicsPipline();
-    renderer->initFrameBuffers();
     renderer->initCommandPool();
+    renderer->initDepthStencilImage();
+    renderer->initFrameBuffers();
     renderer->initTextureImage();
     renderer->initTextureImageView();
     renderer->initTextureSampler();
@@ -197,10 +197,10 @@ void cleanUp()
     renderer->destroyTextureImage();
     renderer->destroyCommandPool();
     renderer->destroyFrameBuffers();
+    renderer->destoryDepthStencilImage();
     renderer->destroyGraphicsPipline();
     renderer->destroyDescriptorSetLayout();
     renderer->destroyRenderPass();
-    // renderer->destoryDepthStencilImage();
     renderer->destroySwapchainImageViews();
     renderer->destroySwapchain();
 
