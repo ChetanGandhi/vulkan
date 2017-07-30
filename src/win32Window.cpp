@@ -1,13 +1,14 @@
 #pragma once
 
+#include <assert.h>
+#include <iostream>
+#include <chrono>
+
 #include "buildParam.h"
 #include "platform.h"
 #include "vulkanWindow.h"
 #include "utils.h"
-
-#include <assert.h>
-#include <iostream>
-#include <chrono>
+#include "resource.h"
 
 #if VK_USE_PLATFORM_WIN32_KHR
 
@@ -92,12 +93,12 @@ void initPlatformSpecificWindow()
     wndclassex.cbWndExtra = 0;
     wndclassex.lpfnWndProc = WndProc;
     wndclassex.hInstance = hGlobalInstance;
-    wndclassex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    wndclassex.hIcon = LoadIcon(hGlobalInstance, MAKEINTRESOURCE(CP_ICON));
+    wndclassex.hIconSm = LoadIcon(hGlobalInstance, MAKEINTRESOURCE(CP_ICON_SMALL));
     wndclassex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wndclassex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
     wndclassex.lpszClassName = className.c_str();
     wndclassex.lpszMenuName = NULL;
-    wndclassex.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 
     if(!RegisterClassEx(&wndclassex))
     {
