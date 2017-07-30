@@ -1726,13 +1726,14 @@ void Renderer::destroySynchronizations()
 
 void Renderer::recreateSwapChain()
 {
+    LOG("---------- Recreate SwapChain --------");
     vkDeviceWaitIdle(device);
     cleanupSwapChain();
     initSwapchain();
     initSwapchainImageViews();
-    // initDepthStencilImage();
     initRenderPass();
     initGraphicsPipline();
+    initDepthStencilImage();
     initFrameBuffers();
     initCommandBuffers();
 }
@@ -1740,11 +1741,11 @@ void Renderer::recreateSwapChain()
 void Renderer::cleanupSwapChain()
 {
     waitForIdle();
-    destroyCommandBuffers();
     destroyFrameBuffers();
+    destoryDepthStencilImage();
+    destroyCommandBuffers();
     destroyGraphicsPipline();
     destroyRenderPass();
-    // destoryDepthStencilImage();
     destroySwapchainImageViews();
     destroySwapchain();
 }
@@ -1820,9 +1821,10 @@ void Renderer::updateUniformBuffer()
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
+    // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
     UniformBufferObject ubo = {};
     ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.projection = glm::perspective(glm::radians(45.0f), (float)surfaceSize.width / (float)surfaceSize.height, 0.1f, 10.0f);
 
     //The GLM is designed for OoenGL, where the Y coordinate of the clip coordinate is inverted.
