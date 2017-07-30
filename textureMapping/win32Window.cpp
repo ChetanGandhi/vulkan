@@ -66,7 +66,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR lpszCmdLi
     hGlobalInstance = hInstance;
 
     initPlatformSpecificWindow();
-    initilizeVulkan();
+    initializeVulkan();
 
     int returnCode = mainLoop();
 
@@ -143,7 +143,7 @@ void destroyPlatformSpecificWindow()
     UnregisterClass(className.c_str(), hGlobalInstance);
 }
 
-void initilizeVulkan()
+void initializeVulkan()
 {
     renderer = new Renderer(surfaceSize);
 
@@ -202,10 +202,12 @@ void cleanUp()
     // renderer->destoryDepthStencilImage();
     renderer->destroySwapchainImageViews();
     renderer->destroySwapchain();
+    renderer->destroyDevice();
 
+    // The surface need to be destoyed before instance is deleted.
     destroyPlatformSpecificSurface();
 
-    renderer->destroyDevice();
+    // Instance is deleted in destructor of Renderer class.
     delete renderer;
 
     destroyPlatformSpecificWindow();

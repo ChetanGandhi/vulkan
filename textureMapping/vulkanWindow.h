@@ -16,7 +16,7 @@ void destroyPlatformSpecificWindow();
 void initPlatformSpecificSurface();
 void destroyPlatformSpecificSurface();
 
-void initilizeVulkan();
+void initializeVulkan();
 void cleanUp();
 
 int mainLoop();
