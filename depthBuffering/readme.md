@@ -38,8 +38,8 @@ cl.exe /EHsc /Zi /Femain.exe /I %VK_SDK_PATH%\Include /I %GLM_PATH% *.cpp /link 
 
 ###### Preview
 
-![textureMapping][textureMapping-image]
+![depthBuffering][depthBuffering-image]
 
 <!-- Image declaration -->
 
-[textureMapping-image]: ./preview/textureMapping.png "Texture Mapping"
+[depthBuffering-image]: ./preview/depthBuffering.png "Texture Mapping"
