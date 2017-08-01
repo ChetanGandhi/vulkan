@@ -56,6 +56,8 @@ public:
     void initTextureSampler();
     void destoryTextureSampler();
 
+    void loadModel();
+
     void initVertexBuffer();
     void destroyVertexBuffer();
 
@@ -87,6 +89,9 @@ public:
 
 private:
     SurfaceSize surfaceSize;
+
+    const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
+    const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
 
     VkInstance            instance                = VK_NULL_HANDLE;
     VkDevice              device                  = VK_NULL_HANDLE;
@@ -174,23 +179,6 @@ private:
         }
     };
 
-    const std::vector<Vertex> vertices = {
-        // {{position.x, position.y, position.z}, {color.r, golor.g, color.b}, {textureCoordinates.x,textureCoordinates.y}}
-        {{-1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-        {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-
-        {{-1.0f, 1.0f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{-1.0f, -1.0f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-        {{1.0f, -1.0f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{1.0f, 1.0f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}
-    };
-
-    const std::vector<uint32_t> vertexIndices = {
-        0, 1, 2, 2, 3, 0,
-        4, 5, 6, 6, 7, 4
-    };
 
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
@@ -205,6 +193,8 @@ private:
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> vertexIndices;
 
     uint32_t swapchainImageCount = 2;
 

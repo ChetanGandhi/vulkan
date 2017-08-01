@@ -59,7 +59,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     Logger::init("debug.log");
 
     windowName = "VulkanWindow";
-    windowTitle = "Vulkan Window | Texture Mapping";
+    windowTitle = "Vulkan Window | Model Loading";
 
     surfaceSize.width = 800;
     surfaceSize.height = 600;
@@ -164,6 +164,7 @@ void initializeVulkan()
     renderer->initTextureImage();
     renderer->initTextureImageView();
     renderer->initTextureSampler();
+    renderer->loadModel();
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffer();

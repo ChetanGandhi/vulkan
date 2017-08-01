@@ -3,7 +3,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
-#define CP_RESOURCE_PATH "resources/textures/cp.png"
+#define TINYOBJLOADER_IMPLEMENTATION
 
 #include <cstdlib>
 #include <assert.h>
@@ -13,6 +13,7 @@
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb/stb_image.h>
+#include <tinyobj/tiny_obj_loader.h>
 
 #include "buildParam.h"
 #include "platform.h"
@@ -1214,7 +1215,7 @@ void Renderer::initTextureImage()
     int textureHeight = 0;
     int textureChannels = 0;
 
-    stbi_uc *pixels = stbi_load(CP_RESOURCE_PATH, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(chaletTextureResourcePath.c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
     VkDeviceSize size = textureWidth * textureHeight * 4;
 
     if(!pixels)
@@ -1461,6 +1462,48 @@ void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     endOneTimeCommand(commandBuffer);
+}
+
+void Renderer::loadModel()
+{
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string error;
+
+    bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, chaletModelResourcePath.c_str());
+
+    if(!loaded) {
+        LOGF("Model load error: %s", error.c_str());
+        assert(0 && "Not able to load model.");
+    }
+
+    for(const tinyobj::shape_t &nextShape : shapes)
+    {
+        for(const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
+        {
+            Vertex nextVertex = {};
+            nextVertex.position = {
+                // the attrib.vertices array is an array of float values instead of something like glm::vec3,
+                // so you need to multiply the index by 3 to create group of 3 values.
+                attrib.vertices[3 * nextIndex.vertex_index + 0],
+                attrib.vertices[3 * nextIndex.vertex_index + 1],
+                attrib.vertices[3 * nextIndex.vertex_index + 2]
+            };
+
+            nextVertex.textureCoordinates = {
+                // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
+                // so you need to multiply the index by 2 to create group of 2 values.
+                attrib.texcoords[2 * nextIndex.texcoord_index + 0],
+                1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]
+            };
+
+            nextVertex.color = {1.0f, 1.0f, 1.0f};
+
+            vertices.push_back(nextVertex);
+            vertexIndices.push_back(vertexIndices.size());
+        }
+    }
 }
 
 void Renderer::initVertexBuffer()
@@ -1824,10 +1867,10 @@ void Renderer::updateUniformBuffer()
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
     UniformBufferObject ubo = {};
     ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.projection = glm::perspective(glm::radians(45.0f), (float)surfaceSize.width / (float)surfaceSize.height, 0.1f, 10.0f);
 
-    //The GLM is designed for OoenGL, where the Y coordinate of the clip coordinate is inverted.
+    //The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
     // The easy way to fix this is to flip the sign on the scaling factor of Y axis
     // in the projection matrix.
