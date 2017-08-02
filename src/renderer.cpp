@@ -11,6 +11,7 @@
 #include <sstream>
 #include <set>
 #include <chrono>
+#include <unordered_map>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb/stb_image.h>
 #include <tinyobj/tiny_obj_loader.h>
@@ -1478,6 +1479,8 @@ void Renderer::loadModel()
         assert(0 && "Not able to load model.");
     }
 
+    std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
+
     for(const tinyobj::shape_t &nextShape : shapes)
     {
         for(const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
@@ -1500,8 +1503,13 @@ void Renderer::loadModel()
 
             nextVertex.color = {1.0f, 1.0f, 1.0f};
 
-            vertices.push_back(nextVertex);
-            vertexIndices.push_back(vertexIndices.size());
+            if(uniqueVertices.count(nextVertex) == 0)
+            {
+                uniqueVertices[nextVertex] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(nextVertex);
+            }
+
+            vertexIndices.push_back(uniqueVertices[nextVertex]);
         }
     }
 }

@@ -9,7 +9,5 @@ layout(location = 1) in vec2 fragmentTextureCoordinates;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    // This is for debugging.
-    // outColor = vec4(fragmentTextureCoordinates, 0.0, 1.0);
     outColor = texture(textureSampler, fragmentTextureCoordinates);
 }

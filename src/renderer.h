@@ -7,6 +7,7 @@
 
 #include "platform.h"
 #include "common.h"
+#include "vertex.h"
 
 class Renderer
 {
@@ -133,52 +134,6 @@ private:
         glm::mat4 view;
         glm::mat4 projection;
     };
-
-    struct Vertex {
-        glm::vec3 position;
-        glm::vec3 color;
-        glm::vec2 textureCoordinates;
-
-        static VkVertexInputBindingDescription getBindingDescription()
-        {
-            VkVertexInputBindingDescription bindingDescription = {};
-            bindingDescription.binding = 0;
-            bindingDescription.stride = sizeof(Vertex);
-            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-            return bindingDescription;
-        }
-
-        static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription()
-        {
-            VkVertexInputAttributeDescription positionAttributeDescription = {};
-            positionAttributeDescription.binding = 0;
-            positionAttributeDescription.location = 0;
-            positionAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
-            positionAttributeDescription.offset = offsetof(Vertex, position);
-
-            VkVertexInputAttributeDescription colorAttributeDescription = {};
-            colorAttributeDescription.binding = 0;
-            colorAttributeDescription.location = 1;
-            colorAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
-            colorAttributeDescription.offset = offsetof(Vertex, color);
-
-            VkVertexInputAttributeDescription textureCoordinatesAttributeDescription = {};
-            textureCoordinatesAttributeDescription.binding = 0;
-            textureCoordinatesAttributeDescription.location = 2;
-            textureCoordinatesAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
-            textureCoordinatesAttributeDescription.offset = offsetof(Vertex, textureCoordinates);
-
-            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {
-                positionAttributeDescription,
-                colorAttributeDescription,
-                textureCoordinatesAttributeDescription
-            };
-
-            return attributeDescriptions;
-        }
-    };
-
 
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
