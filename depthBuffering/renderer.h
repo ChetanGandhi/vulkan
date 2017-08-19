@@ -175,7 +175,7 @@ private:
     };
 
     const std::vector<Vertex> vertices = {
-        // {{position.x, position.y, position.z}, {color.r, golor.g, color.b}, {textureCoordinates.x,textureCoordinates.y}}
+        // {{position.x, position.y, position.z}, {color.r, color.g, color.b}, {textureCoordinates.x,textureCoordinates.y}}
         {{-1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
         {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
         {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
