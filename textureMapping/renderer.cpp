@@ -1425,7 +1425,7 @@ void Renderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayo
 
     if(oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+        imageMemoryBarrier.srcAccessMask = 0;
         imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         sourceStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
