@@ -157,6 +157,7 @@ void initializeVulkan()
     renderer->initSwapchainImageViews();
     renderer->initRenderPass();
     renderer->initDescriptorSetLayout();
+    renderer->initGraphicsPiplineCache();
     renderer->initGraphicsPipline();
     renderer->initCommandPool();
     renderer->initDepthStencilImage();
@@ -202,6 +203,7 @@ void cleanUp()
     renderer->destoryDepthStencilImage();
     renderer->destroyCommandPool();
     renderer->destroyGraphicsPipline();
+    renderer->destroyGraphicsPiplineCache();
     renderer->destroyDescriptorSetLayout();
     renderer->destroyRenderPass();
     renderer->destroySwapchainImageViews();

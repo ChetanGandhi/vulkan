@@ -729,6 +729,24 @@ VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
     return shaderModule;
 }
 
+void Renderer::initGraphicsPiplineCache()
+{
+    VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
+    pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    pipelineCacheCreateInfo.pNext = NULL;
+    pipelineCacheCreateInfo.flags = 0;
+    pipelineCacheCreateInfo.initialDataSize = 0;
+    pipelineCacheCreateInfo.pInitialData = NULL;
+
+    VkResult result = vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache);
+    CHECK_ERROR(result);
+}
+
+void Renderer::destroyGraphicsPiplineCache()
+{
+    vkDestroyPipelineCache(device, pipelineCache, nullptr);
+}
+
 void Renderer::initGraphicsPipline()
 {
     std::vector<char> vertexShaderCode;
@@ -916,7 +934,7 @@ void Renderer::initGraphicsPipline()
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
 
-    result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
+    result = vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline);
     CHECK_ERROR(result);
 
     vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
@@ -1795,6 +1813,7 @@ void Renderer::recreateSwapChain()
     initSwapchain();
     initSwapchainImageViews();
     initRenderPass();
+    initGraphicsPiplineCache();
     initGraphicsPipline();
     initDepthStencilImage();
     initFrameBuffers();
@@ -1808,6 +1827,7 @@ void Renderer::cleanupSwapChain()
     destoryDepthStencilImage();
     destroyCommandBuffers();
     destroyGraphicsPipline();
+    destroyGraphicsPiplineCache();
     destroyRenderPass();
     destroySwapchainImageViews();
     destroySwapchain();

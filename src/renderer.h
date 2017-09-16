@@ -36,6 +36,9 @@ public:
     void initDescriptorSetLayout();
     void destroyDescriptorSetLayout();
 
+    void initGraphicsPiplineCache();
+    void destroyGraphicsPiplineCache();
+
     void initGraphicsPipline();
     void destroyGraphicsPipline();
 
@@ -103,6 +106,7 @@ private:
     VkSwapchainKHR        swapchain               = VK_NULL_HANDLE;
     VkRenderPass          renderPass              = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptorSetLayout     = VK_NULL_HANDLE;
+    VkPipelineCache       pipelineCache           = VK_NULL_HANDLE;
     VkPipelineLayout      pipelineLayout          = VK_NULL_HANDLE;
     VkPipeline            pipeline                = VK_NULL_HANDLE;
     VkCommandPool         commandPool             = VK_NULL_HANDLE;
