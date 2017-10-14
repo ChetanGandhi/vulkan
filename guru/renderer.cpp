@@ -255,10 +255,12 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
         queueFamilyIndices.graphicsFamilyIndex = indices.graphicsFamilyIndex;
         queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
         queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
+        queueFamilyIndices.computeFamilyIndex = indices.computeFamilyIndex;
 
         LOG("---------- Queue Family Indices ----------");
         LOGF("Graphics Family Index\t\t: %d", queueFamilyIndices.graphicsFamilyIndex);
         LOGF("Present Family Index\t\t: %d", queueFamilyIndices.presentFamilyIndex);
+        LOGF("Compute Family Index\t\t: %d", queueFamilyIndices.computeFamilyIndex);
         LOGF("Has Separate Present Queue\t: %d", queueFamilyIndices.hasSeparatePresentQueue);
         LOG("---------- Queue Family Indices End ----------");
     }
@@ -284,6 +286,7 @@ bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices
     uint32_t familyCount = 0;
     uint32_t graphicsFamilyIndex = UINT32_MAX;
     uint32_t presentFamilyIndex = UINT32_MAX;
+    uint32_t computeFamilyIndex = UINT32_MAX;
 
     vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
     std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
@@ -325,13 +328,25 @@ bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices
         }
     }
 
-    if(graphicsFamilyIndex == UINT32_MAX || presentFamilyIndex == UINT32_MAX)
+    for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
+    {
+        const VkQueueFamilyProperties nextFamilyProperties = familyPropertiesList[queueCounter];
+
+        if(nextFamilyProperties.queueCount > 0 && nextFamilyProperties.queueFlags & VK_QUEUE_COMPUTE_BIT)
+        {
+            computeFamilyIndex = queueCounter;
+            break;
+        }
+    }
+
+    if(graphicsFamilyIndex == UINT32_MAX || presentFamilyIndex == UINT32_MAX || computeFamilyIndex == UINT32_MAX)
     {
         return false;
     }
 
     queueFamilyIndices->graphicsFamilyIndex = graphicsFamilyIndex;
     queueFamilyIndices->presentFamilyIndex = presentFamilyIndex;
+    queueFamilyIndices->computeFamilyIndex = computeFamilyIndex;
     queueFamilyIndices->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
 
     return true;
@@ -712,7 +727,7 @@ void Renderer::destroySwapchainImageViews()
     }
 }
 
-VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
+void Renderer::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule)
 {
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -721,11 +736,8 @@ VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
     shaderModuleCreateInfo.codeSize = code.size();
     shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-    VkShaderModule shaderModule;
-    VkResult result = vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule);
+    VkResult result = vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, shaderModule);
     CHECK_ERROR(result);
-
-    return shaderModule;
 }
 
 void Renderer::initGraphicsPiplineCache()
@@ -746,6 +758,64 @@ void Renderer::destroyGraphicsPiplineCache()
     vkDestroyPipelineCache(device, pipelineCache, nullptr);
 }
 
+void Renderer::initComputePipline()
+{
+    VkResult result = VK_SUCCESS;
+
+    std::vector<char> computeShaderCode;
+
+    if(!readFile("shaders/comp.spv", &computeShaderCode))
+    {
+        assert(0 && "Cannot open compute shader.");
+    }
+
+    VkShaderModule computeShaderModule;
+    createShaderModule(computeShaderCode, &computeShaderModule);
+
+    VkPipelineShaderStageCreateInfo computeShaderStageCreateInfo = {};
+    computeShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    computeShaderStageCreateInfo.pNext = nullptr;
+    computeShaderStageCreateInfo.flags = 0;
+    computeShaderStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    computeShaderStageCreateInfo.module = computeShaderModule;
+    computeShaderStageCreateInfo.pName = "main";
+    computeShaderStageCreateInfo.pSpecializationInfo = nullptr;
+
+    VkPipelineLayoutCreateInfo computePipelineLayoutCreateInfo = {};
+    computePipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    computePipelineLayoutCreateInfo.pNext = nullptr;
+    computePipelineLayoutCreateInfo.flags = 0;
+    computePipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+    computePipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+    computePipelineLayoutCreateInfo.setLayoutCount = 1;
+    computePipelineLayoutCreateInfo.pSetLayouts = &computeDescriptorSetLayout;
+
+    result = vkCreatePipelineLayout(device, &computePipelineLayoutCreateInfo, nullptr, &computePipelineLayout);
+    CHECK_ERROR(result);
+
+    VkComputePipelineCreateInfo computePipelineCreateInfo = {};
+    computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    computePipelineCreateInfo.pNext = nullptr;
+    computePipelineCreateInfo.flags = 0;
+    computePipelineCreateInfo.stage = computeShaderStageCreateInfo;
+    computePipelineCreateInfo.layout = computePipelineLayout;
+
+    // As we have not set flag VK_PIPELINE_CREATE_DERIVATIVE_BIT, these are not used.
+    // If flag is set then either basePipelineHandle must be a valid handle or basePipelineIndex must be valid.
+    computePipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+    computePipelineCreateInfo.basePipelineIndex = -1;
+
+
+    result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &computePipeline);
+    CHECK_ERROR(result);
+}
+
+void Renderer::destroyComputePipline()
+{
+    vkDestroyPipeline(device, computePipeline, nullptr);
+    vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
+}
+
 void Renderer::initGraphicsPipline()
 {
     std::vector<char> vertexShaderCode;
@@ -761,8 +831,11 @@ void Renderer::initGraphicsPipline()
         assert(0 && "Cannot open fragment shader.");
     }
 
-    VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
-    VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
+    VkShaderModule vertexShaderModule;
+    VkShaderModule fragmentShaderModule;
+
+    createShaderModule(vertexShaderCode, &vertexShaderModule);
+    createShaderModule(fragmentShaderCode, &fragmentShaderModule);
 
     VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
     vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -1076,6 +1149,33 @@ void Renderer::initRenderPass()
 void Renderer::destroyRenderPass()
 {
     vkDestroyRenderPass(device, renderPass, nullptr);
+}
+
+void Renderer::initComputeDescriptorSetLayout()
+{
+    VkDescriptorSetLayoutBinding computeDescriptorSetLayoutBinding = {};
+    computeDescriptorSetLayoutBinding.binding = 0;
+    computeDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    computeDescriptorSetLayoutBinding.descriptorCount = 1;
+    computeDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    computeDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo computeDescriptorSetLayoutCreateInfo = {};
+    computeDescriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    computeDescriptorSetLayoutCreateInfo.pNext = nullptr;
+    computeDescriptorSetLayoutCreateInfo.flags = 0;
+    computeDescriptorSetLayoutCreateInfo.bindingCount = 1;
+    computeDescriptorSetLayoutCreateInfo.pBindings = &computeDescriptorSetLayoutBinding;
+
+    VkResult result = vkCreateDescriptorSetLayout(device, &computeDescriptorSetLayoutCreateInfo, nullptr, &computeDescriptorSetLayout);
+    CHECK_ERROR(result);
+
+    // TODO: start from computeDescriptorSet
+}
+
+void Renderer::destroyComputeDescriptorSetLayout()
+{
+    vkDestroyDescriptorSetLayout(device, computeDescriptorSetLayout, nullptr);
 }
 
 void Renderer::initDescriptorSetLayout()
