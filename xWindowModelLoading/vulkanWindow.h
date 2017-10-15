@@ -1,0 +1,70 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include "platform.h"
+#include "renderer.h"
+#include "common.h"
+#include "logger.h"
+
+int start();
+
+void initializePlatformSpecificWindow();
+void destroyPlatformSpecificWindow();
+
+void initPlatformSpecificSurface();
+void destroyPlatformSpecificSurface();
+
+void initializeVulkan();
+void cleanUp();
+
+int mainLoop();
+
+void render();
+void resize(uint32_t width, uint32_t height);
+void toggleFullscreen(bool isFullscreen);
+void onEscapeKeyPressed();
+
+bool isRunning = true;
+bool isActive = false;
+bool isFullscreen = false;
+bool isEscapeKeyPressed = false;
+
+std::string windowName;
+std::string windowTitle;
+
+Renderer *renderer = nullptr;
+SurfaceSize surfaceSize;
+
+VkSurfaceKHR surface = VK_NULL_HANDLE;
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+
+static uint64_t win32ClassIdCounter = 0;
+std::string className;
+
+HINSTANCE hGlobalInstance = NULL;
+HWND hWindow = NULL;
+DWORD dwStyle;
+WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow);
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+
+// Display *gDisplay = NULL;
+// XVisualInfo *visualInfo = NULL;
+// Colormap colormap;
+// Window window;
+// typedef GLXContext (*glXCreateContextAttribsARBProc)(Display *display, GLXFBConfig fbConfig, GLXContext sharedContext, Bool direct, const int* attributes);
+// glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
+// GLXFBConfig glxFBConfig;
+// GLXContext glxContext;
+
+bool isCloseButtonClicked = false;
+
+#endif // VK_USE_PLATFORM_XCB_KHR
