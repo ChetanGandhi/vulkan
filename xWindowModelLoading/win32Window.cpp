@@ -54,7 +54,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     Logger::init("debug_win32.log");
 
     windowName = "VulkanWindow";
-    windowTitle = "Vulkan Window | Model Loading";
+    windowTitle = "Vulkan Window | Win32";
 
     surfaceSize.width = 800;
     surfaceSize.height = 600;

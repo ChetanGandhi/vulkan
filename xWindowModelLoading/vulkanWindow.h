@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <cstring>
 #include <vector>
 
 #include "platform.h"
@@ -56,15 +56,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
 
-// Display *gDisplay = NULL;
-// XVisualInfo *visualInfo = NULL;
-// Colormap colormap;
-// Window window;
-// typedef GLXContext (*glXCreateContextAttribsARBProc)(Display *display, GLXFBConfig fbConfig, GLXContext sharedContext, Bool direct, const int* attributes);
-// glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
-// GLXFBConfig glxFBConfig;
-// GLXContext glxContext;
+xcb_connection_t *xcbConnection = NULL;
+xcb_screen_t *xcbScreen = NULL;
+xcb_window_t xcbWindow;
+xcb_intern_atom_reply_t *atom_wm_delete_window = NULL;
 
 bool isCloseButtonClicked = false;
+
+int main(void);
+void handleEvent(const xcb_generic_event_t *event);
 
 #endif // VK_USE_PLATFORM_XCB_KHR
