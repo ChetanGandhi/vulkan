@@ -213,6 +213,7 @@ void cleanUp()
 
     // Instance is deleted in destructor of Renderer class.
     delete renderer;
+    renderer = nullptr;
 
     destroyPlatformSpecificWindow();
 }

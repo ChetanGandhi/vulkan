@@ -82,7 +82,8 @@ int mainLoop()
         }
     }
 
-    delete fpsTitle;
+    free(fpsTitle);
+    fpsTitle = nullptr;
 
     return EXIT_SUCCESS;
 }
