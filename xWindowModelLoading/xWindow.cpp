@@ -6,7 +6,40 @@
 
 void handleEvent(const xcb_generic_event_t *event)
 {
+    switch(event->response_type & 0x7f)
+    {
+        case XCB_CLIENT_MESSAGE:
+        {
+            const xcb_client_message_event_t *clientMessageEvent = (xcb_client_message_event_t *)event;
+            if(clientMessageEvent->data.data32[0] == atom_wm_delete_window_reply->atom)
+            {
+                isCloseButtonClicked = true;
+            }
+        }
+        break;
 
+        case XCB_KEY_RELEASE:
+        {
+            const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
+            switch(keyEvent->detail)
+            {
+                case 0x9: // Escape key code.
+                    isEscapeKeyPressed = true;
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        case XCB_DESTROY_NOTIFY:
+            isCloseButtonClicked = true;
+        break;
+
+        default:
+        break;
+    }
 }
 
 int main(void)
@@ -73,8 +106,7 @@ void initializePlatformSpecificWindow()
 
     xcb_create_window(xcbConnection,
         XCB_COPY_FROM_PARENT,
-        xcbWindow,
-        xcbScreen->root,
+        xcbWindow, xcbScreen->root,
         0, 0, surfaceSize.width, surfaceSize.height, 0,
         XCB_WINDOW_CLASS_INPUT_OUTPUT,
         xcbScreen->root_visual,
@@ -83,18 +115,19 @@ void initializePlatformSpecificWindow()
 
     // Enable the window close button action.
     xcb_intern_atom_cookie_t atom_wm_protocols_cookie = xcb_intern_atom(xcbConnection, true, std::strlen("WM_PROTOCOLS"), "WM_PROTOCOLS");
-    xcb_intern_atom_reply_t *atom_wm_protocols = xcb_intern_atom_reply(xcbConnection, atom_wm_protocols_cookie, NULL);
+    xcb_intern_atom_reply_t *atom_wm_protocols_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_protocols_cookie, NULL);
 
     xcb_intern_atom_cookie_t atom_wm_delete_window_cookie = xcb_intern_atom(xcbConnection, false, strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
-    atom_wm_delete_window =xcb_intern_atom_reply(xcbConnection, atom_wm_delete_window_cookie, NULL);
+    atom_wm_delete_window_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_delete_window_cookie, NULL);
+
     xcb_change_property(xcbConnection,
         XCB_PROP_MODE_REPLACE,
         xcbWindow,
-        (*atom_wm_protocols).atom,
+        atom_wm_protocols_reply->atom,
         4,
         32,
         1,
-        &(*atom_wm_delete_window).atom
+        &(atom_wm_delete_window_reply->atom)
     );
 
     // Update the window title.
@@ -107,8 +140,9 @@ void initializePlatformSpecificWindow()
         windowTitle.c_str()
     );
 
-    free(atom_wm_protocols);
+    free(atom_wm_protocols_reply);
     xcb_map_window(xcbConnection, xcbWindow);
+    xcb_flush(xcbConnection);
 }
 
 void destroyPlatformSpecificWindow()
@@ -149,12 +183,18 @@ int mainLoop()
     auto lastTime = timer.now();
     uint64_t frameCounter = 0;
     uint64_t fps = 0;
-
-    char *fpsTitle = (char *)malloc(sizeof(windowTitle.c_str()) + sizeof(fps) + 100);
+    std::string fpsTitle = "";
 
     while(isRunning)
     {
         isRunning = !(isCloseButtonClicked || isEscapeKeyPressed);
+
+        xcb_generic_event_t *event = NULL;
+        while((event = xcb_poll_for_event(xcbConnection)))
+        {
+            handleEvent(event);
+            free(event);
+        }
 
         ++frameCounter;
 
@@ -163,13 +203,18 @@ int mainLoop()
             lastTime = timer.now();
             fps = frameCounter;
             frameCounter = 0;
-            sprintf(fpsTitle, "%s | FPS - %ld", windowTitle.c_str(), fps);
-            printf("%s\n", fpsTitle);
+            fpsTitle = windowTitle + " | FPS - " + std::to_string(fps);
+            xcb_change_property(xcbConnection,
+                XCB_PROP_MODE_REPLACE,
+                xcbWindow, XCB_ATOM_WM_NAME,
+                XCB_ATOM_STRING,
+                8,
+                fpsTitle.size(),
+                fpsTitle.c_str()
+            );
+            xcb_flush(xcbConnection);
         }
     }
-
-    free(fpsTitle);
-    fpsTitle = nullptr;
 
     return EXIT_SUCCESS;
 }
@@ -198,11 +243,6 @@ void resize(uint32_t width, uint32_t height)
 void toggleFullscreen(bool isFullscreen)
 {
 
-}
-
-void onEscapeKeyPressed()
-{
-    isRunning = false;
 }
 
 #endif // VK_USE_PLATFORM_XCB_KHR

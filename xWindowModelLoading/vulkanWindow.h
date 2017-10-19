@@ -24,7 +24,6 @@ int mainLoop();
 void render();
 void resize(uint32_t width, uint32_t height);
 void toggleFullscreen(bool isFullscreen);
-void onEscapeKeyPressed();
 
 bool isRunning = true;
 bool isActive = false;
@@ -59,7 +58,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 xcb_connection_t *xcbConnection = NULL;
 xcb_screen_t *xcbScreen = NULL;
 xcb_window_t xcbWindow;
-xcb_intern_atom_reply_t *atom_wm_delete_window = NULL;
+xcb_intern_atom_reply_t *atom_wm_delete_window_reply = NULL;
 
 bool isCloseButtonClicked = false;
 

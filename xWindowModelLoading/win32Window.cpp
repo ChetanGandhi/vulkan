@@ -337,9 +337,4 @@ void toggleFullscreen(bool isFullscreen)
     }
 }
 
-void onEscapeKeyPressed()
-{
-    isRunning = false;
-}
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
