@@ -27,6 +27,11 @@ void handleEvent(const xcb_generic_event_t *event)
                     isEscapeKeyPressed = true;
                 break;
 
+                case 0x29: // 'f; key code
+                    isFullscreen = !isFullscreen;
+                    toggleFullscreen(isFullscreen);
+                break;
+
                 default:
                 break;
             }
@@ -260,7 +265,26 @@ void resize(uint32_t width, uint32_t height)
 
 void toggleFullscreen(bool isFullscreen)
 {
+    xcb_intern_atom_cookie_t atom_wm_state_normal_cookie = xcb_intern_atom(xcbConnection, false, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
+    xcb_intern_atom_reply_t *atom_wm_state_normal_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_normal_cookie, NULL);
 
+    xcb_intern_atom_cookie_t atom_wm_state_fullscreen_cookie = xcb_intern_atom(xcbConnection, false, strlen("_NET_WM_STATE_FULLSCREEN"), "WM_DELETE_WINDOW");
+    xcb_intern_atom_reply_t *atom_wm_state_fullscreen_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_fullscreen_cookie, NULL);
+
+    xcb_client_message_event_t event = {0};
+    memset(&event, 0, sizeof(event));
+    event.response_type = XCB_CLIENT_MESSAGE;
+    event.window = xcbWindow;
+    event.type = atom_wm_state_normal_reply->atom;
+    event.format = 32;
+    event.data.data32[0] = isFullscreen ? 1 : 0;
+    event.data.data32[1] = atom_wm_state_fullscreen_reply->atom;
+
+    xcb_send_event_checked(xcbConnection, false, xcbWindow, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char *)(&event));
+    xcb_flush(xcbConnection);
+
+    free(atom_wm_state_normal_reply);
+    free(atom_wm_state_fullscreen_reply);
 }
 
 #endif // VK_USE_PLATFORM_XCB_KHR
