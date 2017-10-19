@@ -37,6 +37,13 @@ void handleEvent(const xcb_generic_event_t *event)
             isCloseButtonClicked = true;
         break;
 
+        case XCB_CONFIGURE_NOTIFY:
+        {
+            const xcb_configure_notify_event_t *configureEvent = (const xcb_configure_notify_event_t *)event;
+            resize((uint32_t)(configureEvent->width), (uint32_t)(configureEvent->height));
+        }
+        break;
+
         default:
         break;
     }
@@ -236,8 +243,19 @@ void resize(uint32_t width, uint32_t height)
         return;
     }
 
+    if(width == surfaceSize.width && height == surfaceSize.height)
+    {
+        return;
+    }
+
     surfaceSize.width = width;
     surfaceSize.height = height;
+
+    if(renderer != nullptr)
+    {
+        renderer->setSurfaceSize(surfaceSize);
+        renderer->recreateSwapChain();
+    }
 }
 
 void toggleFullscreen(bool isFullscreen)
