@@ -12,6 +12,9 @@ void Logger::init(std::string fileName)
 {
     if(logger == nullptr)
     {
+        char dateTime[100] = {0};
+        size_t size = currentDateTime(dateTime);
+
         logger = new Logger();
         logger->logfile = fopen(fileName.c_str(), "w");
         if(logger->logfile == NULL)
@@ -21,7 +24,7 @@ void Logger::init(std::string fileName)
         else
         {
             fprintf(logger->logfile, "-----------------------------------\n");
-            fprintf(logger->logfile, "| Logs start: %s |\n", currentDateTime().c_str());
+            fprintf(logger->logfile, "| Logs start: %s |\n", dateTime);
             fprintf(logger->logfile, "-----------------------------------\n");
             fflush(logger->logfile);
         }
@@ -32,8 +35,11 @@ Logger::~Logger()
 {
     if(logger->logfile != NULL)
     {
+        char dateTime[100] = {0};
+        size_t size = currentDateTime(dateTime);
+
         fprintf(logger->logfile, "-----------------------------------\n");
-        fprintf(logger->logfile, "| Logs end: %s   |\n", currentDateTime().c_str());
+        fprintf(logger->logfile, "| Logs end: %s   |\n", dateTime);
         fprintf(logger->logfile, "-----------------------------------\n");
         fclose(logger->logfile);
     }
@@ -47,8 +53,10 @@ void Logger::close()
 
 void Logger::log(const char *format, ...)
 {
+    char dateTime[100] = {0};
+    size_t size = currentDateTime(dateTime);
     va_list args;
-    fprintf(logger->logfile, "%s: ", currentDateTime().c_str());
+    fprintf(logger->logfile, "%s: ", dateTime);
 
     va_start(args, format);
     vfprintf(logger->logfile, format, args);
@@ -60,13 +68,19 @@ void Logger::log(const char *format, ...)
 
 void Logger::log(const std::string &message)
 {
-    fprintf(logger->logfile, "%s: %s\n", currentDateTime().c_str(), message.c_str());
+    char dateTime[100] = {0};
+    size_t size = currentDateTime(dateTime);
+
+    fprintf(logger->logfile, "%s: %s\n", dateTime, message.c_str());
     fflush(logger->logfile);
 }
 
 void Logger::logUUID(const std::string &message, uint8_t *uuid)
 {
-    fprintf(logger->logfile, "%s: %s", currentDateTime().c_str(), message.c_str());
+    char dateTime[100] = {0};
+    size_t size = currentDateTime(dateTime);
+
+    fprintf(logger->logfile, "%s: %s", dateTime, message.c_str());
     for (int counter = 0; counter < VK_UUID_SIZE; ++counter)
     {
         fprintf(logger->logfile, "%2d", (uint32_t)uuid[counter]);

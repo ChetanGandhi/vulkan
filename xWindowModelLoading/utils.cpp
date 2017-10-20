@@ -137,12 +137,24 @@ bool readFile(const std::string &fileName, std::vector<char> *data)
     return true;
 }
 
-const std::string currentDateTime()
+#if defined (_WIN32) // check for Windows
+
+size_t currentDateTime(char *dateTimeString)
 {
     time_t now = time(NULL);
     struct tm tmStruct;
-    char buf[80];
-    localtime_r(&now, &tmStruct);
-    strftime(buf, sizeof(buf), "%d-%m-%Y.%H.%M.%S", &tmStruct);
-    return buf;
+    _localtime64_s(&tmStruct, &now);
+    return strftime(dateTimeString, 100, "%d-%m-%Y.%H.%M.%S", &tmStruct);
 }
+
+#elif defined (__linux) // check for Linux
+
+size_t currentDateTime(char *dateTimeString)
+{
+    time_t now = time(NULL);
+    struct tm tmStruct;
+    localtime_r(&now, &tmStruct);
+    return strftime(dateTimeString, sizeof(dateTimeString), "%d-%m-%Y.%H.%M.%S", &tmStruct);
+}
+
+#endif
