@@ -47,12 +47,15 @@ void Logger::close()
 
 void Logger::log(const char *format, ...)
 {
-    // va_list args;
-    // va_start(args, format);
-    // fprintf(logger->logfile, "%s: ", currentDateTime().c_str());
-    // vfprintf(logger->logfile, format, args);
-    // va_end(args);
-    // fflush(logger->logfile);
+    va_list args;
+    fprintf(logger->logfile, "%s: ", currentDateTime().c_str());
+
+    va_start(args, format);
+    vfprintf(logger->logfile, format, args);
+    va_end(args);
+
+    fprintf(logger->logfile, "\n");
+    fflush(logger->logfile);
 }
 
 void Logger::log(const std::string &message)
