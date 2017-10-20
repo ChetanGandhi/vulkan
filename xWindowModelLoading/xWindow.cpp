@@ -18,7 +18,7 @@ void handleEvent(const xcb_generic_event_t *event)
         }
         break;
 
-        case XCB_KEY_RELEASE:
+        case XCB_KEY_PRESS:
         {
             const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
             switch(keyEvent->detail)
@@ -85,6 +85,8 @@ void initializePlatformSpecificWindow()
 
     const xcb_setup_t *setup = NULL;
     xcb_screen_iterator_t screenIterator;
+    xcb_generic_error_t *error = NULL;
+    xcb_void_cookie_t cookieForError;
     int screenCount = 0;
 
     xcbConnection = xcb_connect(NULL, &screenCount);
@@ -117,7 +119,7 @@ void initializePlatformSpecificWindow()
     | XCB_EVENT_MASK_BUTTON_PRESS
     | XCB_EVENT_MASK_BUTTON_RELEASE;
 
-    xcb_create_window(xcbConnection,
+    cookieForError = xcb_create_window(xcbConnection,
         XCB_COPY_FROM_PARENT,
         xcbWindow, xcbScreen->root,
         0, 0, surfaceSize.width, surfaceSize.height, 0,
@@ -126,11 +128,21 @@ void initializePlatformSpecificWindow()
         valueMask, valueList
     );
 
+    error = xcb_request_check(xcbConnection, cookieForError);
+    if (error)
+    {
+        LOGF("Error: Cannot create window [%d]", error->error_code);
+        printf("Error: Cannot create window [%d]\n", error->error_code);
+        free (error);
+        cleanUp();
+        exit(EXIT_FAILURE);
+    }
+
     // Enable the window close button action.
-    xcb_intern_atom_cookie_t atom_wm_protocols_cookie = xcb_intern_atom(xcbConnection, true, std::strlen("WM_PROTOCOLS"), "WM_PROTOCOLS");
+    xcb_intern_atom_cookie_t atom_wm_protocols_cookie = xcb_intern_atom(xcbConnection, 1, std::strlen("WM_PROTOCOLS"), "WM_PROTOCOLS");
     xcb_intern_atom_reply_t *atom_wm_protocols_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_protocols_cookie, NULL);
 
-    xcb_intern_atom_cookie_t atom_wm_delete_window_cookie = xcb_intern_atom(xcbConnection, false, strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
+    xcb_intern_atom_cookie_t atom_wm_delete_window_cookie = xcb_intern_atom(xcbConnection, 0, strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
     atom_wm_delete_window_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_delete_window_cookie, NULL);
 
     xcb_change_property(xcbConnection,
@@ -213,27 +225,30 @@ void cleanUp()
         toggleFullscreen(isFullscreen);
     }
 
-    renderer->waitForIdle();
-    renderer->destroySynchronizations();
-    renderer->destroyCommandBuffers();
-    renderer->destroyDescriptorSet();
-    renderer->destroyDescriptorPool();
-    renderer->destroyUniformBuffer();
-    renderer->destroyIndexBuffer();
-    renderer->destroyVertexBuffer();
-    renderer->destoryTextureSampler();
-    renderer->destroyTextureImageView();
-    renderer->destroyTextureImage();
-    renderer->destroyFrameBuffers();
-    renderer->destoryDepthStencilImage();
-    renderer->destroyCommandPool();
-    renderer->destroyGraphicsPipline();
-    renderer->destroyGraphicsPiplineCache();
-    renderer->destroyDescriptorSetLayout();
-    renderer->destroyRenderPass();
-    renderer->destroySwapchainImageViews();
-    renderer->destroySwapchain();
-    renderer->destroyDevice();
+    if(renderer != nullptr)
+    {
+        renderer->waitForIdle();
+        renderer->destroySynchronizations();
+        renderer->destroyCommandBuffers();
+        renderer->destroyDescriptorSet();
+        renderer->destroyDescriptorPool();
+        renderer->destroyUniformBuffer();
+        renderer->destroyIndexBuffer();
+        renderer->destroyVertexBuffer();
+        renderer->destoryTextureSampler();
+        renderer->destroyTextureImageView();
+        renderer->destroyTextureImage();
+        renderer->destroyFrameBuffers();
+        renderer->destoryDepthStencilImage();
+        renderer->destroyCommandPool();
+        renderer->destroyGraphicsPipline();
+        renderer->destroyGraphicsPiplineCache();
+        renderer->destroyDescriptorSetLayout();
+        renderer->destroyRenderPass();
+        renderer->destroySwapchainImageViews();
+        renderer->destroySwapchain();
+        renderer->destroyDevice();
+    }
 
     // The surface need to be destoyed before instance is deleted.
     destroyPlatformSpecificSurface();
@@ -333,26 +348,29 @@ void resize(uint32_t width, uint32_t height)
 
 void toggleFullscreen(bool isFullscreen)
 {
-    xcb_intern_atom_cookie_t atom_wm_state_normal_cookie = xcb_intern_atom(xcbConnection, false, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
-    xcb_intern_atom_reply_t *atom_wm_state_normal_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_normal_cookie, NULL);
+    if(xcbWindow)
+    {
+        xcb_intern_atom_cookie_t atom_wm_state_normal_cookie = xcb_intern_atom(xcbConnection, 0, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
+        xcb_intern_atom_reply_t *atom_wm_state_normal_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_normal_cookie, NULL);
 
-    xcb_intern_atom_cookie_t atom_wm_state_fullscreen_cookie = xcb_intern_atom(xcbConnection, false, strlen("_NET_WM_STATE_FULLSCREEN"), "WM_DELETE_WINDOW");
-    xcb_intern_atom_reply_t *atom_wm_state_fullscreen_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_fullscreen_cookie, NULL);
+        xcb_intern_atom_cookie_t atom_wm_state_fullscreen_cookie = xcb_intern_atom(xcbConnection, 0, strlen("_NET_WM_STATE_FULLSCREEN"), "_NET_WM_STATE_FULLSCREEN");
+        xcb_intern_atom_reply_t *atom_wm_state_fullscreen_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_fullscreen_cookie, NULL);
 
-    xcb_client_message_event_t event = {0};
-    memset(&event, 0, sizeof(event));
-    event.response_type = XCB_CLIENT_MESSAGE;
-    event.window = xcbWindow;
-    event.type = atom_wm_state_normal_reply->atom;
-    event.format = 32;
-    event.data.data32[0] = isFullscreen ? 1 : 0;
-    event.data.data32[1] = atom_wm_state_fullscreen_reply->atom;
+        xcb_client_message_event_t event = {0};
+        memset(&event, 0, sizeof(event));
+        event.response_type = XCB_CLIENT_MESSAGE;
+        event.window = xcbWindow;
+        event.type = atom_wm_state_normal_reply->atom;
+        event.format = 32;
+        event.data.data32[0] = isFullscreen ? 1 : 0;
+        event.data.data32[1] = atom_wm_state_fullscreen_reply->atom;
 
-    xcb_send_event_checked(xcbConnection, false, xcbWindow, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char *)(&event));
-    xcb_flush(xcbConnection);
+        xcb_send_event(xcbConnection, 0, xcbScreen->root, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char *)(&event));
+        xcb_flush(xcbConnection);
 
-    free(atom_wm_state_normal_reply);
-    free(atom_wm_state_fullscreen_reply);
+        free(atom_wm_state_normal_reply);
+        free(atom_wm_state_fullscreen_reply);
+    }
 }
 
 #endif // VK_USE_PLATFORM_XCB_KHR
