@@ -65,6 +65,7 @@ int main(void)
     surfaceSize.height = 600;
 
     initializePlatformSpecificWindow();
+    initializeVulkan();
 
     int returnCode = mainLoop();
 
@@ -173,7 +174,33 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
+    renderer = new Renderer(surfaceSize);
 
+    initPlatformSpecificSurface();
+
+    renderer->setSurface(surface);
+    renderer->initDevice();
+    renderer->initLogicalDevice();
+    renderer->initSwapchain();
+    renderer->initSwapchainImageViews();
+    renderer->initRenderPass();
+    renderer->initDescriptorSetLayout();
+    renderer->initGraphicsPiplineCache();
+    renderer->initGraphicsPipline();
+    renderer->initCommandPool();
+    renderer->initDepthStencilImage();
+    renderer->initFrameBuffers();
+    renderer->initTextureImage();
+    renderer->initTextureImageView();
+    renderer->initTextureSampler();
+    renderer->loadModel();
+    renderer->initVertexBuffer();
+    renderer->initIndexBuffer();
+    renderer->initUniformBuffer();
+    renderer->initDescriptorPool();
+    renderer->initDescriptorSet();
+    renderer->initCommandBuffers();
+    renderer->initSynchronizations();
 }
 
 void cleanUp()
@@ -185,6 +212,35 @@ void cleanUp()
         isFullscreen = false;
         toggleFullscreen(isFullscreen);
     }
+
+    renderer->waitForIdle();
+    renderer->destroySynchronizations();
+    renderer->destroyCommandBuffers();
+    renderer->destroyDescriptorSet();
+    renderer->destroyDescriptorPool();
+    renderer->destroyUniformBuffer();
+    renderer->destroyIndexBuffer();
+    renderer->destroyVertexBuffer();
+    renderer->destoryTextureSampler();
+    renderer->destroyTextureImageView();
+    renderer->destroyTextureImage();
+    renderer->destroyFrameBuffers();
+    renderer->destoryDepthStencilImage();
+    renderer->destroyCommandPool();
+    renderer->destroyGraphicsPipline();
+    renderer->destroyGraphicsPiplineCache();
+    renderer->destroyDescriptorSetLayout();
+    renderer->destroyRenderPass();
+    renderer->destroySwapchainImageViews();
+    renderer->destroySwapchain();
+    renderer->destroyDevice();
+
+    // The surface need to be destoyed before instance is deleted.
+    destroyPlatformSpecificSurface();
+
+    // Instance is deleted in destructor of Renderer class.
+    delete renderer;
+    renderer = nullptr;
 
     destroyPlatformSpecificWindow();
 }
@@ -226,6 +282,9 @@ int mainLoop()
             );
             xcb_flush(xcbConnection);
         }
+
+        renderer->updateUniformBuffer();
+        renderer->render();
     }
 
     return EXIT_SUCCESS;
@@ -233,12 +292,21 @@ int mainLoop()
 
 void initPlatformSpecificSurface()
 {
+    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo {};
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.pNext = nullptr;
+    surfaceCreateInfo.flags = 0;
+    surfaceCreateInfo.connection = xcbConnection;
+    surfaceCreateInfo.window = xcbWindow;
 
+    VkResult result = vkCreateXcbSurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
+
+    CHECK_ERROR(result);
 }
 
 void destroyPlatformSpecificSurface()
 {
-
+    vkDestroySurfaceKHR(renderer->getVulkanInstance(), surface, nullptr);
 }
 
 void resize(uint32_t width, uint32_t height)
