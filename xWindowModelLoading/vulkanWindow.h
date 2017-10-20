@@ -26,7 +26,6 @@ void resize(uint32_t width, uint32_t height);
 void toggleFullscreen(bool isFullscreen);
 
 bool isRunning = true;
-bool isActive = false;
 bool isFullscreen = false;
 bool isEscapeKeyPressed = false;
 
@@ -47,6 +46,8 @@ HINSTANCE hGlobalInstance = NULL;
 HWND hWindow = NULL;
 DWORD dwStyle;
 WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
+
+bool isActive = false;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow);
