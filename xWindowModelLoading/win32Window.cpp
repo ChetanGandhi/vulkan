@@ -179,11 +179,8 @@ void cleanUp()
 
     if(isFullscreen)
     {
-        dwStyle = GetWindowLong(hWindow, GWL_STYLE);
-        SetWindowLong(hWindow, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(hWindow, &wpPrev);
-        SetWindowPos(hWindow, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
-        ShowCursor(TRUE);
+        isFullscreen = false;
+        toggleFullscreen(isFullscreen);
     }
 
     renderer->waitForIdle();
