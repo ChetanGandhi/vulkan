@@ -11,12 +11,21 @@
 
 #define VK_USE_PLATFORM_XCB_KHR 1
 #define PLATFORM_SURFACE_EXTENSION_NAME VK_KHR_XCB_SURFACE_EXTENSION_NAME
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <xcb/xcb.h>
 
 #else // platform not supported
 
-#error Platform not suppotred yet.
+#error Platform not supported yet.
 
 #endif
 
+#include <assert.h>
+#include <iostream>
+#include <chrono>
 #include <vulkan/vulkan.h>
+
+#include "buildParam.h"
+#include "utils.h"

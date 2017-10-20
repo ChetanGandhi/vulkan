@@ -1,9 +1,9 @@
-#pragma once
+// #pragma once
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
-#define  GURU_RESOURCE_PATH "resources/textures/guru.png"
+#define GURU_RESOURCE_PATH "resources/textures/guru.png"
 
 #include <cstdlib>
 #include <assert.h>
@@ -180,7 +180,7 @@ void Renderer::initInstance()
     applicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     applicationInfo.pApplicationName = "Vulkan";
     applicationInfo.pEngineName = nullptr;
-    applicationInfo.engineVersion = NULL;
+    applicationInfo.engineVersion = 0;
 
     VkInstanceCreateInfo instanceCreateInfo = {};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -804,7 +804,6 @@ void Renderer::initComputePipline()
     // If flag is set then either basePipelineHandle must be a valid handle or basePipelineIndex must be valid.
     computePipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     computePipelineCreateInfo.basePipelineIndex = -1;
-
 
     result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &computePipeline);
     CHECK_ERROR(result);
@@ -2034,7 +2033,7 @@ void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32
     LOGF("API Version\t\t: %d", properties->apiVersion);
     LOGF("Driver Version\t\t: %d", properties->driverVersion);
     LOG_UUID("Pipeline Cache UUID\t: ", properties->pipelineCacheUUID);
-    LOGF("---------- GPU Properties End ----------");
+    LOG("---------- GPU Properties End ----------");
 }
 
 void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)

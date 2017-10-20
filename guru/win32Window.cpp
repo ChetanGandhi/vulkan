@@ -1,16 +1,11 @@
-#pragma once
+// #pragma once
 
-#include <assert.h>
-#include <iostream>
-#include <chrono>
-
-#include "buildParam.h"
 #include "platform.h"
-#include "vulkanWindow.h"
-#include "utils.h"
-#include "resource.h"
 
-#if VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+
+#include "vulkanWindow.h"
+#include "resource.h"
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -56,7 +51,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-    Logger::init("debug.log");
+    Logger::init("debug_win32.log");
 
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | Guru";
@@ -66,7 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hGlobalInstance = hInstance;
 
-    initPlatformSpecificWindow();
+    initializePlatformSpecificWindow();
     initializeVulkan();
 
     int returnCode = mainLoop();
@@ -77,7 +72,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     return returnCode;
 }
 
-void initPlatformSpecificWindow()
+void initializePlatformSpecificWindow()
 {
     WNDCLASSEX wndclassex {};
 
@@ -102,7 +97,9 @@ void initPlatformSpecificWindow()
 
     if(!RegisterClassEx(&wndclassex))
     {
-        assert(1 && "Cannot register window class.\n");
+        assert(1 && "Error: Cannot register window class.\n");
+        LOG("Error: Cannot register window class.");
+        // TODO: Call cleanup.
         fflush(stdout);
         std::exit(EXIT_FAILURE);
     }
@@ -129,12 +126,10 @@ void initPlatformSpecificWindow()
     if(!hWindow)
     {
         assert(0 && "Cannot create window.\n");
+        LOG("Cannot create window.\n");
         fflush(stdout);
         std::exit(EXIT_FAILURE);
     }
-
-    isFullscreen = true;
-    toggleFullscreen(isFullscreen);
 
     ShowWindow(hWindow, SW_SHOW);
     SetForegroundWindow(hWindow);
@@ -184,11 +179,8 @@ void cleanUp()
 
     if(isFullscreen)
     {
-        dwStyle = GetWindowLong(hWindow, GWL_STYLE);
-        SetWindowLong(hWindow, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(hWindow, &wpPrev);
-        SetWindowPos(hWindow, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
-        ShowCursor(TRUE);
+        isFullscreen = false;
+        toggleFullscreen(isFullscreen);
     }
 
     renderer->waitForIdle();
@@ -218,6 +210,7 @@ void cleanUp()
 
     // Instance is deleted in destructor of Renderer class.
     delete renderer;
+    renderer = nullptr;
 
     destroyPlatformSpecificWindow();
 }
@@ -339,11 +332,6 @@ void toggleFullscreen(bool isFullscreen)
         SetWindowPos(hWindow, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
         ShowCursor(TRUE);
     }
-}
-
-void onEscapeKeyPressed()
-{
-    isRunning = false;
 }
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
