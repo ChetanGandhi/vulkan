@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 
 #include <fstream>
 #include <iostream>
@@ -7,7 +7,7 @@
 
 #include "buildParam.h"
 #include "utils.h"
-#include "Logger.h"
+#include "logger.h"
 
 void checkError(VkResult result, std::string file, uint32_t lineNumber)
 {
@@ -140,9 +140,9 @@ bool readFile(const std::string &fileName, std::vector<char> *data)
 const std::string currentDateTime()
 {
     time_t now = time(NULL);
-    struct tm tstruct;
+    struct tm tmStruct;
     char buf[80];
-    localtime_s(&tstruct, &now);
-    strftime(buf, sizeof(buf), "%d-%m-%Y.%H.%M.%S", &tstruct);
+    localtime_r(&now, &tmStruct);
+    strftime(buf, sizeof(buf), "%d-%m-%Y.%H.%M.%S", &tmStruct);
     return buf;
 }

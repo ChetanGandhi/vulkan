@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 
 #include "logger.h"
 #include "utils.h"
@@ -13,21 +13,30 @@ void Logger::init(std::string fileName)
     if(logger == nullptr)
     {
         logger = new Logger();
-        logger->logfileOutStream.open(fileName.c_str(), std::ios::out);
-        logger->logfileOutStream<<"-----------------------------------\n";
-        logger->logfileOutStream<<"| Logs start: "<<currentDateTime()<<" |\n";
-        logger->logfileOutStream<<"-----------------------------------\n";
+        logger->logfile = fopen(fileName.c_str(), "w");
+        if(logger->logfile == NULL)
+        {
+            assert(1 && "Cannot open log file");
+        }
+        else
+        {
+            fprintf(logger->logfile, "-----------------------------------\n");
+            fprintf(logger->logfile, "| Logs start: %s |\n", currentDateTime().c_str());
+            fprintf(logger->logfile, "-----------------------------------\n");
+            fflush(logger->logfile);
+        }
     }
 }
 
 Logger::~Logger()
 {
-    logger->logfileOutStream<<"-----------------------------------\n";
-    logger->logfileOutStream<<"| Logs end: "<<currentDateTime()<<"   |\n";
-    logger->logfileOutStream<<"-----------------------------------\n";
-
-    logger->logfileOutStream.flush();
-    logger->logfileOutStream.close();
+    if(logger->logfile != NULL)
+    {
+        fprintf(logger->logfile, "-----------------------------------\n");
+        fprintf(logger->logfile, "| Logs end: %s   |\n", currentDateTime().c_str());
+        fprintf(logger->logfile, "-----------------------------------\n");
+        fclose(logger->logfile);
+    }
 }
 
 void Logger::close()
@@ -36,49 +45,38 @@ void Logger::close()
     logger = nullptr;
 }
 
-void Logger::log(const char * format, ...)
+void Logger::log(const char *format, ...)
 {
-    char* message = NULL;
-    int length = 0;
-
     va_list args;
+    fprintf(logger->logfile, "%s: ", currentDateTime().c_str());
+
     va_start(args, format);
-
-    //  Return the number of characters in the string referenced the list of arguments.
-    // _vscprintf doesn't count terminating '\0' (that's why +1)
-    length = _vscprintf(format, args) + 1;
-    message = new char[length];
-    vsprintf_s(message, length, format, args);
-
-    logger->logfileOutStream<<currentDateTime()<<": "<<message<<"\n";
-
+    vfprintf(logger->logfile, format, args);
     va_end(args);
 
-    delete [] message;
-
-    logger->logfileOutStream.flush();
+    fprintf(logger->logfile, "\n");
+    fflush(logger->logfile);
 }
 
 void Logger::log(const std::string &message)
 {
-    logger->logfileOutStream<<currentDateTime()<<": "<<message<<"\n";
-    logger->logfileOutStream.flush();
+    fprintf(logger->logfile, "%s: %s\n", currentDateTime().c_str(), message.c_str());
+    fflush(logger->logfile);
 }
 
 void Logger::logUUID(const std::string &message, uint8_t *uuid)
 {
-    logger->logfileOutStream<<currentDateTime()<<": "<<message;
-
+    fprintf(logger->logfile, "%s: %s", currentDateTime().c_str(), message.c_str());
     for (int counter = 0; counter < VK_UUID_SIZE; ++counter)
     {
-        logger->logfileOutStream<<std::setw(2)<<(uint32_t)uuid[counter];
+        fprintf(logger->logfile, "%2d", (uint32_t)uuid[counter]);
 
         if (counter == 3 || counter == 5 || counter == 7 || counter == 9)
         {
-            logger->logfileOutStream<<'-';
+            fprintf(logger->logfile, "-");
         }
     }
 
-    logger->logfileOutStream<<"\n";
-    logger->logfileOutStream.flush();
+    fprintf(logger->logfile, "\n");
+    fflush(logger->logfile);
 }

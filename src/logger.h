@@ -5,6 +5,7 @@
 #include <cstdarg>
 #include <string>
 #include <iomanip>
+#include <stdlib.h>
 
 #if defined (ENABLE_DEBUG)
 
@@ -37,5 +38,5 @@ private:
 
     static Logger* logger;
 
-    std::ofstream logfileOutStream;
+    FILE *logfile;
 };
