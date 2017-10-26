@@ -51,11 +51,17 @@ public:
     void initFrameBuffers();
     void destroyFrameBuffers();
 
+    void initComputeCommandPool();
+    void destroyComputeCommandPool();
+
     void initCommandPool();
     void destroyCommandPool();
 
     void initDepthStencilImage();
     void destoryDepthStencilImage();
+
+    void loadTexture();
+    void destroyTexture();
 
     void initTextureImage();
     void destroyTextureImage();
@@ -68,6 +74,9 @@ public:
 
     void loadModel();
 
+    void initComputeBuffer();
+    void destroyComputeBuffer();
+
     void initVertexBuffer();
     void destroyVertexBuffer();
 
@@ -77,11 +86,20 @@ public:
     void initUniformBuffer();
     void destroyUniformBuffer();
 
+    void initComputeDescriptorPool();
+    void destroyComputeDescriptorPool();
+
     void initDescriptorPool();
     void destroyDescriptorPool();
 
+    void initComputeDescriptorSet();
+    void destroyComputeDescriptorSet();
+
     void initDescriptorSet();
     void destroyDescriptorSet();
+
+    void initComputeCommandBuffers();
+    void destroyComputeCommandBuffers();
 
     void initCommandBuffers();
     void destroyCommandBuffers();
@@ -99,6 +117,7 @@ public:
 
 private:
     SurfaceSize surfaceSize;
+    VkExtent2D imageExtent = {0, 0};
 
     const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
     const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
@@ -106,27 +125,36 @@ private:
     VkInstance            instance                   = VK_NULL_HANDLE;
     VkDevice              device                     = VK_NULL_HANDLE;
     VkSurfaceKHR          surface                    = VK_NULL_HANDLE;
+    VkQueue               computeQueue               = VK_NULL_HANDLE;
     VkQueue               graphicsQueue              = VK_NULL_HANDLE;
     VkQueue               presentQueue               = VK_NULL_HANDLE;
-    VkBuffer              vertexBuffer               = VK_NULL_HANDLE;
     VkSwapchainKHR        swapchain                  = VK_NULL_HANDLE;
     VkRenderPass          renderPass                 = VK_NULL_HANDLE;
-    VkDescriptorSetLayout descriptorSetLayout        = VK_NULL_HANDLE;
     VkDescriptorSetLayout computeDescriptorSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptorSetLayout        = VK_NULL_HANDLE;
     VkPipelineCache       pipelineCache              = VK_NULL_HANDLE;
     VkPipelineLayout      computePipelineLayout      = VK_NULL_HANDLE;
     VkPipeline            computePipeline            = VK_NULL_HANDLE;
     VkPipelineLayout      pipelineLayout             = VK_NULL_HANDLE;
     VkPipeline            pipeline                   = VK_NULL_HANDLE;
+    VkCommandPool         computeCommandPool         = VK_NULL_HANDLE;
     VkCommandPool         commandPool                = VK_NULL_HANDLE;
     VkSemaphore           imageAvailableSemaphore    = VK_NULL_HANDLE;
     VkSemaphore           renderFinishedSemaphore    = VK_NULL_HANDLE;
+    VkSemaphore           computeFinishedSemaphore   = VK_NULL_HANDLE;
+    VkBuffer              textureImageBuffer         = VK_NULL_HANDLE;
+    VkDeviceMemory        textureImageBufferMemory   = VK_NULL_HANDLE;
+    VkBuffer              computeBuffer              = VK_NULL_HANDLE;
+    VkDeviceMemory        computeBufferMemory        = VK_NULL_HANDLE;
+    VkBuffer              vertexBuffer               = VK_NULL_HANDLE;
     VkDeviceMemory        vertexBufferMemory         = VK_NULL_HANDLE;
     VkBuffer              indexBuffer                = VK_NULL_HANDLE;
     VkDeviceMemory        indexBufferMemory          = VK_NULL_HANDLE;
     VkBuffer              uniformBuffer              = VK_NULL_HANDLE;
     VkDeviceMemory        uniformBufferMemory        = VK_NULL_HANDLE;
+    VkDescriptorPool      computeDescriptorPool      = VK_NULL_HANDLE;
     VkDescriptorPool      descriptorPool             = VK_NULL_HANDLE;
+    VkDescriptorSet       computeDescriptorSet       = VK_NULL_HANDLE;
     VkDescriptorSet       descriptorSet              = VK_NULL_HANDLE;
     VkImage               depthImage                 = VK_NULL_HANDLE;
     VkDeviceMemory        depthImageMemory           = VK_NULL_HANDLE;
@@ -161,6 +189,7 @@ private:
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkCommandBuffer> computeCommandBuffers;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> vertexIndices;
 
@@ -183,10 +212,10 @@ private:
     void initInstance();
     void destroyInstance();
 
-    void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
-    void endOneTimeCommand(VkCommandBuffer &commandBuffer);
+    void beginOneTimeCommand(VkCommandBuffer &commandBuffer, VkCommandPool &commandPool);
+    void endOneTimeCommand(VkCommandBuffer &commandBuffer, VkCommandPool &commandPool, VkQueue &queue);
 
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkCommandPool &commandPool);
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
     void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
 
