@@ -4,6 +4,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
 #define GURU_RESOURCE_PATH "resources/textures/guru.png"
+#define WORKGROUP_SIZE 32
 
 #include <cstdlib>
 #include <assert.h>
@@ -204,6 +205,11 @@ void Renderer::destroyInstance()
 
 void Renderer::waitForIdle()
 {
+    if(queueFamilyIndices.hasSeparateComputeQueue)
+    {
+        vkQueueWaitIdle(computeQueue);
+    }
+
     vkQueueWaitIdle(graphicsQueue);
 
     if(queueFamilyIndices.hasSeparatePresentQueue)
@@ -254,6 +260,7 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
     {
         queueFamilyIndices.graphicsFamilyIndex = indices.graphicsFamilyIndex;
         queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
+        queueFamilyIndices.hasSeparateComputeQueue = indices.hasSeparateComputeQueue;
         queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
         queueFamilyIndices.computeFamilyIndex = indices.computeFamilyIndex;
 
@@ -261,6 +268,7 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
         LOGF("Graphics Family Index\t\t: %d", queueFamilyIndices.graphicsFamilyIndex);
         LOGF("Present Family Index\t\t: %d", queueFamilyIndices.presentFamilyIndex);
         LOGF("Compute Family Index\t\t: %d", queueFamilyIndices.computeFamilyIndex);
+        LOGF("Has Separate Compute Queue\t: %d", queueFamilyIndices.hasSeparateComputeQueue);
         LOGF("Has Separate Present Queue\t: %d", queueFamilyIndices.hasSeparatePresentQueue);
         LOG("---------- Queue Family Indices End ----------");
     }
@@ -347,6 +355,7 @@ bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices
     queueFamilyIndices->graphicsFamilyIndex = graphicsFamilyIndex;
     queueFamilyIndices->presentFamilyIndex = presentFamilyIndex;
     queueFamilyIndices->computeFamilyIndex = computeFamilyIndex;
+    queueFamilyIndices->hasSeparateComputeQueue = (computeFamilyIndex != graphicsFamilyIndex);
     queueFamilyIndices->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
 
     return true;
@@ -452,6 +461,19 @@ void Renderer::initLogicalDevice()
 
     deviceQueueCreateInfos.push_back(deviceGraphicQueueCreateInfo);
 
+    if(queueFamilyIndices.hasSeparateComputeQueue)
+    {
+        VkDeviceQueueCreateInfo computeQueueCreateInfo = {};
+        computeQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        computeQueueCreateInfo.pNext = nullptr;
+        computeQueueCreateInfo.flags = 0;
+        computeQueueCreateInfo.queueFamilyIndex = queueFamilyIndices.computeFamilyIndex;
+        computeQueueCreateInfo.queueCount = 1;
+        computeQueueCreateInfo.pQueuePriorities = queuePriorities.data();
+
+        deviceQueueCreateInfos.push_back(computeQueueCreateInfo);
+    }
+
     if(queueFamilyIndices.hasSeparatePresentQueue)
     {
         VkDeviceQueueCreateInfo devicePresentQueueCreateInfo {};
@@ -487,6 +509,15 @@ void Renderer::initLogicalDevice()
 
     // Create the graphic queue using graphicsFamilyIndex for given physical device.
     vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamilyIndex, 0, &graphicsQueue);
+
+    if(!queueFamilyIndices.hasSeparateComputeQueue)
+    {
+        computeQueue = graphicsQueue;
+    }
+    else
+    {
+        vkGetDeviceQueue(device, queueFamilyIndices.computeFamilyIndex, 0, &computeQueue);
+    }
 
     if(!queueFamilyIndices.hasSeparatePresentQueue)
     {
@@ -807,6 +838,8 @@ void Renderer::initComputePipline()
 
     result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &computePipeline);
     CHECK_ERROR(result);
+
+    vkDestroyShaderModule(device, computeShaderModule, nullptr);
 }
 
 void Renderer::destroyComputePipline()
@@ -1066,7 +1099,7 @@ void Renderer::initDepthStencilImage()
     bool stencilAvailable = hasStencilComponent(depthStencilFormat);
     createImage(surfaceSize.width, surfaceSize.height, depthStencilFormat,VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
     createImageView(depthImage, depthStencilFormat, depthImageView, VK_IMAGE_ASPECT_DEPTH_BIT);
-    transitionImageLayout(depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    transitionImageLayout(depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, commandPool);
 }
 
 void Renderer::destoryDepthStencilImage()
@@ -1168,8 +1201,6 @@ void Renderer::initComputeDescriptorSetLayout()
 
     VkResult result = vkCreateDescriptorSetLayout(device, &computeDescriptorSetLayoutCreateInfo, nullptr, &computeDescriptorSetLayout);
     CHECK_ERROR(result);
-
-    // TODO: start from computeDescriptorSet
 }
 
 void Renderer::destroyComputeDescriptorSetLayout()
@@ -1243,6 +1274,23 @@ void Renderer::destroyFrameBuffers()
     {
         vkDestroyFramebuffer(device, nextFrameBuffer, nullptr);
     }
+}
+
+void Renderer::initComputeCommandPool()
+{
+    VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.pNext = nullptr;
+    commandPoolCreateInfo.flags = 0;
+    commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.computeFamilyIndex;
+
+    VkResult result = vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &computeCommandPool);
+    CHECK_ERROR(result);
+}
+
+void Renderer::destroyComputeCommandPool()
+{
+    vkDestroyCommandPool(device, computeCommandPool, nullptr);
 }
 
 void Renderer::initCommandPool()
@@ -1326,7 +1374,7 @@ void Renderer::createImageView(VkImage image, VkFormat format, VkImageView &imag
     CHECK_ERROR(result);
 }
 
-void Renderer::initTextureImage()
+void Renderer::loadTexture()
 {
     int textureWidth = 0;
     int textureHeight = 0;
@@ -1334,29 +1382,35 @@ void Renderer::initTextureImage()
 
     stbi_uc *pixels = stbi_load(GURU_RESOURCE_PATH, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
     VkDeviceSize size = textureWidth * textureHeight * 4;
+    imageExtent.width = static_cast<uint32_t>(textureWidth);
+    imageExtent.height = static_cast<uint32_t>(textureHeight);
 
     if(!pixels)
     {
         assert(0 && "Not able to load texture");
     }
 
-    VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
-
-    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingImageBuffer, stagingImageBufferMemory);
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, textureImageBuffer, textureImageBufferMemory);
 
     void *data = nullptr;
-    vkMapMemory(device, stagingImageBufferMemory, 0, size, 0, &data);
+    vkMapMemory(device, textureImageBufferMemory, 0, size, 0, &data);
     memcpy(data, pixels, size);
-    vkUnmapMemory(device, stagingImageBufferMemory);
+    vkUnmapMemory(device, textureImageBufferMemory);
     stbi_image_free(pixels);
+}
 
-    createImage(static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(stagingImageBuffer, textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    vkDestroyBuffer(device, stagingImageBuffer, nullptr);
-    vkFreeMemory(device, stagingImageBufferMemory, nullptr);
+void Renderer::destroyTexture()
+{
+    vkDestroyBuffer(device, textureImageBuffer, nullptr);
+    vkFreeMemory(device, textureImageBufferMemory, nullptr);
+}
+
+void Renderer::initTextureImage()
+{
+    createImage(imageExtent.width, imageExtent.height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandPool);
+    copyBufferToImage(textureImageBuffer, textureImage, imageExtent.width, imageExtent.height);
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool);
 }
 
 void Renderer::destroyTextureImage()
@@ -1439,7 +1493,7 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, V
     CHECK_ERROR(result);
 }
 
-void Renderer::beginOneTimeCommand(VkCommandBuffer &commandBuffer)
+void Renderer::beginOneTimeCommand(VkCommandBuffer &commandBuffer, VkCommandPool &commandPool)
 {
     VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1460,7 +1514,7 @@ void Renderer::beginOneTimeCommand(VkCommandBuffer &commandBuffer)
     vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
 }
 
-void Renderer::endOneTimeCommand(VkCommandBuffer &commandBuffer)
+void Renderer::endOneTimeCommand(VkCommandBuffer &commandBuffer, VkCommandPool &commandPool, VkQueue &queue)
 {
     VkResult result = vkEndCommandBuffer(commandBuffer);
     CHECK_ERROR(result);
@@ -1476,17 +1530,17 @@ void Renderer::endOneTimeCommand(VkCommandBuffer &commandBuffer)
     submitInfo.signalSemaphoreCount = 0;
     submitInfo.pSignalSemaphores = nullptr;
 
-    result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CHECK_ERROR(result);
 
     vkQueueWaitIdle(graphicsQueue);
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void Renderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldImageLayout, VkImageLayout newImageLayout)
+void Renderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkCommandPool &commandPool)
 {
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    beginOneTimeCommand(commandBuffer);
+    beginOneTimeCommand(commandBuffer, commandPool);
 
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1550,13 +1604,13 @@ void Renderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayo
 
     vkCmdPipelineBarrier(commandBuffer, sourceStageMask, destinationStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 
-    endOneTimeCommand(commandBuffer);
+    endOneTimeCommand(commandBuffer, commandPool, graphicsQueue);
 }
 
 void Renderer::copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size)
 {
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    beginOneTimeCommand(commandBuffer);
+    beginOneTimeCommand(commandBuffer, commandPool);
 
     VkBufferCopy copyRegion = {};
     copyRegion.srcOffset = 0;
@@ -1565,13 +1619,13 @@ void Renderer::copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDevice
 
     vkCmdCopyBuffer(commandBuffer, sourceBuffer, targetBuffer, 1, &copyRegion);
 
-    endOneTimeCommand(commandBuffer);
+    endOneTimeCommand(commandBuffer, commandPool, graphicsQueue);
 }
 
 void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 {
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    beginOneTimeCommand(commandBuffer);
+    beginOneTimeCommand(commandBuffer, commandPool);
 
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
@@ -1590,11 +1644,29 @@ void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    endOneTimeCommand(commandBuffer);
+    endOneTimeCommand(commandBuffer, commandPool, graphicsQueue);
 }
 
 void Renderer::loadModel()
 {
+    std::vector<VkSemaphore> signalSemaphores = {computeFinishedSemaphore};
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = nullptr;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.pWaitSemaphores = nullptr;
+    submitInfo.pWaitDstStageMask = nullptr;
+    submitInfo.commandBufferCount = computeCommandBuffers.size();
+    submitInfo.pCommandBuffers = computeCommandBuffers.data();
+    submitInfo.signalSemaphoreCount = signalSemaphores.size();
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+    VkResult result = vkQueueSubmit(computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    CHECK_ERROR(result);
+
+    vkQueueWaitIdle(computeQueue);
+
     int xCounter = 0;
     double yCounter = 0;
 
@@ -1633,6 +1705,21 @@ void Renderer::loadModel()
             vertexIndices.push_back(uniqueVertices[nextVertex]);
         }
     }
+}
+
+void Renderer::initComputeBuffer()
+{
+    VkDeviceSize size = sizeof(Vertex) * imageExtent.width * imageExtent.height;
+    VkBufferUsageFlags computeBufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkMemoryPropertyFlags computeMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    createBuffer(size, computeBufferUsage, computeMemoryProperties, computeBuffer, computeBufferMemory);
+}
+
+void Renderer::destroyComputeBuffer()
+{
+    vkDestroyBuffer(device, computeBuffer, nullptr);
+    vkFreeMemory(device, computeBufferMemory, nullptr);
 }
 
 void Renderer::initVertexBuffer()
@@ -1716,6 +1803,27 @@ void Renderer::destroyUniformBuffer()
     vkFreeMemory(device, uniformBufferMemory, nullptr);
 }
 
+void Renderer::initComputeDescriptorPool()
+{
+    VkDescriptorPoolSize computeDescriptorPoolSize = {};
+    computeDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    computeDescriptorPoolSize.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo computeDescriptorPoolCreateInfo = {};
+    computeDescriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    computeDescriptorPoolCreateInfo.maxSets = 1;
+    computeDescriptorPoolCreateInfo.poolSizeCount = 1;
+    computeDescriptorPoolCreateInfo.pPoolSizes = &computeDescriptorPoolSize;
+
+    VkResult result = vkCreateDescriptorPool(device, &computeDescriptorPoolCreateInfo, nullptr, &computeDescriptorPool);
+    CHECK_ERROR(result);
+}
+
+void Renderer::destroyComputeDescriptorPool()
+{
+    vkDestroyDescriptorPool(device, computeDescriptorPool, nullptr);
+}
+
 void Renderer::initDescriptorPool()
 {
     VkDescriptorPoolSize uboPoolSize = {};
@@ -1747,6 +1855,46 @@ void Renderer::initDescriptorPool()
 void Renderer::destroyDescriptorPool()
 {
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+}
+
+void Renderer::initComputeDescriptorSet()
+{
+    std::vector<VkDescriptorSetLayout> computeDescriptorSetLayouts = {computeDescriptorSetLayout};
+
+    VkDescriptorSetAllocateInfo computeDescriptorSetAllocateInfo = {};
+    computeDescriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    computeDescriptorSetAllocateInfo.pNext = nullptr;
+    computeDescriptorSetAllocateInfo.descriptorPool = computeDescriptorPool;
+    computeDescriptorSetAllocateInfo.descriptorSetCount = 1;
+    computeDescriptorSetAllocateInfo.pSetLayouts = computeDescriptorSetLayouts.data();
+
+    VkResult result = vkAllocateDescriptorSets(device, &computeDescriptorSetAllocateInfo, &computeDescriptorSet);
+    CHECK_ERROR(result);
+
+    VkDescriptorBufferInfo computeDescriptorBufferInfo = {};
+    computeDescriptorBufferInfo.buffer = computeBuffer;
+    computeDescriptorBufferInfo.offset = 0;
+    computeDescriptorBufferInfo.range = sizeof(computeBuffer);
+
+    VkWriteDescriptorSet writeDescriptorSet = {};
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet = computeDescriptorSet;
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    writeDescriptorSet.pBufferInfo = &computeDescriptorBufferInfo;
+
+    vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
+}
+
+void Renderer::destroyComputeDescriptorSet()
+{
+    // If you want to explicitly destroy the descriptorSet, then set
+    // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
+    // bit in VkDescriptorPoolCreateInfo else you will get runtime error
+    // while destroying the descriptorSet.
+    // We are not going to used this for now.
+    // vkFreeDescriptorSets(device, computeDescriptorPool, 1, &computeDescriptorSet);
 }
 
 void Renderer::initDescriptorSet()
@@ -1809,6 +1957,43 @@ void Renderer::destroyDescriptorSet()
     // while destroying the descriptorSet.
     // We are not going to used this for now.
     // vkFreeDescriptorSets(device, descriptorPool, 1, &descriptorSet);
+}
+
+void Renderer::initComputeCommandBuffers()
+{
+    computeCommandBuffers.resize(1);
+
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferAllocateInfo.pNext = nullptr;
+    commandBufferAllocateInfo.commandPool = computeCommandPool;
+    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferAllocateInfo.commandBufferCount = computeCommandBuffers.size();
+
+    VkResult result = vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, computeCommandBuffers.data());
+    CHECK_ERROR(result);
+
+    for(uint32_t counter = 0; counter < computeCommandBuffers.size(); ++counter)
+    {
+        VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.pNext = nullptr;
+        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+        vkBeginCommandBuffer(computeCommandBuffers[counter], &commandBufferBeginInfo);
+        vkCmdBindPipeline(computeCommandBuffers[counter], VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+        vkCmdBindDescriptorSets(computeCommandBuffers[counter], VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, 1, &computeDescriptorSet, 0, nullptr);
+        vkCmdDispatch(computeCommandBuffers[counter], (uint32_t)ceil(imageExtent.width / (float)WORKGROUP_SIZE), (uint32_t)ceil(imageExtent.height / (float)WORKGROUP_SIZE), 1);
+
+        VkResult result = vkEndCommandBuffer(computeCommandBuffers[counter]);
+        CHECK_ERROR(result);
+    }
+}
+
+void Renderer::destroyComputeCommandBuffers()
+{
+    vkFreeCommandBuffers(device, computeCommandPool, computeCommandBuffers.size(), computeCommandBuffers.data());
 }
 
 void Renderer::initCommandBuffers()
@@ -1883,7 +2068,10 @@ void Renderer::initSynchronizations()
     semaphoreCreateInfo.pNext = nullptr;
     semaphoreCreateInfo.flags = 0;
 
-    VkResult result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
+    VkResult result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &computeFinishedSemaphore);
+    CHECK_ERROR(result);
+
+    result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
     CHECK_ERROR(result);
 
     result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore);
@@ -1892,6 +2080,7 @@ void Renderer::initSynchronizations()
 
 void Renderer::destroySynchronizations()
 {
+    vkDestroySemaphore(device, computeFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 }
