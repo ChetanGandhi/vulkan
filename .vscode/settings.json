@@ -1,13 +1,5 @@
 {
     "files.associations": {
-        "xiosbase": "cpp",
-        "unordered_map": "cpp",
-        "chrono": "cpp",
-        "xhash": "cpp",
-        "xtree": "cpp",
-        "array": "cpp",
-        "vector": "cpp",
-        "xstring": "cpp",
-        "xutility": "cpp"
+        "xiosbase": "cpp"
     }
 }

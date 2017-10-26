@@ -151,22 +151,6 @@ void initializeVulkan()
     renderer->setSurface(surface);
     renderer->initDevice();
     renderer->initLogicalDevice();
-
-    // Compute start
-
-    renderer->loadTexture();
-    renderer->initComputeDescriptorSetLayout();
-    renderer->initComputePipline();
-    renderer->initComputeCommandPool();
-    renderer->initComputeBuffer();
-    renderer->initComputeDescriptorPool();
-    renderer->initComputeDescriptorSet();
-    renderer->initComputeCommandBuffers();
-    renderer->initSynchronizations();
-    renderer->loadModel();
-
-    // Compute end
-
     renderer->initSwapchain();
     renderer->initSwapchainImageViews();
     renderer->initRenderPass();
@@ -179,15 +163,14 @@ void initializeVulkan()
     renderer->initTextureImage();
     renderer->initTextureImageView();
     renderer->initTextureSampler();
+    renderer->loadModel();
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffer();
     renderer->initDescriptorPool();
     renderer->initDescriptorSet();
     renderer->initCommandBuffers();
-
-    // Clear texture staging memory
-    renderer->destroyTexture();
+    renderer->initSynchronizations();
 }
 
 void cleanUp()
@@ -202,15 +185,6 @@ void cleanUp()
 
     renderer->waitForIdle();
     renderer->destroySynchronizations();
-
-    renderer->destroyComputeCommandBuffers();
-    renderer->destroyComputeDescriptorSet();
-    renderer->destroyComputeDescriptorPool();
-    renderer->destroyComputeBuffer();
-    renderer->destroyComputeCommandPool();
-    renderer->destroyComputePipline();
-    renderer->destroyComputeDescriptorSetLayout();
-
     renderer->destroyCommandBuffers();
     renderer->destroyDescriptorSet();
     renderer->destroyDescriptorPool();
