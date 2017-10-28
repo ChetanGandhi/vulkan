@@ -9,7 +9,7 @@
 #include "utils.h"
 #include "logger.h"
 
-void checkError(VkResult result, std::string file, uint32_t lineNumber)
+void checkError(VkResult result, std::string file, std::string function, uint32_t lineNumber)
 {
     std::ostringstream stream;
 
@@ -92,7 +92,7 @@ void checkError(VkResult result, std::string file, uint32_t lineNumber)
             break;
         }
 
-        stream<<"\nFile :"<<file<<"\nLine: "<<lineNumber;
+        stream<<"\nFile :"<<file<<"\nfunction: "<<function<<"\nLine: "<<lineNumber;
         LOG(stream.str());
 
         assert(0 && "----- Vulkan Runtime Error -----");

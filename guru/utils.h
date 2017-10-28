@@ -9,7 +9,7 @@
 
 #if defined (ENABLE_DEBUG)
 
-#define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
+#define CHECK_ERROR(result) checkError(result, __FILE__, __FUNCTION__, __LINE__);
 
 #else
 
@@ -17,7 +17,7 @@
 
 #endif
 
-void checkError(VkResult result, std::string file, uint32_t lineNumber);
+void checkError(VkResult result, std::string file, std::string function, uint32_t lineNumber);
 
 uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *memoryRequirements, const VkMemoryPropertyFlags memoryPropertyFlags);
 
