@@ -96,6 +96,7 @@ private:
 
     const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
     const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
+    const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
     VkInstance            instance                = VK_NULL_HANDLE;
     VkDevice              device                  = VK_NULL_HANDLE;
@@ -110,8 +111,6 @@ private:
     VkPipelineLayout      pipelineLayout          = VK_NULL_HANDLE;
     VkPipeline            pipeline                = VK_NULL_HANDLE;
     VkCommandPool         commandPool             = VK_NULL_HANDLE;
-    VkSemaphore           imageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore           renderFinishedSemaphore = VK_NULL_HANDLE;
     VkDeviceMemory        vertexBufferMemory      = VK_NULL_HANDLE;
     VkBuffer              indexBuffer             = VK_NULL_HANDLE;
     VkDeviceMemory        indexBufferMemory       = VK_NULL_HANDLE;
@@ -150,12 +149,16 @@ private:
     std::vector<const char*> deviceExtensionList;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> vertexIndices;
 
     uint32_t swapchainImageCount = 2;
+    size_t currentFrame = 0;
 
     struct SwapchainSupportDetails {
         VkSurfaceCapabilitiesKHR surfaceCapabilities = {};

@@ -231,13 +231,13 @@ void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
     for(uint32_t counter = 0; counter < gpuCount; ++counter)
     {
         VkPhysicalDevice nextGpu = deviceList[counter];
-        VkPhysicalDeviceProperties nextGpuProperties{};
-        VkPhysicalDeviceMemoryProperties nextGpuMemoryProperties{};
+        VkPhysicalDeviceProperties nextGpuProperties = {};
+        VkPhysicalDeviceMemoryProperties nextGpuMemoryProperties = {};
 
         vkGetPhysicalDeviceProperties(nextGpu, &nextGpuProperties);
         vkGetPhysicalDeviceMemoryProperties(nextGpu, &nextGpuMemoryProperties);
 
-        GpuDetails nextPhysicalDevice{};
+        GpuDetails nextPhysicalDevice = {};
         nextPhysicalDevice.gpu = nextGpu;
         nextPhysicalDevice.properties = nextGpuProperties;
         nextPhysicalDevice.memoryProperties = nextGpuMemoryProperties;
@@ -440,7 +440,7 @@ void Renderer::initLogicalDevice()
 
     if(queueFamilyIndices.hasSeparatePresentQueue)
     {
-        VkDeviceQueueCreateInfo devicePresentQueueCreateInfo {};
+        VkDeviceQueueCreateInfo devicePresentQueueCreateInfo = {};
         devicePresentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         devicePresentQueueCreateInfo.pNext = nullptr;
         devicePresentQueueCreateInfo.flags = 0;
@@ -807,8 +807,8 @@ void Renderer::initGraphicsPipline()
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float) this->surfaceSize.width;
-    viewport.height = (float) this->surfaceSize.height;
+    viewport.width = (float)this->surfaceSize.width;
+    viewport.height = (float)this->surfaceSize.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -970,7 +970,7 @@ VkFormat Renderer::findSupportedFormat(VkPhysicalDevice gpu, const std::vector<V
 
 VkFormat Renderer::findDepthFormat()
 {
-     std::vector<VkFormat> formatsToCheck = {
+    std::vector<VkFormat> formatsToCheck = {
         VK_FORMAT_D32_SFLOAT,
         VK_FORMAT_D32_SFLOAT_S8_UINT,
         VK_FORMAT_D24_UNORM_S8_UINT
@@ -993,7 +993,7 @@ void Renderer::initDepthStencilImage()
     }
 
     bool stencilAvailable = hasStencilComponent(depthStencilFormat);
-    createImage(surfaceSize.width, surfaceSize.height, depthStencilFormat,VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+    createImage(surfaceSize.width, surfaceSize.height, depthStencilFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
     createImageView(depthImage, depthStencilFormat, depthImageView, VK_IMAGE_ASPECT_DEPTH_BIT);
     transitionImageLayout(depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
@@ -1504,7 +1504,8 @@ void Renderer::loadModel()
 
     bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, chaletModelResourcePath.c_str());
 
-    if(!loaded) {
+    if(!loaded)
+    {
         LOGF("Model load error: %s", error.c_str());
         assert(0 && "Not able to load model.");
     }
@@ -1787,22 +1788,41 @@ void Renderer::destroyCommandBuffers()
 
 void Renderer::initSynchronizations()
 {
+    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphoreCreateInfo.pNext = nullptr;
     semaphoreCreateInfo.flags = 0;
 
-    VkResult result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore);
-    CHECK_ERROR(result);
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.pNext = nullptr;
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore);
-    CHECK_ERROR(result);
+    for(size_t counter = 0; counter < MAX_FRAMES_IN_FLIGHT; ++counter)
+    {
+        VkResult result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphores[counter]);
+        CHECK_ERROR(result);
+
+        result = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[counter]);
+        CHECK_ERROR(result);
+
+        result = vkCreateFence(device, &fenceCreateInfo, nullptr, &inFlightFences[counter]);
+        CHECK_ERROR(result);
+    }
 }
 
 void Renderer::destroySynchronizations()
 {
-    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+    for(size_t counter = 0; counter < MAX_FRAMES_IN_FLIGHT; ++counter)
+    {
+        vkDestroySemaphore(device, imageAvailableSemaphores[counter], nullptr);
+        vkDestroySemaphore(device, renderFinishedSemaphores[counter], nullptr);
+        vkDestroyFence(device, inFlightFences[counter], nullptr);
+    }
 }
 
 void Renderer::recreateSwapChain()
@@ -1835,12 +1855,12 @@ void Renderer::cleanupSwapChain()
 
 void Renderer::render()
 {
+    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
     uint32_t activeSwapchainImageId = UINT32_MAX;
 
-    VkResult result = vkQueueWaitIdle(graphicsQueue);
-    CHECK_ERROR(result);
-
-    result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &activeSwapchainImageId);
+    VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &activeSwapchainImageId);
 
     // If result is VK_ERROR_OUT_OF_DATE_KHR than just recreate swap chain
     // as current swap chain cannot be used with current surface.
@@ -1852,8 +1872,8 @@ void Renderer::render()
 
     CHECK_ERROR(result);
 
-    std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
-    std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphore};
+    std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphores[currentFrame]};
+    std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphores[currentFrame]};
     std::vector<VkPipelineStageFlags> waitPipelineStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     VkSubmitInfo submitInfo = {};
@@ -1867,7 +1887,7 @@ void Renderer::render()
     submitInfo.signalSemaphoreCount = signalSemaphores.size();
     submitInfo.pSignalSemaphores = signalSemaphores.data();
 
-    result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
     CHECK_ERROR(result);
 
     std::vector<VkSwapchainKHR> swapchains = {swapchain};
@@ -1895,7 +1915,7 @@ void Renderer::render()
         CHECK_ERROR(result);
     }
 
-    vkQueueWaitIdle(presentQueue);
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void Renderer::updateUniformBuffer()
