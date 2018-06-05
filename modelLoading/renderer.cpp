@@ -13,9 +13,9 @@
 #include <chrono>
 #include <unordered_map>
 #include <glm/gtc/matrix_transform.hpp>
-#include <stb/stb_image.h>
-#include <tinyobj/tiny_obj_loader.h>
 
+#include "lib/stb/stb_image.h"
+#include "lib/tinyobj/tiny_obj_loader.h"
 #include "buildParam.h"
 #include "platform.h"
 #include "renderer.h"

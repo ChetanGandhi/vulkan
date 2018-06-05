@@ -12,8 +12,8 @@
 #include <set>
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
-#include <stb/stb_image.h>
 
+#include "lib/stb/stb_image.h"
 #include "buildParam.h"
 #include "platform.h"
 #include "renderer.h"
