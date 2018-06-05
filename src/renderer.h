@@ -158,6 +158,7 @@ private:
     std::vector<uint32_t> vertexIndices;
 
     uint32_t swapchainImageCount = 2;
+    uint32_t mipLevels = 1;
     size_t currentFrame = 0;
 
     struct SwapchainSupportDetails {
@@ -180,7 +181,9 @@ private:
     void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
     void endOneTimeCommand(VkCommandBuffer &commandBuffer);
 
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
+    void generateMipmaps(VkImage &image, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
+
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, uint32_t mipLevels);
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
     void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
 
@@ -197,8 +200,8 @@ private:
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling imageTiling, VkImageUsageFlags imageUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
-    void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags);
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling imageTiling, VkImageUsageFlags imageUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+    void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
     void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
