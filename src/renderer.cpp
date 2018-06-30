@@ -1326,7 +1326,10 @@ void Renderer::generateMipmaps(VkImage &image, int32_t textureWidth, int32_t tex
         // The x and y dimensions of the dstOffsets[1] are divided by two since
         // each mip level is half the size of the previous level.
         // The z dimension of dstOffsets[1] must be 1, since a 2D image has a depth of 1
-        imageBlit.dstOffsets[1] = {mipWidth / 2, mipHeight / 2, 1};
+        // In case where we have odd texture dimensions, the mip dimension may reach 1.
+        // this will cause 0 to be passed to VkImageBlit.dstOffsets which results in validation layer warning.
+        // To avoid this, check is next mip level is non-zero, if it is, then use 1 instead of 0.
+        imageBlit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
         imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         // The destination mip level is counter
