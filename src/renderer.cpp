@@ -1723,19 +1723,28 @@ void Renderer::destroyIndexBuffer()
     vkFreeMemory(device, indexBufferMemory, nullptr);
 }
 
-void Renderer::initUniformBuffer()
+void Renderer::initUniformBuffers()
 {
     VkDeviceSize size = sizeof(UniformBufferObject);
     VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-    createBuffer(size, uniformBufferUsage, uniformMemoryProperties, uniformBuffer, uniformBufferMemory);
+    uniformBuffers.resize(swapchainImages.size());
+    uniformBuffersMemory.resize(swapchainImages.size());
+
+    for(size_t counter = 0; counter < swapchainImages.size(); ++counter)
+    {
+        createBuffer(size, uniformBufferUsage, uniformMemoryProperties, uniformBuffers[counter], uniformBuffersMemory[counter]);
+    }
 }
 
-void Renderer::destroyUniformBuffer()
+void Renderer::destroyUniformBuffers()
 {
-    vkDestroyBuffer(device, uniformBuffer, nullptr);
-    vkFreeMemory(device, uniformBufferMemory, nullptr);
+    for(size_t counter = 0; counter < swapchainImages.size(); ++counter)
+    {
+        vkDestroyBuffer(device, uniformBuffers[counter], nullptr);
+        vkFreeMemory(device, uniformBuffersMemory[counter], nullptr);
+    }
 }
 
 void Renderer::initDescriptorPool()
@@ -1758,7 +1767,7 @@ void Renderer::initDescriptorPool()
     // else you will get runtime error while destroying the descriptorSet.
     // We are not going to used this for now.
     // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    poolCreateInfo.maxSets = 1;
+    poolCreateInfo.maxSets = static_cast<uint32_t>(swapchainImages.size());
     poolCreateInfo.poolSizeCount = poolSizes.size();
     poolCreateInfo.pPoolSizes = poolSizes.data();
 
@@ -1771,59 +1780,64 @@ void Renderer::destroyDescriptorPool()
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
-void Renderer::initDescriptorSet()
+void Renderer::initDescriptorSets()
 {
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {descriptorSetLayout};
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts(swapchainImages.size(),  descriptorSetLayout);
 
     VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
     descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descriptorSetAllocateInfo.pNext = nullptr;
     descriptorSetAllocateInfo.descriptorPool = descriptorPool;
-    descriptorSetAllocateInfo.descriptorSetCount = 1;
+    descriptorSetAllocateInfo.descriptorSetCount = static_cast<uint32_t>(swapchainImages.size());
     descriptorSetAllocateInfo.pSetLayouts = descriptorSetLayouts.data();
 
-    VkResult result = vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, &descriptorSet);
+    descriptorSets.resize(swapchainImages.size());
+
+    VkResult result = vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, descriptorSets.data());
     CHECK_ERROR(result);
 
-    VkDescriptorBufferInfo descriptorBufferInfo = {};
-    descriptorBufferInfo.buffer = uniformBuffer;
-    descriptorBufferInfo.offset = 0;
-    descriptorBufferInfo.range = sizeof(UniformBufferObject);
+    for(size_t counter = 0; counter < swapchainImages.size(); ++counter)
+    {
+        VkDescriptorBufferInfo descriptorBufferInfo = {};
+        descriptorBufferInfo.buffer = uniformBuffers[counter];
+        descriptorBufferInfo.offset = 0;
+        descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
-    VkDescriptorImageInfo descriptorImageInfo = {};
-    descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    descriptorImageInfo.imageView = textureImageView;
-    descriptorImageInfo.sampler = textureSampler;
+        VkDescriptorImageInfo descriptorImageInfo = {};
+        descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptorImageInfo.imageView = textureImageView;
+        descriptorImageInfo.sampler = textureSampler;
 
-    VkWriteDescriptorSet uniformBudderDescriptorWrite = {};
-    uniformBudderDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    uniformBudderDescriptorWrite.pNext = nullptr;
-    uniformBudderDescriptorWrite.dstSet = descriptorSet;
-    uniformBudderDescriptorWrite.dstBinding = 0;
-    uniformBudderDescriptorWrite.dstArrayElement = 0;
-    uniformBudderDescriptorWrite.descriptorCount = 1;
-    uniformBudderDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniformBudderDescriptorWrite.pImageInfo = nullptr;
-    uniformBudderDescriptorWrite.pBufferInfo = &descriptorBufferInfo;
-    uniformBudderDescriptorWrite.pTexelBufferView = nullptr;
+        VkWriteDescriptorSet uniformBudderDescriptorWrite = {};
+        uniformBudderDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        uniformBudderDescriptorWrite.pNext = nullptr;
+        uniformBudderDescriptorWrite.dstSet = descriptorSets[counter];
+        uniformBudderDescriptorWrite.dstBinding = 0;
+        uniformBudderDescriptorWrite.dstArrayElement = 0;
+        uniformBudderDescriptorWrite.descriptorCount = 1;
+        uniformBudderDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uniformBudderDescriptorWrite.pImageInfo = nullptr;
+        uniformBudderDescriptorWrite.pBufferInfo = &descriptorBufferInfo;
+        uniformBudderDescriptorWrite.pTexelBufferView = nullptr;
 
-    VkWriteDescriptorSet textureImageDescriptorWrite = {};
-    textureImageDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    textureImageDescriptorWrite.pNext = nullptr;
-    textureImageDescriptorWrite.dstSet = descriptorSet;
-    textureImageDescriptorWrite.dstBinding = 1;
-    textureImageDescriptorWrite.dstArrayElement = 0;
-    textureImageDescriptorWrite.descriptorCount = 1;
-    textureImageDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    textureImageDescriptorWrite.pImageInfo = &descriptorImageInfo;
-    textureImageDescriptorWrite.pBufferInfo = nullptr;
-    textureImageDescriptorWrite.pTexelBufferView = nullptr;
+        VkWriteDescriptorSet textureImageDescriptorWrite = {};
+        textureImageDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        textureImageDescriptorWrite.pNext = nullptr;
+        textureImageDescriptorWrite.dstSet = descriptorSets[counter];
+        textureImageDescriptorWrite.dstBinding = 1;
+        textureImageDescriptorWrite.dstArrayElement = 0;
+        textureImageDescriptorWrite.descriptorCount = 1;
+        textureImageDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        textureImageDescriptorWrite.pImageInfo = &descriptorImageInfo;
+        textureImageDescriptorWrite.pBufferInfo = nullptr;
+        textureImageDescriptorWrite.pTexelBufferView = nullptr;
 
-    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {uniformBudderDescriptorWrite, textureImageDescriptorWrite};
-    vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites = {uniformBudderDescriptorWrite, textureImageDescriptorWrite};
+        vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+    }
 }
 
-void Renderer::destroyDescriptorSet()
+void Renderer::destroyDescriptorSets()
 {
     // If you want to explicitly destroy the descriptorSet, then set
     // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
@@ -1883,7 +1897,7 @@ void Renderer::initCommandBuffers()
         std::vector<VkDeviceSize> offsets = {0};
         vkCmdBindVertexBuffers(commandBuffers[counter], 0, 1, vertexBuffers.data(), offsets.data());
         vkCmdBindIndexBuffer(commandBuffers[counter], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[counter], 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffers[counter], vertexIndices.size(), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[counter]);
@@ -1984,6 +1998,9 @@ void Renderer::render()
 
     CHECK_ERROR(result);
 
+    // Update the uniform buffer for current image.
+    updateUniformBuffer(activeSwapchainImageId);
+
     std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphores[currentFrame]};
     std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphores[currentFrame]};
     std::vector<VkPipelineStageFlags> waitPipelineStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -2030,7 +2047,7 @@ void Renderer::render()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::updateUniformBuffer()
+void Renderer::updateUniformBuffer(uint32_t imageIndex)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -2049,9 +2066,9 @@ void Renderer::updateUniformBuffer()
     ubo.projection[1][1] *= -1;
 
     void *data = nullptr;
-    vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+    vkMapMemory(device, uniformBuffersMemory[imageIndex], 0, sizeof(ubo), 0, &data);
     memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device, uniformBufferMemory);
+    vkUnmapMemory(device, uniformBuffersMemory[imageIndex]);
 }
 
 // Debug methods

@@ -166,9 +166,9 @@ void initializeVulkan()
     renderer->loadModel();
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
-    renderer->initUniformBuffer();
+    renderer->initUniformBuffers();
     renderer->initDescriptorPool();
-    renderer->initDescriptorSet();
+    renderer->initDescriptorSets();
     renderer->initCommandBuffers();
     renderer->initSynchronizations();
 }
@@ -186,9 +186,9 @@ void cleanUp()
     renderer->waitForIdle();
     renderer->destroySynchronizations();
     renderer->destroyCommandBuffers();
-    renderer->destroyDescriptorSet();
+    renderer->destroyDescriptorSets();
     renderer->destroyDescriptorPool();
-    renderer->destroyUniformBuffer();
+    renderer->destroyUniformBuffers();
     renderer->destroyIndexBuffer();
     renderer->destroyVertexBuffer();
     renderer->destoryTextureSampler();
@@ -259,7 +259,7 @@ int mainLoop()
                         SetWindowText(hWindow, fpsTitle);
                     }
 
-                    renderer->updateUniformBuffer();
+                    // This will also update uniform buffer as per current inflight image.
                     renderer->render();
                 }
             }

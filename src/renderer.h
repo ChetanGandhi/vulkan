@@ -68,14 +68,14 @@ public:
     void initIndexBuffer();
     void destroyIndexBuffer();
 
-    void initUniformBuffer();
-    void destroyUniformBuffer();
+    void initUniformBuffers();
+    void destroyUniformBuffers();
 
     void initDescriptorPool();
     void destroyDescriptorPool();
 
-    void initDescriptorSet();
-    void destroyDescriptorSet();
+    void initDescriptorSets();
+    void destroyDescriptorSets();
 
     void initCommandBuffers();
     void destroyCommandBuffers();
@@ -87,7 +87,6 @@ public:
     void cleanupSwapChain();
 
     void render();
-    void updateUniformBuffer();
 
     const VkInstance getVulkanInstance() const;
 
@@ -114,10 +113,7 @@ private:
     VkDeviceMemory        vertexBufferMemory      = VK_NULL_HANDLE;
     VkBuffer              indexBuffer             = VK_NULL_HANDLE;
     VkDeviceMemory        indexBufferMemory       = VK_NULL_HANDLE;
-    VkBuffer              uniformBuffer           = VK_NULL_HANDLE;
-    VkDeviceMemory        uniformBufferMemory     = VK_NULL_HANDLE;
     VkDescriptorPool      descriptorPool          = VK_NULL_HANDLE;
-    VkDescriptorSet       descriptorSet           = VK_NULL_HANDLE;
     VkImage               depthImage              = VK_NULL_HANDLE;
     VkDeviceMemory        depthImageMemory        = VK_NULL_HANDLE;
     VkImageView           depthImageView          = VK_NULL_HANDLE;
@@ -154,6 +150,9 @@ private:
     std::vector<VkFence> inFlightFences;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<VkDescriptorSet> descriptorSets;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> vertexIndices;
 
@@ -180,6 +179,7 @@ private:
 
     void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
     void endOneTimeCommand(VkCommandBuffer &commandBuffer);
+    void updateUniformBuffer(uint32_t imageIndex);
 
     void generateMipmaps(VkImage &image, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
 
