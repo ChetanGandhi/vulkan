@@ -1751,11 +1751,11 @@ void Renderer::initDescriptorPool()
 {
     VkDescriptorPoolSize uboPoolSize = {};
     uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboPoolSize.descriptorCount = 1;
+    uboPoolSize.descriptorCount = static_cast<uint32_t>(swapchainImages.size());
 
     VkDescriptorPoolSize samplerPoolSize = {};
     samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerPoolSize.descriptorCount = 1;
+    samplerPoolSize.descriptorCount = static_cast<uint32_t>(swapchainImages.size());;
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {uboPoolSize, samplerPoolSize};
 
