@@ -1244,7 +1244,7 @@ void Renderer::initTextureImage()
     VkDeviceSize size = textureWidth * textureHeight * 4;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
 
-    LOGF("----------\nmipLevels: %d----------", mipLevels);
+    LOGF("---------- mipLevels: %d----------", mipLevels);
 
     VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
