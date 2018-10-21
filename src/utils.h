@@ -23,4 +23,4 @@ uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryPr
 
 bool readFile(const std::string &fileName, std::vector<char> *data);
 
-size_t currentDateTime(char *dateTimeString);
+size_t currentDateTime(char *dateTimeString, size_t size);

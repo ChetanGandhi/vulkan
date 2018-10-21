@@ -94,7 +94,7 @@ void initializePlatformSpecificWindow()
     if(xcbConnection == NULL)
     {
         printf("Error: Cannot create connection to XCB\n");
-        LOG("Error: Cannot create connection to XCB\n");
+        logf("Error: Cannot create connection to XCB\n");
         std::exit(EXIT_FAILURE);
     }
 
@@ -217,7 +217,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    LOG("---------- Cleanup Started ----------");
+    logf("---------- Cleanup Started ----------");
 
     if(isFullscreen)
     {

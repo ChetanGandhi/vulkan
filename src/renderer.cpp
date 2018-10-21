@@ -71,7 +71,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, 
     }
 
     stream<<layerPrefix<<"]: "<<message;
-    LOG(stream.str());
+    logf(stream.str());
 
     #if defined (_WIN32)
 
@@ -257,11 +257,11 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
         queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
         queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
 
-        LOG("---------- Queue Family Indices ----------");
-        LOGF("Graphics Family Index\t\t: %d", queueFamilyIndices.graphicsFamilyIndex);
-        LOGF("Present Family Index\t\t: %d", queueFamilyIndices.presentFamilyIndex);
-        LOGF("Has Separate Present Queue\t: %d", queueFamilyIndices.hasSeparatePresentQueue);
-        LOG("---------- Queue Family Indices End ----------");
+        logf("---------- Queue Family Indices ----------");
+        logf("Graphics Family Index\t\t: %d", queueFamilyIndices.graphicsFamilyIndex);
+        logf("Present Family Index\t\t: %d", queueFamilyIndices.presentFamilyIndex);
+        logf("Has Separate Present Queue\t: %d", queueFamilyIndices.hasSeparatePresentQueue);
+        logf("---------- Queue Family Indices End ----------");
     }
 
     bool extensionSupported = checkDeviceExtensionSupport(gpu);
@@ -375,7 +375,7 @@ void Renderer::initDevice()
         uint32_t gpuCount = gpuDetailsList.size();
         uint32_t selectedGpuIndex = 0;
 
-        LOGF("---------- Total GPU Found [%d]----------", gpuCount);
+        logf("---------- Total GPU Found [%d]----------", gpuCount);
 
         for(uint32_t counter = 0; counter < gpuCount; ++counter)
         {
@@ -401,9 +401,9 @@ void Renderer::initDevice()
             std::exit(EXIT_FAILURE);
         }
 
-        LOG("---------- Selected GPU Properties ----------");
+        logf("---------- Selected GPU Properties ----------");
         printGpuProperties(&gpuDetails.properties, (selectedGpuIndex + 1), gpuCount);
-        LOG("---------- Selected GPU Properties End ----------");
+        logf("---------- Selected GPU Properties End ----------");
     }
 
     {
@@ -632,18 +632,18 @@ void Renderer::initSwapchain()
     printSwapChainImageCount(swapchainSupportDetails.surfaceCapabilities.minImageCount, swapchainSupportDetails.surfaceCapabilities.maxImageCount, swapchainImageCount);
 
     {
-        LOG("---------- Presentation Mode ----------");
+        logf("---------- Presentation Mode ----------");
 
         if(presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
         {
-            LOGF("Mode: MAILBOX [%d]", presentMode);
+            logf("Mode: MAILBOX [%d]", presentMode);
         }
         else
         {
-            LOGF("Mode: %d", presentMode);
+            logf("Mode: %d", presentMode);
         }
 
-        LOG("---------- Presentation Mode End----------");
+        logf("---------- Presentation Mode End----------");
     }
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
@@ -1244,7 +1244,7 @@ void Renderer::initTextureImage()
     VkDeviceSize size = textureWidth * textureHeight * 4;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
 
-    LOGF("---------- mipLevels: %d----------", mipLevels);
+    logf("---------- mipLevels: %d----------", mipLevels);
 
     VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
@@ -1503,6 +1503,8 @@ void Renderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayo
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     beginOneTimeCommand(commandBuffer);
 
+    logf("image == null %d", image == nullptr);
+
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     imageMemoryBarrier.pNext = nullptr;
@@ -1619,7 +1621,7 @@ void Renderer::loadModel()
 
     if(!loaded)
     {
-        LOGF("Model load error: %s", error.c_str());
+        logf("Model load error: %s", error.c_str());
         assert(0 && "Not able to load model.");
     }
 
@@ -1954,7 +1956,7 @@ void Renderer::destroySynchronizations()
 
 void Renderer::recreateSwapChain()
 {
-    LOG("---------- Recreate SwapChain --------");
+    logf("---------- Recreate SwapChain --------");
     vkDeviceWaitIdle(device);
     cleanupSwapChain();
     initSwapchain();
@@ -2050,8 +2052,8 @@ void Renderer::render()
 
 void Renderer::updateUniformBuffer(uint32_t imageIndex)
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
@@ -2078,37 +2080,37 @@ void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32
 {
     if(!properties)
     {
-        LOG("No GPU properties to show!!!");
+        logf("No GPU properties to show!!!");
         return;
     }
 
-    LOGF("---------- GPU Properties [%d/%d]----------", currentGpuIndex, totalGpuCount);
-    LOGF("Device Name\t\t: %s", properties->deviceName);
-    LOGF("Vendor Id\t\t: %d", properties->vendorID);
-    LOGF("Device Id\t\t: %d", properties->deviceID);
-    LOGF("Device Type\t\t: %d", properties->deviceType);
-    LOGF("API Version\t\t: %d", properties->apiVersion);
-    LOGF("Driver Version\t\t: %d", properties->driverVersion);
+    logf("---------- GPU Properties [%d/%d]----------", currentGpuIndex, totalGpuCount);
+    logf("Device Name\t\t: %s", properties->deviceName);
+    logf("Vendor Id\t\t: %d", properties->vendorID);
+    logf("Device Id\t\t: %d", properties->deviceID);
+    logf("Device Type\t\t: %d", properties->deviceType);
+    logf("API Version\t\t: %d", properties->apiVersion);
+    logf("Driver Version\t\t: %d", properties->driverVersion);
     LOG_UUID("Pipeline Cache UUID\t: ", properties->pipelineCacheUUID);
-    LOG("---------- GPU Properties End ----------");
+    logf("---------- GPU Properties End ----------");
 }
 
 void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)
 {
     #if ENABLE_DEBUG
 
-    LOG("---------- Instance Layer Properties ----------");
+    logf("---------- Instance Layer Properties ----------");
 
     for(VkLayerProperties &nextProperty : properties)
     {
-        LOGF("Layer Name\t\t: %s", nextProperty.layerName);
-        LOGF("Description\t\t: %s", nextProperty.description);
-        LOGF("Spec Version\t\t: %d", nextProperty.specVersion);
-        LOGF("Implementation Version\t: %d", nextProperty.implementationVersion);
-        LOG("------------------------------------------------------------");
+        logf("Layer Name\t\t: %s", nextProperty.layerName);
+        logf("Description\t\t: %s", nextProperty.description);
+        logf("Spec Version\t\t: %d", nextProperty.specVersion);
+        logf("Implementation Version\t: %d", nextProperty.implementationVersion);
+        logf("------------------------------------------------------------");
     }
 
-    LOGF("---------- Instance Layer Properties End [%d] ----------", properties.size());
+    logf("---------- Instance Layer Properties End [%d] ----------", properties.size());
 
     #endif // ENABLE_DEBUG
 }
@@ -2117,18 +2119,18 @@ void Renderer::printDeviceLayerProperties(std::vector<VkLayerProperties> propert
 {
     #if ENABLE_DEBUG
 
-    LOG("---------- Device Layer Properties ----------");
+    logf("---------- Device Layer Properties ----------");
 
     for(VkLayerProperties &nextProperty : properties)
     {
-        LOGF("Layer Name\t\t: %s", nextProperty.layerName);
-        LOGF("Description\t\t: %s", nextProperty.description);
-        LOGF("Spec Version\t\t: %d", nextProperty.specVersion);
-        LOGF("Implementation Version\t: %d", nextProperty.implementationVersion);
-        LOG("------------------------------------------------------------");
+        logf("Layer Name\t\t: %s", nextProperty.layerName);
+        logf("Description\t\t: %s", nextProperty.description);
+        logf("Spec Version\t\t: %d", nextProperty.specVersion);
+        logf("Implementation Version\t: %d", nextProperty.implementationVersion);
+        logf("------------------------------------------------------------");
     }
 
-    LOGF("---------- Device Layer Properties End [%d] ----------", properties.size());
+    logf("---------- Device Layer Properties End [%d] ----------", properties.size());
 
     #endif // ENABLE_DEBUG
 }
@@ -2137,16 +2139,16 @@ void Renderer::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfac
 {
     #if ENABLE_DEBUG
 
-    LOG("---------- Surface Formats ----------");
+    logf("---------- Surface Formats ----------");
 
     for(VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
     {
-        LOGF("format\t\t: %d", nextSurfaceFormat.format);
-        LOGF("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
-        LOG("------------------------------------------------------------");
+        logf("format\t\t: %d", nextSurfaceFormat.format);
+        logf("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
+        logf("------------------------------------------------------------");
     }
 
-    LOGF("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
+    logf("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
 
     #endif // ENABLE_DEBUG
 }
@@ -2155,11 +2157,11 @@ void Renderer::printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImag
 {
     #if ENABLE_DEBUG
 
-    LOG("---------- Swapchain Image Count ----------");
-    LOGF("Min\t: %d", minImageCount);
-    LOGF("Max\t: %d", maxImageCount);
-    LOGF("Current\t: %d", currentImageCount);
-    LOG("---------- Swapchain Image Count End ----------");
+    logf("---------- Swapchain Image Count ----------");
+    logf("Min\t: %d", minImageCount);
+    logf("Max\t: %d", maxImageCount);
+    logf("Current\t: %d", currentImageCount);
+    logf("---------- Swapchain Image Count End ----------");
 
     #endif // ENABLE_DEBUG
 }

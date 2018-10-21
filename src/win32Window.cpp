@@ -51,7 +51,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-    Logger::init("debug_win32.log");
+    Logger::initialize("debug_win32.log");
 
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | Win32";
@@ -98,7 +98,7 @@ void initializePlatformSpecificWindow()
     if(!RegisterClassEx(&wndclassex))
     {
         assert(1 && "Cannot register window class.\n");
-        LOG("Error: Unable to open XgDisplay.\n");
+        logf("Error: Unable to open XgDisplay.\n");
         // TODO: Call cleanup.
         fflush(stdout);
         std::exit(EXIT_FAILURE);
@@ -126,7 +126,7 @@ void initializePlatformSpecificWindow()
     if(!hWindow)
     {
         assert(0 && "Cannot create window.\n");
-        LOG("Cannot create window.\n");
+        logf("Cannot create window.\n");
         fflush(stdout);
         std::exit(EXIT_FAILURE);
     }
@@ -175,7 +175,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    LOG("---------- Cleanup Started ----------");
+    logf("---------- Cleanup Started ----------");
 
     if(isFullscreen)
     {

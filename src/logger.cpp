@@ -1,4 +1,4 @@
-// #pragma once
+#include <cstdarg>
 
 #include "logger.h"
 #include "utils.h"
@@ -8,18 +8,22 @@ Logger* Logger::logger = nullptr;
 Logger::Logger() {}
 Logger::Logger(const Logger&) {};
 
-void Logger::init(std::string fileName)
+bool Logger::initialize(std::string fileName)
 {
+    bool logFileCreated = true;
+
     if(logger == nullptr)
     {
         char dateTime[100] = {0};
-        size_t size = currentDateTime(dateTime);
+        size_t size = currentDateTime(dateTime, sizeof(dateTime));
 
         logger = new Logger();
-        logger->logfile = fopen(fileName.c_str(), "w");
+        fopen_s(&logger->logfile, fileName.c_str(), "w");
+
         if(logger->logfile == NULL)
         {
             assert(1 && "Cannot open log file");
+            logFileCreated = false;
         }
         else
         {
@@ -29,20 +33,26 @@ void Logger::init(std::string fileName)
             fflush(logger->logfile);
         }
     }
+
+    return logFileCreated;
 }
 
 Logger::~Logger()
 {
-    if(logger->logfile != NULL)
+    if(logger->logfile == NULL)
     {
-        char dateTime[100] = {0};
-        size_t size = currentDateTime(dateTime);
-
-        fprintf(logger->logfile, "-----------------------------------\n");
-        fprintf(logger->logfile, "| Logs end: %s   |\n", dateTime);
-        fprintf(logger->logfile, "-----------------------------------\n");
-        fclose(logger->logfile);
+        return;
     }
+
+    char dateTime[100] = {0};
+    size_t size = currentDateTime(dateTime, sizeof(dateTime));
+
+    fprintf(logger->logfile, "-----------------------------------\n");
+    fprintf(logger->logfile, "| Logs end: %s   |\n", dateTime);
+    fprintf(logger->logfile, "-----------------------------------\n");
+    fflush(logger->logfile);
+    fclose(logger->logfile);
+    logger->logfile = nullptr;
 }
 
 void Logger::close()
@@ -51,36 +61,38 @@ void Logger::close()
     logger = nullptr;
 }
 
-void Logger::log(const char *format, ...)
+void Logger::log(std::string file, std::string function, int line, std::string message, ...)
 {
-    char dateTime[100] = {0};
-    size_t size = currentDateTime(dateTime);
-    va_list args;
-    fprintf(logger->logfile, "%s: ", dateTime);
+    if(logger->logfile == NULL)
+    {
+        return;
+    }
 
-    va_start(args, format);
-    vfprintf(logger->logfile, format, args);
+    char dateTime[100] = {0};
+    size_t size = currentDateTime(dateTime, sizeof(dateTime));
+    fprintf(logger->logfile, "%s | %s:%04d | %s | ", dateTime, file.c_str(), line, function.c_str());
+
+    va_list args;
+    va_start(args, message);
+    vfprintf(logger->logfile, message.c_str(), args);
     va_end(args);
 
     fprintf(logger->logfile, "\n");
     fflush(logger->logfile);
 }
 
-void Logger::log(const std::string &message)
+void Logger::logUUID(std::string file, std::string function, int line, std::string message, uint8_t *uuid)
 {
+    if(logger->logfile == NULL)
+    {
+        return;
+    }
+
     char dateTime[100] = {0};
-    size_t size = currentDateTime(dateTime);
+    size_t size = currentDateTime(dateTime, sizeof(dateTime));
 
-    fprintf(logger->logfile, "%s: %s\n", dateTime, message.c_str());
-    fflush(logger->logfile);
-}
+    fprintf(logger->logfile, "%s | [UUID] | %s:%04d | %s | %s: ", dateTime, file.c_str(), line, function.c_str(), message.c_str());
 
-void Logger::logUUID(const std::string &message, uint8_t *uuid)
-{
-    char dateTime[100] = {0};
-    size_t size = currentDateTime(dateTime);
-
-    fprintf(logger->logfile, "%s: %s", dateTime, message.c_str());
     for (int counter = 0; counter < VK_UUID_SIZE; ++counter)
     {
         fprintf(logger->logfile, "%2d", (uint32_t)uuid[counter]);
