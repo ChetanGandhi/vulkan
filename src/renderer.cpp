@@ -1285,6 +1285,7 @@ void Renderer::generateMipmaps(VkImage &image, int32_t textureWidth, int32_t tex
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     imageMemoryBarrier.pNext = nullptr;
+    imageMemoryBarrier.image = image;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
