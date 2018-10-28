@@ -159,6 +159,7 @@ void initializeVulkan()
     renderer->initGraphicsPipline();
     renderer->initCommandPool();
     renderer->initDepthStencilImage();
+    renderer->initMSAAColorImage();
     renderer->initFrameBuffers();
     renderer->initTextureImage();
     renderer->initTextureImageView();
@@ -195,6 +196,7 @@ void cleanUp()
     renderer->destroyTextureImageView();
     renderer->destroyTextureImage();
     renderer->destroyFrameBuffers();
+    renderer->destoryMSAAColorImage();
     renderer->destoryDepthStencilImage();
     renderer->destroyCommandPool();
     renderer->destroyGraphicsPipline();

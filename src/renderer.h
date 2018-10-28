@@ -51,6 +51,9 @@ public:
     void initDepthStencilImage();
     void destoryDepthStencilImage();
 
+    void initMSAAColorImage();
+    void destoryMSAAColorImage();
+
     void initTextureImage();
     void destroyTextureImage();
 
@@ -121,6 +124,9 @@ private:
     VkDeviceMemory        textureImageMemory      = VK_NULL_HANDLE;
     VkImageView           textureImageView        = VK_NULL_HANDLE;
     VkSampler             textureSampler          = VK_NULL_HANDLE;
+    VkImage               msaaColorImage          = VK_NULL_HANDLE;
+    VkDeviceMemory        msaaColorImageMemory    = VK_NULL_HANDLE;
+    VkImageView           msaaColorImageView      = VK_NULL_HANDLE;
 
     struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
@@ -167,6 +173,7 @@ private:
     } swapchainSupportDetails;
 
     VkSurfaceFormatKHR surfaceFormat = {};
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     void setupDebugLayer();
     void setupLayersAndExtensions();
@@ -189,6 +196,7 @@ private:
 
     VkFormat findSupportedFormat(VkPhysicalDevice gpu, const std::vector<VkFormat> &formatsToCheck, VkImageTiling imageTiling, VkFormatFeatureFlags formatFeatureFlags);
     VkFormat findDepthFormat();
+    VkSampleCountFlagBits findMaxMSAASampleCount(VkPhysicalDevice gpu, VkPhysicalDeviceProperties properties);
     VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
     VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> presentModes);
     void chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent);
@@ -200,7 +208,7 @@ private:
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling imageTiling, VkImageUsageFlags imageUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
     void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
     void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
