@@ -28,7 +28,10 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}"
+                "${VK_SDK_PATH}/Include/*",
+                "${GLM_PATH}/*",
+                "${workspaceRoot}/lib/*",
+                "${workspaceRoot}/*"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -36,6 +39,9 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
+                    "${VK_SDK_PATH}/Include/*",
+                    "${GLM_PATH}/*",
+                    "${workspaceRoot}/lib/*",
                     "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,

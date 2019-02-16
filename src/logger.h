@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
+#include "platform.h"
+
 #include <iomanip>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdarg>
 
 #if defined (ENABLE_DEBUG)
 
-#define logf(x_message, ...) Logger::log(__FILE__, __FUNCTION__, __LINE__, x_message, __VA_ARGS__)
+#define logf(x_message, ...) Logger::log(__FILE__, __FUNCTION__, __LINE__, x_message, ## __VA_ARGS__)
 #define LOG_UUID(x_message, u_uuid) Logger::logUUID(__FILE__, __FUNCTION__, __LINE__, x_message, u_uuid)
 
 #else

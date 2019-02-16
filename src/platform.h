@@ -1,5 +1,11 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define STB_IMAGE_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
+
 #if defined (_WIN32) // check for Windows
 
 #define VK_USE_PLATFORM_WIN32_KHR 1
@@ -22,10 +28,23 @@
 
 #endif
 
-#include <assert.h>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <chrono>
+#include <vector>
+#include <array>
+#include <set>
+#include <unordered_map>
+#include <string>
+#include <cstring>
+#include <assert.h>
+#include <time.h>
 #include <vulkan/vulkan.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/hash.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "buildParam.h"
 #include "utils.h"

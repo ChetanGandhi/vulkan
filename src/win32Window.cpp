@@ -184,28 +184,31 @@ void cleanUp()
         toggleFullscreen(isFullscreen);
     }
 
-    renderer->waitForIdle();
-    renderer->destroySynchronizations();
-    renderer->destroyCommandBuffers();
-    renderer->destroyDescriptorSets();
-    renderer->destroyDescriptorPool();
-    renderer->destroyUniformBuffers();
-    renderer->destroyIndexBuffer();
-    renderer->destroyVertexBuffer();
-    renderer->destoryTextureSampler();
-    renderer->destroyTextureImageView();
-    renderer->destroyTextureImage();
-    renderer->destroyFrameBuffers();
-    renderer->destoryMSAAColorImage();
-    renderer->destoryDepthStencilImage();
-    renderer->destroyCommandPool();
-    renderer->destroyGraphicsPipline();
-    renderer->destroyGraphicsPiplineCache();
-    renderer->destroyDescriptorSetLayout();
-    renderer->destroyRenderPass();
-    renderer->destroySwapchainImageViews();
-    renderer->destroySwapchain();
-    renderer->destroyDevice();
+    if(renderer != nullptr)
+    {
+        renderer->waitForIdle();
+        renderer->destroySynchronizations();
+        renderer->destroyCommandBuffers();
+        renderer->destroyDescriptorSets();
+        renderer->destroyDescriptorPool();
+        renderer->destroyUniformBuffers();
+        renderer->destroyIndexBuffer();
+        renderer->destroyVertexBuffer();
+        renderer->destoryTextureSampler();
+        renderer->destroyTextureImageView();
+        renderer->destroyTextureImage();
+        renderer->destroyFrameBuffers();
+        renderer->destoryMSAAColorImage();
+        renderer->destoryDepthStencilImage();
+        renderer->destroyCommandPool();
+        renderer->destroyGraphicsPipline();
+        renderer->destroyGraphicsPiplineCache();
+        renderer->destroyDescriptorSetLayout();
+        renderer->destroyRenderPass();
+        renderer->destroySwapchainImageViews();
+        renderer->destroySwapchain();
+        renderer->destroyDevice();
+    }
 
     // The surface need to be destoyed before instance is deleted.
     destroyPlatformSpecificSurface();
@@ -293,6 +296,11 @@ void destroyPlatformSpecificSurface()
 void resize(uint32_t width, uint32_t height)
 {
     if(width == 0 || height == 0)
+    {
+        return;
+    }
+
+    if(width == surfaceSize.width && height == surfaceSize.height)
     {
         return;
     }

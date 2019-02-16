@@ -1,5 +1,7 @@
 #pragma once
 
+#include "platform.h"
+
 struct QueueFamilyIndices {
     uint32_t graphicsFamilyIndex = UINT32_MAX;
     uint32_t presentFamilyIndex = UINT32_MAX;

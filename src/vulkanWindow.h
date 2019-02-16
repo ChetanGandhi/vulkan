@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstring>
-#include <vector>
-
 #include "platform.h"
 #include "renderer.h"
 #include "common.h"

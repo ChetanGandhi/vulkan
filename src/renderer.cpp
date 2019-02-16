@@ -1,24 +1,6 @@
-// #pragma once
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define STB_IMAGE_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
-
-#include <cstdlib>
-#include <assert.h>
-#include <iostream>
-#include <sstream>
-#include <set>
-#include <chrono>
-#include <unordered_map>
-#include <glm/gtc/matrix_transform.hpp>
-
+#include "renderer.h"
 #include "lib/stb/stb_image.h"
 #include "lib/tinyobj/tiny_obj_loader.h"
-#include "buildParam.h"
-#include "platform.h"
-#include "renderer.h"
 #include "utils.h"
 #include "logger.h"
 
@@ -2166,15 +2148,15 @@ void Renderer::render()
 
 void Renderer::updateUniformBuffer(uint32_t imageIndex)
 {
-    static std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::high_resolution_clock::now();
-    std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::high_resolution_clock::now();
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
     UniformBufferObject ubo = {};
-    ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.projection = glm::perspective(glm::radians(45.0f), (float)surfaceSize.width / (float)surfaceSize.height, 0.1f, 10.0f);
+    ubo.projection = glm::perspective(glm::radians(45.0f), (float)surfaceSize.width / (float)surfaceSize.height, 0.1f, 100.0f);
 
     //The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.

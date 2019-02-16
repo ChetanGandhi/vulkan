@@ -1,10 +1,5 @@
 #pragma once
 
-#include <assert.h>
-#include <iostream>
-#include <string>
-#include <vector>
-
 #include "platform.h"
 
 #if defined (ENABLE_DEBUG)

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
+#include "platform.h"
 
 struct Vertex {
     glm::vec3 position;

@@ -1,5 +1,3 @@
-#include <cstdarg>
-
 #include "logger.h"
 #include "utils.h"
 
@@ -18,7 +16,16 @@ bool Logger::initialize(std::string fileName)
         size_t size = currentDateTime(dateTime, sizeof(dateTime));
 
         logger = new Logger();
+
+        #if defined (_WIN32) // check for Windows
+
         fopen_s(&logger->logfile, fileName.c_str(), "w");
+
+        #elif defined (__linux) // check for Linux
+
+        logger->logfile = fopen(fileName.c_str(), "w");
+
+        #endif
 
         if(logger->logfile == NULL)
         {

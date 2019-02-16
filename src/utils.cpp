@@ -1,9 +1,5 @@
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <time.h>
 
-#include "buildParam.h"
+#include "platform.h"
 #include "utils.h"
 #include "logger.h"
 
