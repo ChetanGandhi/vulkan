@@ -56,7 +56,7 @@ void handleEvent(const xcb_generic_event_t *event)
 
 int main(void)
 {
-    Logger::init("debug_linux.log");
+    Logger::initialize("debug_linux.log");
 
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | XWindows";
@@ -131,7 +131,7 @@ void initializePlatformSpecificWindow()
     error = xcb_request_check(xcbConnection, cookieForError);
     if (error)
     {
-        LOGF("Error: Cannot create window [%d]", error->error_code);
+        logf("Error: Cannot create window [%d]", error->error_code);
         printf("Error: Cannot create window [%d]\n", error->error_code);
         free (error);
         cleanUp();
@@ -201,6 +201,7 @@ void initializeVulkan()
     renderer->initGraphicsPipline();
     renderer->initCommandPool();
     renderer->initDepthStencilImage();
+    renderer->initMSAAColorImage();
     renderer->initFrameBuffers();
     renderer->initTextureImage();
     renderer->initTextureImageView();
@@ -208,9 +209,9 @@ void initializeVulkan()
     renderer->loadModel();
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
-    renderer->initUniformBuffer();
+    renderer->initUniformBuffers();
     renderer->initDescriptorPool();
-    renderer->initDescriptorSet();
+    renderer->initDescriptorSets();
     renderer->initCommandBuffers();
     renderer->initSynchronizations();
 }
@@ -230,15 +231,16 @@ void cleanUp()
         renderer->waitForIdle();
         renderer->destroySynchronizations();
         renderer->destroyCommandBuffers();
-        renderer->destroyDescriptorSet();
+        renderer->destroyDescriptorSets();
         renderer->destroyDescriptorPool();
-        renderer->destroyUniformBuffer();
+        renderer->destroyUniformBuffers();
         renderer->destroyIndexBuffer();
         renderer->destroyVertexBuffer();
         renderer->destoryTextureSampler();
         renderer->destroyTextureImageView();
         renderer->destroyTextureImage();
         renderer->destroyFrameBuffers();
+        renderer->destoryMSAAColorImage();
         renderer->destoryDepthStencilImage();
         renderer->destroyCommandPool();
         renderer->destroyGraphicsPipline();
@@ -298,7 +300,7 @@ int mainLoop()
             xcb_flush(xcbConnection);
         }
 
-        renderer->updateUniformBuffer();
+        // This will also update uniform buffer as per current inflight image.
         renderer->render();
     }
 
