@@ -2061,16 +2061,22 @@ void Renderer::recreateSwapChain()
     initDepthStencilImage();
     initMSAAColorImage();
     initFrameBuffers();
+    initUniformBuffers();
+    initDescriptorPool();
+    initDescriptorSets();
     initCommandBuffers();
 }
 
 void Renderer::cleanupSwapChain()
 {
     waitForIdle();
+    destroyCommandBuffers();
+    destroyDescriptorSets();
+    destroyDescriptorPool();
+    destroyUniformBuffers();
     destroyFrameBuffers();
     destoryMSAAColorImage();
     destoryDepthStencilImage();
-    destroyCommandBuffers();
     destroyGraphicsPipline();
     destroyGraphicsPiplineCache();
     destroyRenderPass();
