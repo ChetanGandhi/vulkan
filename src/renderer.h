@@ -193,7 +193,7 @@ private:
     VkFormat findDepthFormat();
     VkSampleCountFlagBits findMaxMSAASampleCount(VkPhysicalDevice gpu, VkPhysicalDeviceProperties properties);
     VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
-    VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> presentModes);
+    VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> &presentModes);
     void chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent);
 
     bool isDeviceSuitable(VkPhysicalDevice gpu);

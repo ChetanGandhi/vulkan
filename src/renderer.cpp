@@ -594,7 +594,7 @@ VkSurfaceFormatKHR Renderer::chooseSurfaceFormat(const std::vector<VkSurfaceForm
     return surfaceFormats[0];
 }
 
-VkPresentModeKHR Renderer::choosePresentMode(const std::vector<VkPresentModeKHR> presentModes)
+VkPresentModeKHR Renderer::choosePresentMode(const std::vector<VkPresentModeKHR> &presentModes)
 {
     VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -2187,7 +2187,7 @@ void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32
     logf("Device Type\t\t: %d", properties->deviceType);
     logf("API Version\t\t: %d", properties->apiVersion);
     logf("Driver Version\t\t: %d", properties->driverVersion);
-    LOG_UUID("Pipeline Cache UUID\t: ", properties->pipelineCacheUUID);
+    log_uuid("Pipeline Cache UUID\t: ", properties->pipelineCacheUUID);
     logf("---------- GPU Properties End ----------");
 }
 
