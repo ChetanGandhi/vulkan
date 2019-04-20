@@ -28,8 +28,6 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${VK_SDK_PATH}/Include/*",
-                "${GLM_PATH}/*",
                 "${workspaceRoot}/lib/*",
                 "${workspaceRoot}/*"
             ],
@@ -39,8 +37,6 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${VK_SDK_PATH}/Include/*",
-                    "${GLM_PATH}/*",
                     "${workspaceRoot}/lib/*",
                     "${workspaceRoot}"
                 ],
@@ -56,7 +52,7 @@
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/ucrt",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/shared",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/winrt",
-                "${VK_SDK_PATH}/Include/*",
+                "${VULKAN_SDK}/Include/*",
                 "${GLM_PATH}/*",
                 "${workspaceRoot}/lib/*",
                 "${workspaceRoot}/*"
@@ -73,7 +69,7 @@
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/ucrt",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/shared",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.14393.0/winrt",
-                    "${VK_SDK_PATH}/Include/*",
+                    "${VULKAN_SDK}/Include/*",
                     "${GLM_PATH}/*",
                     "${workspaceRoot}/lib/*",
                     "${workspaceRoot}"

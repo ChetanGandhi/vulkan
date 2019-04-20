@@ -40,7 +40,7 @@ cd ..
 ###### Compile Code
 
 ```
-cl.exe /EHsc /Zi /Femain.exe /I %VK_SDK_PATH%\Include /I %GLM_PATH% *.cpp /link /LIBPATH:%VK_SDK_PATH%\lib user32.lib gdi32.lib kernel32.lib vulkan-1.lib
+cl.exe /EHsc /Zi /Femain.exe /I %VULKAN_SDK%\Include /I %GLM_PATH% *.cpp /link /LIBPATH:%VULKAN_SDK%\lib user32.lib gdi32.lib kernel32.lib vulkan-1.lib
 ```
 
 * /Zi - This is for adding full debug information to executable.
