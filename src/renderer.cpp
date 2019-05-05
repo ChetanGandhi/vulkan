@@ -320,7 +320,7 @@ bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices
     return true;
 }
 
-VkSampleCountFlagBits Renderer::findMaxMSAASampleCount(VkPhysicalDevice gpu, VkPhysicalDeviceProperties properties)
+VkSampleCountFlagBits Renderer::findMaxMSAASampleCount(VkPhysicalDeviceProperties properties)
 {
     VkSampleCountFlags sampleCountFlags = std::min(properties.limits.framebufferColorSampleCounts, properties.limits.framebufferDepthSampleCounts);
 
@@ -409,7 +409,7 @@ void Renderer::initDevice()
             if(isDeviceSuitable(nextGpuDetails.gpu))
             {
                 gpuDetails = nextGpuDetails;
-                msaaSamples = findMaxMSAASampleCount(nextGpuDetails.gpu, nextGpuDetails.properties);
+                msaaSamples = findMaxMSAASampleCount(nextGpuDetails.properties);
                 selectedGpuIndex = counter;
                 break;
             }
@@ -980,7 +980,7 @@ void Renderer::initGraphicsPipline()
     pipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
     pipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
     pipelineCreateInfo.pColorBlendState = &colorBlendingStateCreateInfo;
-    pipelineCreateInfo.pDynamicState = nullptr;
+    pipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.renderPass = renderPass;
     pipelineCreateInfo.subpass = 0;
@@ -1045,7 +1045,6 @@ void Renderer::initDepthStencilImage()
         assert(0 && "Depth stencil format not selected.");
     }
 
-    bool stencilAvailable = hasStencilComponent(depthStencilFormat);
     createImage(surfaceSize.width, surfaceSize.height, 1, msaaSamples, depthStencilFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
     createImageView(depthImage, depthStencilFormat, depthImageView, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     transitionImageLayout(depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
@@ -1279,7 +1278,7 @@ void Renderer::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, 
     VkMemoryRequirements imageMemoryRequirements = {};
     vkGetImageMemoryRequirements(device, image, &imageMemoryRequirements);
 
-    uint32_t memoryIndex = findMemoryTypeIndex(&(gpuDetails.memoryProperties), &imageMemoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    uint32_t memoryIndex = findMemoryTypeIndex(&(gpuDetails.memoryProperties), &imageMemoryRequirements, memoryPropertyFlags);
 
     VkMemoryAllocateInfo memoryAllocationInfo = {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;

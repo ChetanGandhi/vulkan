@@ -358,7 +358,7 @@ void toggleFullscreen(bool isFullscreen)
         xcb_intern_atom_cookie_t atom_wm_state_fullscreen_cookie = xcb_intern_atom(xcbConnection, 0, strlen("_NET_WM_STATE_FULLSCREEN"), "_NET_WM_STATE_FULLSCREEN");
         xcb_intern_atom_reply_t *atom_wm_state_fullscreen_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_state_fullscreen_cookie, NULL);
 
-        xcb_client_message_event_t event = {0};
+        xcb_client_message_event_t event = {};
         memset(&event, 0, sizeof(event));
         event.response_type = XCB_CLIENT_MESSAGE;
         event.window = xcbWindow;
