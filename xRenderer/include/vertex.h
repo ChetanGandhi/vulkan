@@ -2,7 +2,7 @@
 
 #include "platform.h"
 
-namespace {
+namespace xr {
     struct Vertex {
         glm::vec3 position;
         glm::vec3 color;

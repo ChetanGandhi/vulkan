@@ -1,7 +1,7 @@
 #pragma once
 
 #include "platform.h"
-#include "renderer.h"
+// #include "renderer.h"
 #include "common.h"
 #include "logger.h"
 
@@ -29,7 +29,7 @@ bool isEscapeKeyPressed = false;
 std::string windowName;
 std::string windowTitle;
 
-Renderer *renderer = nullptr;
+// Renderer *renderer = nullptr;
 SurfaceSize surfaceSize;
 
 VkSurfaceKHR surface = VK_NULL_HANDLE;
