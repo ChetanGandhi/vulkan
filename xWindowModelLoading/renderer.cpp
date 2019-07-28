@@ -892,7 +892,9 @@ void Renderer::initGraphicsPipline()
     colorBlendingStateCreateInfo.blendConstants[2] = 0.0f;
     colorBlendingStateCreateInfo.blendConstants[3] = 0.0f;
 
-    std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_LINE_WIDTH };
+    // We are not yet using the dynamic state hence removing this for now.
+    // std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_LINE_WIDTH };
+    std::vector<VkDynamicState> dynamicStates = {};
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
