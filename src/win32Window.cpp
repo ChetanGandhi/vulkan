@@ -53,11 +53,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 {
     Logger::initialize("debug_win32.log");
 
-    windowName = "VulkanWindow";
-    windowTitle = "Vulkan Window | Win32";
+    windowName = L"VulkanWindow";
+    windowTitle = L"Vulkan Window | Win32";
 
-    surfaceSize.width = 800;
-    surfaceSize.height = 600;
+    vkState = new VulkanState();
+    vkState->surfaceSize = {};
+    vkState->surfaceSize.width = 800;
+    vkState->surfaceSize.height = 600;
 
     hGlobalInstance = hInstance;
 
@@ -76,10 +78,7 @@ void initializePlatformSpecificWindow()
 {
     WNDCLASSEX wndclassex {};
 
-    assert(surfaceSize.width > 0);
-    assert(surfaceSize.height > 0);
-
-    className = windowName + "_" + std::to_string(win32ClassIdCounter);
+    className = windowName + L"_" + std::to_wstring(win32ClassIdCounter);
     win32ClassIdCounter++;
 
     wndclassex.cbSize = sizeof(WNDCLASSEX);
@@ -107,7 +106,7 @@ void initializePlatformSpecificWindow()
     DWORD dwStyleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
     dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 
-    RECT windowRect = {0, 0, LONG(surfaceSize.width), LONG(surfaceSize.height)};
+    RECT windowRect = {0, 0, LONG(vkState->surfaceSize.width), LONG(vkState->surfaceSize.height)};
     AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwStyleExtra);
 
     hWindow = CreateWindowEx(dwStyleExtra,
@@ -144,11 +143,10 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
-    renderer = new Renderer(surfaceSize);
+    renderer = new Renderer(vkState);
 
-    initPlatformSpecificSurface();
+    initPlatformSpecificSurface(&(vkState->instance), &(vkState->surface));
 
-    renderer->setSurface(surface);
     renderer->initDevice();
     renderer->initLogicalDevice();
     renderer->initSwapchain();
@@ -176,7 +174,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    logf("---------- Cleanup Started ----------");
+    logf("---------- Cleanup started ----------");
 
     if(isFullscreen)
     {
@@ -217,7 +215,12 @@ void cleanUp()
     delete renderer;
     renderer = nullptr;
 
+    delete vkState;
+    vkState = nullptr;
+
     destroyPlatformSpecificWindow();
+
+    logf("---------- Cleanup done ----------");
 }
 
 int mainLoop()
@@ -260,7 +263,7 @@ int mainLoop()
                         lastTime = timer.now();
                         fps = frameCounter;
                         frameCounter = 0;
-                        wsprintf(fpsTitle, "%s | FPS - %d", windowTitle.c_str(), fps);
+                        wsprintf(fpsTitle, L"%s | FPS - %d", windowTitle.c_str(), fps);
                         SetWindowText(hWindow, fpsTitle);
                     }
 
@@ -274,7 +277,7 @@ int mainLoop()
     return (int)msg.wParam;
 }
 
-void initPlatformSpecificSurface()
+void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 {
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -283,14 +286,14 @@ void initPlatformSpecificSurface()
     surfaceCreateInfo.hinstance = hGlobalInstance;
     surfaceCreateInfo.hwnd = hWindow;
 
-    VkResult result = vkCreateWin32SurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
-
+    VkResult result = vkCreateWin32SurfaceKHR(*instance, &surfaceCreateInfo, nullptr, surface);
     CHECK_ERROR(result);
 }
 
 void destroyPlatformSpecificSurface()
 {
-    vkDestroySurfaceKHR(renderer->getVulkanInstance(), surface, nullptr);
+    vkDestroySurfaceKHR(vkState->instance, vkState->surface, nullptr);
+    vkState->surface = VK_NULL_HANDLE;
 }
 
 void resize(uint32_t width, uint32_t height)
@@ -300,17 +303,16 @@ void resize(uint32_t width, uint32_t height)
         return;
     }
 
-    if(width == surfaceSize.width && height == surfaceSize.height)
+    if(width == vkState->surfaceSize.width && height == vkState->surfaceSize.height)
     {
         return;
     }
 
-    surfaceSize.width = width;
-    surfaceSize.height = height;
+    vkState->surfaceSize.width = width;
+    vkState->surfaceSize.height = height;
 
     if(renderer != nullptr)
     {
-        renderer->setSurfaceSize(surfaceSize);
         renderer->recreateSwapChain();
     }
 }

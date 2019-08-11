@@ -3,17 +3,19 @@
 #include "platform.h"
 #include "common.h"
 #include "vertex.h"
+#include "vulkanState.h"
 
 class Renderer
 {
 
 public:
-    Renderer(SurfaceSize surfaceSize);
+    Renderer(VulkanState *vkState);
     ~Renderer();
 
-    void setSurfaceSize(SurfaceSize surfaceSize);
-    void setSurface(VkSurfaceKHR surface);
     void waitForIdle();
+
+    void initInstance();
+    void destroyInstance();
 
     void initDevice();
     void initLogicalDevice();
@@ -86,98 +88,20 @@ public:
 
     void render();
 
-    const VkInstance getVulkanInstance() const;
-
 private:
-    SurfaceSize surfaceSize;
+    VulkanState *vkState = nullptr;
 
     const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
     const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
-    const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-
-    VkInstance            instance                = VK_NULL_HANDLE;
-    VkDevice              device                  = VK_NULL_HANDLE;
-    VkSurfaceKHR          surface                 = VK_NULL_HANDLE;
-    VkQueue               graphicsQueue           = VK_NULL_HANDLE;
-    VkQueue               presentQueue            = VK_NULL_HANDLE;
-    VkBuffer              vertexBuffer            = VK_NULL_HANDLE;
-    VkSwapchainKHR        swapchain               = VK_NULL_HANDLE;
-    VkRenderPass          renderPass              = VK_NULL_HANDLE;
-    VkDescriptorSetLayout descriptorSetLayout     = VK_NULL_HANDLE;
-    VkPipelineCache       pipelineCache           = VK_NULL_HANDLE;
-    VkPipelineLayout      pipelineLayout          = VK_NULL_HANDLE;
-    VkPipeline            pipeline                = VK_NULL_HANDLE;
-    VkCommandPool         commandPool             = VK_NULL_HANDLE;
-    VkDeviceMemory        vertexBufferMemory      = VK_NULL_HANDLE;
-    VkBuffer              indexBuffer             = VK_NULL_HANDLE;
-    VkDeviceMemory        indexBufferMemory       = VK_NULL_HANDLE;
-    VkDescriptorPool      descriptorPool          = VK_NULL_HANDLE;
-    VkImage               depthImage              = VK_NULL_HANDLE;
-    VkDeviceMemory        depthImageMemory        = VK_NULL_HANDLE;
-    VkImageView           depthImageView          = VK_NULL_HANDLE;
-    VkImage               textureImage            = VK_NULL_HANDLE;
-    VkDeviceMemory        textureImageMemory      = VK_NULL_HANDLE;
-    VkImageView           textureImageView        = VK_NULL_HANDLE;
-    VkSampler             textureSampler          = VK_NULL_HANDLE;
-    VkImage               msaaColorImage          = VK_NULL_HANDLE;
-    VkDeviceMemory        msaaColorImageMemory    = VK_NULL_HANDLE;
-    VkImageView           msaaColorImageView      = VK_NULL_HANDLE;
-
-    struct GpuDetails {
-        VkPhysicalDevice gpu = VK_NULL_HANDLE;
-        VkPhysicalDeviceProperties properties = {};
-        VkPhysicalDeviceMemoryProperties memoryProperties = {};
-    } gpuDetails;
-
-    struct UniformBufferObject {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-    };
 
     VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
     VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
-
-    QueueFamilyIndices queueFamilyIndices;
-
-    std::vector<const char*> instanceLayerList;
-    std::vector<const char*> deviceLayerList;
-    std::vector<const char*> instanceExtensionList;
-    std::vector<const char*> deviceExtensionList;
-    std::vector<VkImage> swapchainImages;
-    std::vector<VkImageView> swapchainImageViews;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    std::vector<VkFramebuffer> framebuffers;
-    std::vector<VkCommandBuffer> commandBuffers;
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> vertexIndices;
-
-    uint32_t swapchainImageCount = 2;
-    uint32_t mipLevels = 1;
-    size_t currentFrame = 0;
-
-    struct SwapchainSupportDetails {
-        VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
-        std::vector<VkSurfaceFormatKHR> surfaceFormats;
-        std::vector<VkPresentModeKHR> presentModes;
-    } swapchainSupportDetails;
-
-    VkSurfaceFormatKHR surfaceFormat = {};
-    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     void setupDebugLayer();
     void setupLayersAndExtensions();
 
     void enableDebug();
     void disableDebug();
-
-    void initInstance();
-    void destroyInstance();
 
     void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
     void endOneTimeCommand(VkCommandBuffer &commandBuffer);

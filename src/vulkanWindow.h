@@ -4,13 +4,14 @@
 #include "renderer.h"
 #include "common.h"
 #include "logger.h"
+#include "vulkanState.h"
 
 int start();
 
 void initializePlatformSpecificWindow();
 void destroyPlatformSpecificWindow();
 
-void initPlatformSpecificSurface();
+void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface);
 void destroyPlatformSpecificSurface();
 
 void initializeVulkan();
@@ -26,18 +27,15 @@ bool isRunning = true;
 bool isFullscreen = false;
 bool isEscapeKeyPressed = false;
 
-std::string windowName;
-std::string windowTitle;
-
+VulkanState *vkState = nullptr;
 Renderer *renderer = nullptr;
-SurfaceSize surfaceSize;
-
-VkSurfaceKHR surface = VK_NULL_HANDLE;
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 
 static uint64_t win32ClassIdCounter = 0;
-std::string className;
+std::wstring className;
+std::wstring windowName;
+std::wstring windowTitle;
 
 HINSTANCE hGlobalInstance = NULL;
 HWND hWindow = NULL;
