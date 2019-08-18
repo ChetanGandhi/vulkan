@@ -27,6 +27,9 @@ bool isRunning = true;
 bool isFullscreen = false;
 bool isEscapeKeyPressed = false;
 
+std::wstring windowName;
+std::wstring windowTitle;
+
 VulkanState *vkState = nullptr;
 Renderer *renderer = nullptr;
 
@@ -34,8 +37,6 @@ Renderer *renderer = nullptr;
 
 static uint64_t win32ClassIdCounter = 0;
 std::wstring className;
-std::wstring windowName;
-std::wstring windowTitle;
 
 HINSTANCE hGlobalInstance = NULL;
 HWND hWindow = NULL;
