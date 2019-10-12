@@ -145,7 +145,7 @@ void initializeVulkan()
 {
     renderer = new Renderer(vkState);
 
-    initPlatformSpecificSurface(&(vkState->instance), &(vkState->surface));
+    initPlatformSpecificSurface(&(vkState->instance->vkInstance), &(vkState->surface));
 
     renderer->initDevice();
     renderer->initLogicalDevice();
@@ -292,7 +292,7 @@ void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 
 void destroyPlatformSpecificSurface()
 {
-    vkDestroySurfaceKHR(vkState->instance, vkState->surface, nullptr);
+    vkDestroySurfaceKHR(vkState->instance->vkInstance, vkState->surface, nullptr);
     vkState->surface = VK_NULL_HANDLE;
 }
 

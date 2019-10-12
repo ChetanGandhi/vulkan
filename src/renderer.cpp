@@ -7,10 +7,8 @@
 Renderer::Renderer(VulkanState *vkState)
 {
     this->vkState = vkState;
-    setupDebugLayer();
     setupLayersAndExtensions();
     initInstance();
-    enableDebug(); // After initInstance as we need instance :P
 }
 
 Renderer::~Renderer()
@@ -18,144 +16,17 @@ Renderer::~Renderer()
     this->vkState->vertices.clear();
     this->vkState->vertexIndices.clear();
 
-    disableDebug();
     destroyInstance();
 
     this->vkState = nullptr;
 }
 
-#if ENABLE_DEBUG
-
-PFN_vkCreateDebugReportCallbackEXT _vkCreateDebugReportCallbackEXT = VK_NULL_HANDLE;
-PFN_vkDestroyDebugReportCallbackEXT _vkDestroyDebugReportCallbackEXT = VK_NULL_HANDLE;
-
-#endif
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t sourceObject, size_t location, int32_t messageCode, const char *layerPrefix, const char *message, void *userData)
-{
-    #if ENABLE_DEBUG
-
-        std::ostringstream stream;
-
-        if(flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
-        {
-            stream<<"[INFO | ";
-        }
-
-        if(flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
-        {
-            stream<<"[WARNING | ";
-        }
-
-        if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-        {
-            stream<<"[ERROR | ";
-        }
-
-        if(flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
-        {
-            stream<<"[DEBUG | ";
-        }
-
-        stream<<layerPrefix<<"]: "<<message;
-        logf(stream.str());
-
-        #if defined (_WIN32)
-
-            if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-            {
-                std::wstring wstr;
-                wstr.assign(stream.str().begin(), stream.str().end());
-                MessageBox(NULL, wstr.c_str(), L"Vulkan Error", MB_OK | MB_ICONERROR);
-            }
-
-        #endif // _WIN32
-
-    #endif // ENABLE_DEBUG
-
-    return false;
-}
-
-void Renderer::setupDebugLayer()
-{
-    #if ENABLE_DEBUG
-
-        debugReportCallbackInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        debugReportCallbackInfo.pfnCallback = debugReportCallback;
-        debugReportCallbackInfo.pNext = nullptr;
-        debugReportCallbackInfo.pUserData = nullptr;
-        debugReportCallbackInfo.flags = 0
-        | (VK_DEBUG_REPORT_INFORMATION_BIT_EXT & ENABLE_DEBUG_REPORT_INFORMATION_BIT)
-        | (VK_DEBUG_REPORT_WARNING_BIT_EXT & ENABLE_DEBUG_REPORT_WARNING_BIT)
-        | (VK_DEBUG_REPORT_DEBUG_BIT_EXT & ENABLE_DEBUG_REPORT_DEBUG_BIT)
-        | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT
-        | VK_DEBUG_REPORT_ERROR_BIT_EXT;
-
-        this->vkState->instanceLayerList.push_back("VK_LAYER_LUNARG_standard_validation");
-        // this->vkState->instanceLayerList.push_back("VK_LAYER_GOOGLE_threading");
-        // this->vkState->instanceLayerList.push_back("VK_LAYER_LUNARG_image");
-        // this->vkState->instanceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
-        // this->vkState->instanceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
-        // this->vkState->instanceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
-
-        this->vkState->instanceExtensionList.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-
-        this->vkState->deviceLayerList.push_back("VK_LAYER_LUNARG_standard_validation");
-        // this->vkState->deviceLayerList.push_back("VK_LAYER_LUNARG_threading");
-        // this->vkState->deviceLayerList.push_back("VK_LAYER_LUNARG_image");
-        // this->vkState->deviceLayerList.push_back("VK_LAYER_LUNARG_core_validation");
-        // this->vkState->deviceLayerList.push_back("VK_LAYER_LUNARG_object_tracker");
-        // this->vkState->deviceLayerList.push_back("VK_LAYER_LUNARG_parameter_validation");
-
-    #endif // ENABLE_DEBUG
-}
-
-void Renderer::enableDebug()
-{
-    #if ENABLE_DEBUG
-
-        _vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-            this->vkState->instance,
-            "vkCreateDebugReportCallbackEXT"
-        );
-
-        _vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
-            this->vkState->instance,
-            "vkDestroyDebugReportCallbackEXT"
-        );
-
-        if(_vkCreateDebugReportCallbackEXT == VK_NULL_HANDLE || _vkDestroyDebugReportCallbackEXT == VK_NULL_HANDLE)
-        {
-            assert(0 && "Vulkan Error: Cannot fetch debug functions");
-            std::exit(EXIT_FAILURE);
-        }
-
-        _vkCreateDebugReportCallbackEXT(
-            this->vkState->instance,
-            &debugReportCallbackInfo,
-            VK_NULL_HANDLE,
-            &debugReport
-        );
-
-    #endif // ENABLE_DEBUG
-}
-
-void Renderer::disableDebug()
-{
-    #if ENABLE_DEBUG
-
-        _vkDestroyDebugReportCallbackEXT(this->vkState->instance, debugReport, VK_NULL_HANDLE);
-        debugReport = VK_NULL_HANDLE;
-
-    #endif // ENABLE_DEBUG
-}
-
 void Renderer::setupLayersAndExtensions()
 {
-    this->vkState->instanceExtensionList.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-    this->vkState->instanceExtensionList.push_back(PLATFORM_SURFACE_EXTENSION_NAME);
+    this->vkState->instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    this->vkState->instanceExtensions.push_back(PLATFORM_SURFACE_EXTENSION_NAME);
 
-    this->vkState->deviceExtensionList.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    this->vkState->deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
 void Renderer::initInstance()
@@ -169,24 +40,15 @@ void Renderer::initInstance()
     applicationInfo.pEngineName = nullptr;
     applicationInfo.engineVersion = 0;
 
-    VkInstanceCreateInfo instanceCreateInfo = {};
-    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pNext = &debugReportCallbackInfo;
-    instanceCreateInfo.flags = 0;
-    instanceCreateInfo.pApplicationInfo = &applicationInfo;
-    instanceCreateInfo.enabledLayerCount = this->vkState->instanceLayerList.size();
-    instanceCreateInfo.ppEnabledLayerNames = this->vkState->instanceLayerList.data();
-    instanceCreateInfo.enabledExtensionCount = this->vkState->instanceExtensionList.size();
-    instanceCreateInfo.ppEnabledExtensionNames = this->vkState->instanceExtensionList.data();
-
-    VkResult result = vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &(this->vkState->instance));
+    this->vkState->instance = new Instance(this->vkState->instanceLayers, this->vkState->instanceExtensions);
+    VkResult result = this->vkState->instance->initVulkanInstance(&applicationInfo);
     CHECK_ERROR(result);
 }
 
 void Renderer::destroyInstance()
 {
-    vkDestroyInstance(this->vkState->instance, VK_NULL_HANDLE);
-    this->vkState->instance = VK_NULL_HANDLE;
+    delete this->vkState->instance;
+    this->vkState->instance = nullptr;
 }
 
 void Renderer::waitForIdle()
@@ -204,7 +66,7 @@ void Renderer::waitForIdle()
 void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
 {
     uint32_t gpuCount = 0;
-    vkEnumeratePhysicalDevices(this->vkState->instance, &gpuCount, VK_NULL_HANDLE);
+    vkEnumeratePhysicalDevices(this->vkState->instance->vkInstance, &gpuCount, VK_NULL_HANDLE);
 
     if(gpuCount == 0)
     {
@@ -212,7 +74,7 @@ void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
     }
 
     std::vector<VkPhysicalDevice> deviceList(gpuCount);
-    vkEnumeratePhysicalDevices(this->vkState->instance, &gpuCount, deviceList.data());
+    vkEnumeratePhysicalDevices(this->vkState->instance->vkInstance, &gpuCount, deviceList.data());
 
     for(uint32_t counter = 0; counter < gpuCount; ++counter)
     {
@@ -379,7 +241,7 @@ bool Renderer::checkDeviceExtensionSupport(VkPhysicalDevice gpu)
 
     CHECK_ERROR(result);
 
-    std::set<std::string> requiredExtensions(this->vkState->deviceExtensionList.begin(), this->vkState->deviceExtensionList.end());
+    std::set<std::string> requiredExtensions(this->vkState->deviceExtensions.begin(), this->vkState->deviceExtensions.end());
 
     for(const VkExtensionProperties &nextExtensionProperties : availableDeviceExtensions)
     {
@@ -517,12 +379,10 @@ void Renderer::initLogicalDevice()
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = nullptr;
     deviceCreateInfo.flags = 0;
-    deviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfos.size();
+    deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
     deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
-    deviceCreateInfo.enabledLayerCount = this->vkState->deviceLayerList.size(); // Deprecated but still good for old API
-    deviceCreateInfo.ppEnabledLayerNames = this->vkState->deviceLayerList.data(); // Deprecated but still good for old API
-    deviceCreateInfo.enabledExtensionCount = this->vkState->deviceExtensionList.size();
-    deviceCreateInfo.ppEnabledExtensionNames = this->vkState->deviceExtensionList.data();
+    deviceCreateInfo.enabledExtensionCount = this->vkState->deviceExtensions.size();
+    deviceCreateInfo.ppEnabledExtensionNames = this->vkState->deviceExtensions.data();
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
     VkResult result = vkCreateDevice(this->vkState->gpuDetails.gpu, &deviceCreateInfo, VK_NULL_HANDLE, &(this->vkState->device));
@@ -2388,7 +2248,7 @@ void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32
 
 void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)
 {
-    #if ENABLE_DEBUG
+    #ifndef NDEBUG
 
     logf("---------- Instance Layer Properties ----------");
 
@@ -2403,12 +2263,12 @@ void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> prope
 
     logf("---------- Instance Layer Properties End [%d] ----------", properties.size());
 
-    #endif // ENABLE_DEBUG
+    #endif
 }
 
 void Renderer::printDeviceLayerProperties(std::vector<VkLayerProperties> properties)
 {
-    #if ENABLE_DEBUG
+    #ifndef NDEBUG
 
     logf("---------- Device Layer Properties ----------");
 
@@ -2423,12 +2283,12 @@ void Renderer::printDeviceLayerProperties(std::vector<VkLayerProperties> propert
 
     logf("---------- Device Layer Properties End [%d] ----------", properties.size());
 
-    #endif // ENABLE_DEBUG
+    #endif
 }
 
 void Renderer::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats)
 {
-    #if ENABLE_DEBUG
+    #ifndef NDEBUG
 
     logf("---------- Surface Formats ----------");
 
@@ -2441,12 +2301,12 @@ void Renderer::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfac
 
     logf("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
 
-    #endif // ENABLE_DEBUG
+    #endif
 }
 
 void Renderer::printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount)
 {
-    #if ENABLE_DEBUG
+    #ifndef NDEBUG
 
     logf("---------- Swapchain Image Count ----------");
     logf("Min\t: %d", minImageCount);
@@ -2454,5 +2314,5 @@ void Renderer::printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImag
     logf("Current\t: %d", currentImageCount);
     logf("---------- Swapchain Image Count End ----------");
 
-    #endif // ENABLE_DEBUG
+    #endif
 }

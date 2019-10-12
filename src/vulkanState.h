@@ -4,13 +4,14 @@
 #include "common.h"
 #include "logger.h"
 #include "vertex.h"
+#include "instance.h"
 
 class VulkanState {
     public:
 
     const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
-    VkInstance instance = VK_NULL_HANDLE;
+    Instance *instance = nullptr;
     VkDevice device = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
@@ -38,10 +39,9 @@ class VulkanState {
     VkDeviceMemory msaaColorImageMemory = VK_NULL_HANDLE;
     VkImageView msaaColorImageView = VK_NULL_HANDLE;
 
-    std::vector<const char*> instanceLayerList;
-    std::vector<const char*> deviceLayerList;
-    std::vector<const char*> instanceExtensionList;
-    std::vector<const char*> deviceExtensionList;
+    std::vector<const char*> instanceLayers;
+    std::vector<const char*> instanceExtensions;
+    std::vector<const char*> deviceExtensions;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkSemaphore> imageAvailableSemaphores;

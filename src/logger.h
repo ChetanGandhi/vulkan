@@ -5,15 +5,15 @@
 #include <iomanip>
 #include <cstdarg>
 
-#if defined (ENABLE_DEBUG)
+#ifndef NDEBUG
 
 #define logf(x_message, ...) Logger::log(__FILE__, __FUNCTION__, __LINE__, x_message, ## __VA_ARGS__)
 #define log_uuid(x_message, u_uuid) Logger::logUUID(__FILE__, __FUNCTION__, __LINE__, x_message, u_uuid)
 
 #else
 
-#define logf(x_message, ...)
-#define log_uuid(x_message, u_uuid)
+#define logf(x_message, ...) ((void)0)
+#define log_uuid(x_message, u_uuid) ((void)0)
 
 #endif
 

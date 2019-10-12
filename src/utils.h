@@ -2,13 +2,13 @@
 
 #include "platform.h"
 
-#if defined (ENABLE_DEBUG)
+#ifndef NDEBUG
 
 #define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
 
 #else
 
-#define CHECK_ERROR(result)
+#define CHECK_ERROR(result) ((void)0)
 
 #endif
 

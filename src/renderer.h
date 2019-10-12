@@ -94,15 +94,7 @@ private:
     const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
     const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
 
-    VkDebugReportCallbackEXT debugReport = VK_NULL_HANDLE;
-    VkDebugReportCallbackCreateInfoEXT debugReportCallbackInfo = {};
-
-    void setupDebugLayer();
     void setupLayersAndExtensions();
-
-    void enableDebug();
-    void disableDebug();
-
     void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
     void endOneTimeCommand(VkCommandBuffer &commandBuffer);
     void updateUniformBuffer(uint32_t imageIndex);
