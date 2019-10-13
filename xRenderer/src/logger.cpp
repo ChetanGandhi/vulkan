@@ -2,7 +2,7 @@
 #include "utils.h"
 
 namespace xr {
-	Logger *Logger::logger = nullptr;
+    Logger *Logger::logger = nullptr;
 
     Logger::Logger() {}
     Logger::Logger(const Logger&) {};
@@ -99,7 +99,7 @@ namespace xr {
         char dateTime[100] = {0};
         size_t size = currentDateTime(dateTime, sizeof(dateTime));
 
-        fprintf(logger->logfile, "%s | [UUID] | %s:%04d | %s | %s: ", dateTime, file.c_str(), line, function.c_str(), message.c_str());
+        fprintf(logger->logfile, "%s | %s:%04d | %s | [UUID] | %s", dateTime, file.c_str(), line, function.c_str(), message.c_str());
 
         for (int counter = 0; counter < VK_UUID_SIZE; ++counter)
         {

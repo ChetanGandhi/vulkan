@@ -19,6 +19,7 @@ project(
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Set CXX flags
 set(CMAKE_CXX_STANDARD 11)
@@ -46,10 +47,17 @@ target_sources(
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src/logger.cpp
         ${PROJECT_SOURCE_DIR}/src/utils.cpp
+        ${PROJECT_SOURCE_DIR}/src/renderer.cpp
+        ${PROJECT_SOURCE_DIR}/src/core.cpp
+        ${PROJECT_SOURCE_DIR}/src/debugger.cpp
+        ${PROJECT_SOURCE_DIR}/src/instance.cpp
         ${PROJECT_SOURCE_DIR}/include/buildParam.h
         ${PROJECT_SOURCE_DIR}/include/common.h
         ${PROJECT_SOURCE_DIR}/include/logger.h
         ${PROJECT_SOURCE_DIR}/include/platform.h
+        ${PROJECT_SOURCE_DIR}/include/core.h
+        ${PROJECT_SOURCE_DIR}/include/debugger.h
+        ${PROJECT_SOURCE_DIR}/include/instance.h
         ${PROJECT_SOURCE_DIR}/include/utils.h
         ${PROJECT_SOURCE_DIR}/include/vertex.h
         ${PROJECT_SOURCE_DIR}/include/vulkanWindow.h
@@ -72,10 +80,10 @@ target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} ${glm_LIBRARIES})
 
 install(
     TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/install/lib
+    ARCHIVE DESTINATION ${CMAKE_BINARY_DIR}/install/lib
+    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/bin
+    INCLUDES DESTINATION ${CMAKE_BINARY_DIR}/install/include
 )
 
 # Visual Studio startup project

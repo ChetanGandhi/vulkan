@@ -3,10 +3,14 @@
 #include "platform.h"
 
 namespace xr {
-    #if defined (ENABLE_DEBUG)
-        #define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
+    #ifndef NDEBUG
+
+    #define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
+
     #else
-        #define CHECK_ERROR(result)
+
+    #define CHECK_ERROR(result) ((void)0)
+
     #endif
 
     void checkError(VkResult result, std::string file, uint32_t lineNumber);

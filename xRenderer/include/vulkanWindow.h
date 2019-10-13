@@ -1,16 +1,17 @@
 #pragma once
 
 #include "platform.h"
-// #include "renderer.h"
+#include "renderer.h"
 #include "common.h"
 #include "logger.h"
+#include "vulkanState.h"
 
 int start();
 
 void initializePlatformSpecificWindow();
 void destroyPlatformSpecificWindow();
 
-void initPlatformSpecificSurface();
+void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface);
 void destroyPlatformSpecificSurface();
 
 void initializeVulkan();
@@ -29,10 +30,8 @@ bool isEscapeKeyPressed = false;
 std::string windowName;
 std::string windowTitle;
 
-// Renderer *renderer = nullptr;
-SurfaceSize surfaceSize;
-
-VkSurfaceKHR surface = VK_NULL_HANDLE;
+xr::VulkanState *vkState = nullptr;
+xr::Renderer *renderer = nullptr;
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 
