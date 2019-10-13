@@ -11,7 +11,7 @@ endif()
 
 # Define the project
 project(
-    XRenderer
+    xRenderer
     VERSION 1.0.0
     DESCRIPTION "Vulkan renderer"
     LANGUAGES CXX
@@ -80,10 +80,15 @@ target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} ${glm_LIBRARIES})
 
 install(
     TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}
-    LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/install/lib
-    ARCHIVE DESTINATION ${CMAKE_BINARY_DIR}/install/lib
-    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/bin
-    INCLUDES DESTINATION ${CMAKE_BINARY_DIR}/install/include
+    LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/lib
+    ARCHIVE DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/lib
+    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/bin
+    INCLUDES DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/include
+)
+
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/include/${PROJECT_NAME}
 )
 
 # Visual Studio startup project
