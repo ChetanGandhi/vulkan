@@ -4,7 +4,7 @@
 #include "logger.h"
 
 namespace xr {
-    void checkError(VkResult result, std::string file, uint32_t lineNumber)
+    XR_API void checkError(const VkResult result, const char* file, const uint32_t lineNumber)
     {
         std::ostringstream stream;
 
@@ -88,13 +88,13 @@ namespace xr {
             }
 
             stream<<"\nFile :"<<file<<"\nLine: "<<lineNumber;
-            logf(stream.str());
+            logf(stream.str().c_str());
 
             assert(0 && "----- Vulkan Runtime Error -----");
         }
     }
 
-    uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *imageMemoryRequirements, const VkMemoryPropertyFlags requiredMemoryProperties)
+    XR_API uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *imageMemoryRequirements, const VkMemoryPropertyFlags requiredMemoryProperties)
     {
         for(uint32_t memoryTypeCounter = 0; memoryTypeCounter < gpuMemoryProperties->memoryTypeCount; ++memoryTypeCounter)
         {
@@ -112,7 +112,7 @@ namespace xr {
         return UINT32_MAX;
     }
 
-    bool readFile(const std::string &fileName, std::vector<char> *data)
+    XR_API bool readFile(const char* fileName, std::vector<char> *data)
     {
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
@@ -132,7 +132,7 @@ namespace xr {
         return true;
     }
 
-    size_t currentDateTime(char *dateTimeString, size_t size)
+    XR_API size_t currentDateTime(char *dateTimeString, size_t size)
     {
         time_t now = time(NULL);
         struct tm tmStruct;

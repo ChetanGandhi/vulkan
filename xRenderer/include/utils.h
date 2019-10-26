@@ -2,22 +2,19 @@
 
 #include "platform.h"
 
+#ifndef NDEBUG
+
+#define CHECK_ERROR(result) xr::checkError(result, __FILE__, __LINE__);
+
+#else
+
+#define CHECK_ERROR(result) ((void)0)
+
+#endif
+
 namespace xr {
-    #ifndef NDEBUG
-
-    #define CHECK_ERROR(result) checkError(result, __FILE__, __LINE__);
-
-    #else
-
-    #define CHECK_ERROR(result) ((void)0)
-
-    #endif
-
-    void checkError(VkResult result, std::string file, uint32_t lineNumber);
-
-    uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *memoryRequirements, const VkMemoryPropertyFlags memoryPropertyFlags);
-
-    bool readFile(const std::string &fileName, std::vector<char> *data);
-
-    size_t currentDateTime(char *dateTimeString, size_t size);
+    XR_API void checkError(const VkResult result, const char* file, const uint32_t lineNumber);
+    XR_API uint32_t findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties, const VkMemoryRequirements *memoryRequirements, const VkMemoryPropertyFlags memoryPropertyFlags);
+    XR_API bool readFile(const char* fileName, std::vector<char> *data);
+    XR_API size_t currentDateTime(char *dateTimeString, size_t size);
 }

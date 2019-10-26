@@ -36,7 +36,7 @@ namespace xr {
         }
 
         stream<<" | "<<pCallbackData->pMessage;
-        logf(stream.str());
+        logf(stream.str().c_str());
 
         #if defined (_WIN32)
 

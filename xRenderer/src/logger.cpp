@@ -7,7 +7,7 @@ namespace xr {
     Logger::Logger() {}
     Logger::Logger(const Logger&) {};
 
-    bool Logger::initialize(std::string fileName)
+    XR_API bool Logger::initialize(const char *fileName)
     {
         bool logFileCreated = true;
 
@@ -20,11 +20,11 @@ namespace xr {
 
             #if defined (_WIN32) // check for Windows
 
-            fopen_s(&logger->logfile, fileName.c_str(), "w");
+            fopen_s(&logger->logfile, fileName, "w");
 
             #elif defined (__linux) // check for Linux
 
-            logger->logfile = fopen(fileName.c_str(), "w");
+            logger->logfile = fopen(fileName, "w");
 
             #endif
 
@@ -63,13 +63,13 @@ namespace xr {
         logger->logfile = nullptr;
     }
 
-    void Logger::close()
+    XR_API void Logger::close()
     {
         delete logger;
         logger = nullptr;
     }
 
-    void Logger::log(std::string file, std::string function, int line, std::string message, ...)
+    XR_API void Logger::log(const char* file, const char* function, const uint32_t line, const char* message, ...)
     {
         if(logger->logfile == NULL)
         {
@@ -78,18 +78,18 @@ namespace xr {
 
         char dateTime[100] = {0};
         size_t size = currentDateTime(dateTime, sizeof(dateTime));
-        fprintf(logger->logfile, "%s | %s:%04d | %s | ", dateTime, file.c_str(), line, function.c_str());
+        fprintf(logger->logfile, "%s | %s:%04d | %s | ", dateTime, file, line, function);
 
         va_list args;
         va_start(args, message);
-        vfprintf(logger->logfile, message.c_str(), args);
+        vfprintf(logger->logfile, message, args);
         va_end(args);
 
         fprintf(logger->logfile, "\n");
         fflush(logger->logfile);
     }
 
-    void Logger::logUUID(std::string file, std::string function, int line, std::string message, uint8_t *uuid)
+    XR_API void Logger::logUUID(const char* file, const char* function, const uint32_t line, const char* message, const uint8_t *uuid)
     {
         if(logger->logfile == NULL)
         {
@@ -99,7 +99,7 @@ namespace xr {
         char dateTime[100] = {0};
         size_t size = currentDateTime(dateTime, sizeof(dateTime));
 
-        fprintf(logger->logfile, "%s | %s:%04d | %s | [UUID] | %s", dateTime, file.c_str(), line, function.c_str(), message.c_str());
+        fprintf(logger->logfile, "%s | %s:%04d | %s | [UUID] | %s", dateTime, file, line, function, message);
 
         for (int counter = 0; counter < VK_UUID_SIZE; ++counter)
         {

@@ -11,6 +11,8 @@ namespace xr {
         public:
 
         const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+        const char* vertexShaderFilePath = NULL;
+        const char* fragmentShaderFile = NULL;
 
         Instance *instance = nullptr;
         VkDevice device = VK_NULL_HANDLE;

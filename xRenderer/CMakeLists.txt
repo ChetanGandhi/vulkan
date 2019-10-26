@@ -31,16 +31,20 @@ endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-add_definitions(-DDEBUG)
+    add_definitions(-DDEBUG)
 endif()
 
 # Check for Vulkan package
 # Be aware that system libraries have priority on SDK in the finding.
 find_package(Vulkan REQUIRED)
-find_package(GLM REQUIRED)
+find_package(glm REQUIRED)
 
 # Build
-add_library(${PROJECT_NAME} SHARED)
+add_library(${PROJECT_NAME} SHARED "")
+
+target_compile_definitions(
+    ${PROJECT_NAME} PRIVATE XR_EXPORTS
+)
 
 target_sources(
         ${PROJECT_NAME}

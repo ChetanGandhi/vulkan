@@ -5,14 +5,14 @@
 #include "logger.h"
 
 namespace xr {
-    Renderer::Renderer(VulkanState *vkState)
+    XR_API Renderer::Renderer(VulkanState *vkState)
     {
         this->vkState = vkState;
         setupLayersAndExtensions();
         initInstance();
     }
 
-    Renderer::~Renderer()
+    XR_API Renderer::~Renderer()
     {
         this->vkState->vertices.clear();
         this->vkState->vertexIndices.clear();
@@ -30,7 +30,7 @@ namespace xr {
         this->vkState->deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }
 
-    void Renderer::initInstance()
+    XR_API void Renderer::initInstance()
     {
         VkApplicationInfo applicationInfo = {};
         applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -46,13 +46,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroyInstance()
+    XR_API void Renderer::destroyInstance()
     {
         delete this->vkState->instance;
         this->vkState->instance = nullptr;
     }
 
-    void Renderer::waitForIdle()
+    XR_API void Renderer::waitForIdle()
     {
         vkQueueWaitIdle(this->vkState->graphicsQueue);
 
@@ -252,7 +252,7 @@ namespace xr {
         return requiredExtensions.empty();
     }
 
-    void Renderer::initDevice()
+    XR_API void Renderer::initDevice()
     {
         {
             std::vector<GpuDetails> gpuDetailsList(0);
@@ -343,7 +343,7 @@ namespace xr {
         }
     }
 
-    void Renderer::initLogicalDevice()
+    XR_API void Renderer::initLogicalDevice()
     {
         std::vector<float> queuePriorities = {0.0f};
         std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos(0);
@@ -402,7 +402,7 @@ namespace xr {
         }
     }
 
-    void Renderer::destroyDevice()
+    XR_API void Renderer::destroyDevice()
     {
         vkDestroyDevice(this->vkState->device, VK_NULL_HANDLE);
         this->vkState->device = VK_NULL_HANDLE;
@@ -512,7 +512,7 @@ namespace xr {
         }
     }
 
-    void Renderer::initSwapchain()
+    XR_API void Renderer::initSwapchain()
     {
         VkExtent2D initialSurfaceExtent = {};
         initialSurfaceExtent.width = this->vkState->surfaceSize.width;
@@ -628,13 +628,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroySwapchain()
+    XR_API void Renderer::destroySwapchain()
     {
         vkDestroySwapchainKHR(this->vkState->device, this->vkState->swapchain, nullptr);
         this->vkState->swapchain = VK_NULL_HANDLE;
     }
 
-    void Renderer::initSwapchainImageViews()
+    XR_API void Renderer::initSwapchainImageViews()
     {
         this->vkState->swapchainImageViews.resize(this->vkState->swapchainImageCount);
 
@@ -650,7 +650,7 @@ namespace xr {
         }
     }
 
-    void Renderer::destroySwapchainImageViews()
+    XR_API void Renderer::destroySwapchainImageViews()
     {
         for(VkImageView imageView : this->vkState->swapchainImageViews)
         {
@@ -660,7 +660,7 @@ namespace xr {
         this->vkState->swapchainImageViews.clear();
     }
 
-    VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
+    XR_API VkShaderModule Renderer::createShaderModule(const std::vector<char> &code)
     {
         VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
         shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -676,7 +676,7 @@ namespace xr {
         return shaderModule;
     }
 
-    void Renderer::initGraphicsPiplineCache()
+    XR_API void Renderer::initGraphicsPiplineCache()
     {
         VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
         pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -689,29 +689,31 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroyGraphicsPiplineCache()
+    XR_API void Renderer::destroyGraphicsPiplineCache()
     {
         vkDestroyPipelineCache(this->vkState->device, this->vkState->pipelineCache, nullptr);
         this->vkState->pipelineCache = VK_NULL_HANDLE;
     }
 
-    void Renderer::initGraphicsPipline()
+    XR_API void Renderer::initGraphicsPipline()
     {
         std::vector<char> vertexShaderCode;
         std::vector<char> fragmentShaderCode;
 
-        if(!readFile("shaders/vert.spv", &vertexShaderCode))
+        if(!readFile(this->vkState->vertexShaderFilePath, &vertexShaderCode))
         {
+            logf("Cannot open vertex shader file: %s", this->vkState->vertexShaderFilePath);
             assert(0 && "Cannot open vertex shader.");
         }
 
-        if(!readFile("shaders/frag.spv", &fragmentShaderCode))
+        if(!readFile(this->vkState->fragmentShaderFile, &fragmentShaderCode))
         {
+            logf("Cannot open fragment shader file: %s", this->vkState->fragmentShaderFile);
             assert(0 && "Cannot open fragment shader.");
         }
 
-        VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
-        VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
+        VkShaderModule vertexShaderModule = this->createShaderModule(vertexShaderCode);
+        VkShaderModule fragmentShaderModule = this->createShaderModule(fragmentShaderCode);
 
         VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
         vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -891,7 +893,7 @@ namespace xr {
         vkDestroyShaderModule(this->vkState->device, vertexShaderModule, nullptr);
     }
 
-    void Renderer::destroyGraphicsPipline()
+    XR_API void Renderer::destroyGraphicsPipline()
     {
         vkDestroyPipeline(this->vkState->device, this->vkState->pipeline, nullptr);
         vkDestroyPipelineLayout(this->vkState->device, this->vkState->pipelineLayout, nullptr);
@@ -936,7 +938,7 @@ namespace xr {
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT || false;
     }
 
-    void Renderer::initDepthStencilImage()
+    XR_API void Renderer::initDepthStencilImage()
     {
         VkFormat depthStencilFormat = findDepthFormat();
         if(depthStencilFormat == VK_FORMAT_UNDEFINED)
@@ -974,7 +976,7 @@ namespace xr {
         );
     }
 
-    void Renderer::destoryDepthStencilImage()
+    XR_API void Renderer::destoryDepthStencilImage()
     {
         vkDestroyImageView(this->vkState->device, this->vkState->depthImageView, nullptr);
         vkDestroyImage(this->vkState->device, this->vkState->depthImage, nullptr);
@@ -984,7 +986,7 @@ namespace xr {
         this->vkState->depthImageMemory = VK_NULL_HANDLE;
     }
 
-    void Renderer::initMSAAColorImage()
+    XR_API void Renderer::initMSAAColorImage()
     {
         createImage(
             this->vkState->surfaceSize.width,
@@ -1016,7 +1018,7 @@ namespace xr {
         );
     }
 
-    void Renderer::destoryMSAAColorImage()
+    XR_API void Renderer::destoryMSAAColorImage()
     {
         vkDestroyImageView(this->vkState->device, this->vkState->msaaColorImageView, nullptr);
         vkDestroyImage(this->vkState->device, this->vkState->msaaColorImage, nullptr);
@@ -1026,7 +1028,7 @@ namespace xr {
         this->vkState->msaaColorImageMemory = VK_NULL_HANDLE;
     }
 
-    void Renderer::initRenderPass()
+    XR_API void Renderer::initRenderPass()
     {
         VkAttachmentDescription colorAttachmentDescription = {};
         colorAttachmentDescription.flags = 0;
@@ -1114,13 +1116,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroyRenderPass()
+    XR_API void Renderer::destroyRenderPass()
     {
         vkDestroyRenderPass(this->vkState->device, this->vkState->renderPass, nullptr);
         this->vkState->renderPass = VK_NULL_HANDLE;
     }
 
-    void Renderer::initDescriptorSetLayout()
+    XR_API void Renderer::initDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding uboDescriptorSetLayoutBinding = {};
         uboDescriptorSetLayoutBinding.binding = 0;
@@ -1149,13 +1151,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroyDescriptorSetLayout()
+    XR_API void Renderer::destroyDescriptorSetLayout()
     {
         vkDestroyDescriptorSetLayout(this->vkState->device, this->vkState->descriptorSetLayout, nullptr);
         this->vkState->descriptorSetLayout = VK_NULL_HANDLE;
     }
 
-    void Renderer::initFrameBuffers()
+    XR_API void Renderer::initFrameBuffers()
     {
         this->vkState->framebuffers.resize(this->vkState->swapchainImageCount);
 
@@ -1188,7 +1190,7 @@ namespace xr {
         }
     }
 
-    void Renderer::destroyFrameBuffers()
+    XR_API void Renderer::destroyFrameBuffers()
     {
         for(VkFramebuffer nextFrameBuffer : this->vkState->framebuffers)
         {
@@ -1198,7 +1200,7 @@ namespace xr {
         this->vkState->framebuffers.clear();
     }
 
-    void Renderer::initCommandPool()
+    XR_API void Renderer::initCommandPool()
     {
         VkCommandPoolCreateInfo commandPoolCreateInfo = {};
         commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1210,13 +1212,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroyCommandPool()
+    XR_API void Renderer::destroyCommandPool()
     {
         vkDestroyCommandPool(this->vkState->device, this->vkState->commandPool, nullptr);
         this->vkState->commandPool = VK_NULL_HANDLE;
     }
 
-    void Renderer::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory)
+    XR_API void Renderer::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory)
     {
         VkImageCreateInfo imageCreateInfo = {};
         imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1257,7 +1259,7 @@ namespace xr {
         vkBindImageMemory(this->vkState->device, image, imageMemory, 0);
     }
 
-    void Renderer::createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels)
+    XR_API void Renderer::createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels)
     {
         VkImageViewCreateInfo imageViewCreateInfo = {};
         imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1280,13 +1282,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::initTextureImage()
+    XR_API void Renderer::initTextureImage(const char* textureFilePath)
     {
         int textureWidth = 0;
         int textureHeight = 0;
         int textureChannels = 0;
 
-        stbi_uc *pixels = stbi_load(chaletTextureResourcePath.c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+        stbi_uc *pixels = stbi_load(textureFilePath, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
 
         if(!pixels)
         {
@@ -1301,7 +1303,7 @@ namespace xr {
         VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
         VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
 
-        createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingImageBuffer, stagingImageBufferMemory);
+        createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingImageBuffer, &stagingImageBufferMemory);
 
         void *data = nullptr;
         vkMapMemory(this->vkState->device, stagingImageBufferMemory, 0, size, 0, &data);
@@ -1344,7 +1346,7 @@ namespace xr {
         vkFreeMemory(this->vkState->device, stagingImageBufferMemory, nullptr);
     }
 
-    void Renderer::destroyTextureImage()
+    XR_API void Renderer::destroyTextureImage()
     {
         vkDestroyImage(this->vkState->device, this->vkState->textureImage, nullptr);
         vkFreeMemory(this->vkState->device, this->vkState->textureImageMemory, nullptr);
@@ -1458,7 +1460,7 @@ namespace xr {
         endOneTimeCommand(commandBuffer);
     }
 
-    void Renderer::initTextureImageView()
+    XR_API void Renderer::initTextureImageView()
     {
         createImageView(
             this->vkState->textureImage,
@@ -1469,13 +1471,13 @@ namespace xr {
         );
     }
 
-    void Renderer::destroyTextureImageView()
+    XR_API void Renderer::destroyTextureImageView()
     {
         vkDestroyImageView(this->vkState->device, this->vkState->textureImageView, nullptr);
         this->vkState->textureImageView = VK_NULL_HANDLE;
     }
 
-    void Renderer::initTextureSampler()
+    XR_API void Renderer::initTextureSampler()
     {
         VkSamplerCreateInfo samplerCreateInfo = {};
         samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1501,13 +1503,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destoryTextureSampler()
+    XR_API void Renderer::destoryTextureSampler()
     {
         vkDestroySampler(this->vkState->device, this->vkState->textureSampler, nullptr);
         this->vkState->textureSampler = VK_NULL_HANDLE;
     }
 
-    void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+    XR_API void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer *buffer, VkDeviceMemory *bufferMemory)
     {
         VkBufferCreateInfo bufferCreateInfo = {};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1519,11 +1521,11 @@ namespace xr {
         bufferCreateInfo.queueFamilyIndexCount = 0;
         bufferCreateInfo.pQueueFamilyIndices = nullptr; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
 
-        VkResult result = vkCreateBuffer(this->vkState->device, &bufferCreateInfo, nullptr, &buffer);
+        VkResult result = vkCreateBuffer(this->vkState->device, &bufferCreateInfo, nullptr, buffer);
         CHECK_ERROR(result);
 
         VkMemoryRequirements bufferMemoryRequirements = {};
-        vkGetBufferMemoryRequirements(this->vkState->device, buffer, &bufferMemoryRequirements);
+        vkGetBufferMemoryRequirements(this->vkState->device, *buffer, &bufferMemoryRequirements);
 
         uint32_t memoryIndex = findMemoryTypeIndex(&(this->vkState->gpuDetails.memoryProperties), &bufferMemoryRequirements, memoryProperties);
 
@@ -1533,10 +1535,10 @@ namespace xr {
         memoryAllocationInfo.allocationSize = bufferMemoryRequirements.size;
         memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
-        result = vkAllocateMemory(this->vkState->device, &memoryAllocationInfo, nullptr, &bufferMemory);
+        result = vkAllocateMemory(this->vkState->device, &memoryAllocationInfo, nullptr, bufferMemory);
         CHECK_ERROR(result);
 
-        result = vkBindBufferMemory(this->vkState->device, buffer, bufferMemory, 0);
+        result = vkBindBufferMemory(this->vkState->device, *buffer, *bufferMemory, 0);
         CHECK_ERROR(result);
     }
 
@@ -1662,7 +1664,7 @@ namespace xr {
         endOneTimeCommand(commandBuffer);
     }
 
-    void Renderer::copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size)
+    XR_API void Renderer::copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size)
     {
         VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         beginOneTimeCommand(commandBuffer);
@@ -1677,7 +1679,7 @@ namespace xr {
         endOneTimeCommand(commandBuffer);
     }
 
-    void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+    XR_API void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
     {
         VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         beginOneTimeCommand(commandBuffer);
@@ -1702,14 +1704,14 @@ namespace xr {
         endOneTimeCommand(commandBuffer);
     }
 
-    void Renderer::loadModel()
+    XR_API void Renderer::loadModel(const char* modelFilePath)
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string error;
 
-        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, chaletModelResourcePath.c_str());
+        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, modelFilePath);
 
         if(!loaded)
         {
@@ -1752,7 +1754,7 @@ namespace xr {
         }
     }
 
-    void Renderer::initVertexBuffer()
+    XR_API void Renderer::initVertexBuffer()
     {
         VkDeviceSize size = sizeof(this->vkState->vertices[0]) * this->vkState->vertices.size();
         VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -1761,7 +1763,7 @@ namespace xr {
         VkBuffer stagingBuffer = VK_NULL_HANDLE;
         VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
-        createBuffer(size, stagingBufferUsage, stagingMemoryProperties, stagingBuffer, stagingBufferMemory);
+        createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
 
         void *stagingBufferData = nullptr;
         VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
@@ -1773,13 +1775,13 @@ namespace xr {
         VkBufferUsageFlags vertexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         VkMemoryPropertyFlags vertexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        createBuffer(size, vertexBufferUsage, vertexMemoryProperties, this->vkState->vertexBuffer, this->vkState->vertexBufferMemory);
+        createBuffer(size, vertexBufferUsage, vertexMemoryProperties, &(this->vkState->vertexBuffer), &(this->vkState->vertexBufferMemory));
         copyBuffer(stagingBuffer, this->vkState->vertexBuffer, size);
         vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
         vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
     }
 
-    void Renderer::destroyVertexBuffer()
+    XR_API void Renderer::destroyVertexBuffer()
     {
         vkDestroyBuffer(this->vkState->device, this->vkState->vertexBuffer, nullptr);
         vkFreeMemory(this->vkState->device, this->vkState->vertexBufferMemory, nullptr);
@@ -1787,7 +1789,7 @@ namespace xr {
         this->vkState->vertexBufferMemory = VK_NULL_HANDLE;
     }
 
-    void Renderer::initIndexBuffer()
+    XR_API void Renderer::initIndexBuffer()
     {
         VkDeviceSize size = sizeof(this->vkState->vertexIndices[0]) * this->vkState->vertexIndices.size();
         VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -1796,7 +1798,7 @@ namespace xr {
         VkBuffer stagingBuffer = VK_NULL_HANDLE;
         VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
-        createBuffer(size, stagingBufferUsage, stagingMemoryProperties, stagingBuffer, stagingBufferMemory);
+        createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
 
         void *stagingBufferData = nullptr;
         VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
@@ -1808,13 +1810,13 @@ namespace xr {
         VkBufferUsageFlags indexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         VkMemoryPropertyFlags indexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        createBuffer(size, indexBufferUsage, indexMemoryProperties, this->vkState->indexBuffer, this->vkState->indexBufferMemory);
+        createBuffer(size, indexBufferUsage, indexMemoryProperties, &(this->vkState->indexBuffer), &(this->vkState->indexBufferMemory));
         copyBuffer(stagingBuffer, this->vkState->indexBuffer, size);
         vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
         vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
     }
 
-    void Renderer::destroyIndexBuffer()
+    XR_API void Renderer::destroyIndexBuffer()
     {
         vkDestroyBuffer(this->vkState->device, this->vkState->indexBuffer, nullptr);
         vkFreeMemory(this->vkState->device, this->vkState->indexBufferMemory, nullptr);
@@ -1822,7 +1824,7 @@ namespace xr {
         this->vkState->indexBufferMemory = VK_NULL_HANDLE;
     }
 
-    void Renderer::initUniformBuffers()
+    XR_API void Renderer::initUniformBuffers()
     {
         VkDeviceSize size = sizeof(UniformBufferObject);
         VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -1833,11 +1835,11 @@ namespace xr {
 
         for(size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
-            createBuffer(size, uniformBufferUsage, uniformMemoryProperties, this->vkState->uniformBuffers[counter], this->vkState->uniformBuffersMemory[counter]);
+            createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(this->vkState->uniformBuffers[counter]), &(this->vkState->uniformBuffersMemory[counter]));
         }
     }
 
-    void Renderer::destroyUniformBuffers()
+    XR_API void Renderer::destroyUniformBuffers()
     {
         for(size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
@@ -1850,7 +1852,7 @@ namespace xr {
         this->vkState->uniformBuffersMemory.clear();
     }
 
-    void Renderer::initDescriptorPool()
+    XR_API void Renderer::initDescriptorPool()
     {
         VkDescriptorPoolSize uboPoolSize = {};
         uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1878,13 +1880,13 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    void Renderer::destroyDescriptorPool()
+    XR_API void Renderer::destroyDescriptorPool()
     {
         vkDestroyDescriptorPool(this->vkState->device, this->vkState->descriptorPool, nullptr);
         this->vkState->descriptorPool = VK_NULL_HANDLE;
     }
 
-    void Renderer::initDescriptorSets()
+    XR_API void Renderer::initDescriptorSets()
     {
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts(this->vkState->swapchainImages.size(),  this->vkState->descriptorSetLayout);
 
@@ -1941,7 +1943,7 @@ namespace xr {
         }
     }
 
-    void Renderer::destroyDescriptorSets()
+    XR_API void Renderer::destroyDescriptorSets()
     {
         // If you want to explicitly destroy the descriptorSet, then set
         // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
@@ -1958,7 +1960,7 @@ namespace xr {
         this->vkState->descriptorSets.clear();
     }
 
-    void Renderer::initCommandBuffers()
+    XR_API void Renderer::initCommandBuffers()
     {
         this->vkState->commandBuffers.resize(this->vkState->framebuffers.size());
 
@@ -2018,7 +2020,7 @@ namespace xr {
         }
     }
 
-    void Renderer::destroyCommandBuffers()
+    XR_API void Renderer::destroyCommandBuffers()
     {
         vkFreeCommandBuffers(
             this->vkState->device,
@@ -2030,7 +2032,7 @@ namespace xr {
         this->vkState->commandBuffers.clear();
     }
 
-    void Renderer::initSynchronizations()
+    XR_API void Renderer::initSynchronizations()
     {
         this->vkState->imageAvailableSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
         this->vkState->renderFinishedSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
@@ -2059,7 +2061,7 @@ namespace xr {
         }
     }
 
-    void Renderer::destroySynchronizations()
+    XR_API void Renderer::destroySynchronizations()
     {
         for(size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
         {
@@ -2073,7 +2075,7 @@ namespace xr {
         this->vkState->inFlightFences.clear();
     }
 
-    void Renderer::recreateSwapChain()
+    XR_API void Renderer::recreateSwapChain()
     {
         logf("---------- Recreate SwapChain --------");
         vkDeviceWaitIdle(this->vkState->device);
@@ -2092,7 +2094,7 @@ namespace xr {
         initCommandBuffers();
     }
 
-    void Renderer::cleanupSwapChain()
+    XR_API void Renderer::cleanupSwapChain()
     {
         waitForIdle();
         destroyCommandBuffers();
@@ -2109,7 +2111,7 @@ namespace xr {
         destroySwapchain();
     }
 
-    void Renderer::render()
+    XR_API void Renderer::render()
     {
         vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
         vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));

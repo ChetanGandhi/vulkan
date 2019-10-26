@@ -12,6 +12,7 @@
 [Rr]elease/
 x64/
 build/
+build_linux/
 [Bb]in/
 [Oo]bj/
 

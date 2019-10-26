@@ -10,90 +10,94 @@ namespace xr {
     {
 
     public:
-        Renderer(VulkanState *vkState);
-        ~Renderer();
+        XR_API Renderer(VulkanState *vkState);
+        XR_API ~Renderer();
 
-        void waitForIdle();
+        XR_API void waitForIdle();
 
-        void initInstance();
-        void destroyInstance();
+        XR_API void initInstance();
+        XR_API void destroyInstance();
 
-        void initDevice();
-        void initLogicalDevice();
-        void destroyDevice();
+        XR_API void initDevice();
+        XR_API void initLogicalDevice();
+        XR_API void destroyDevice();
 
-        void initSwapchain();
-        void destroySwapchain();
+        XR_API void initSwapchain();
+        XR_API void destroySwapchain();
 
-        void initSwapchainImageViews();
-        void destroySwapchainImageViews();
+        XR_API void initSwapchainImageViews();
+        XR_API void destroySwapchainImageViews();
 
-        void initRenderPass();
-        void destroyRenderPass();
+        XR_API void initRenderPass();
+        XR_API void destroyRenderPass();
 
-        void initDescriptorSetLayout();
-        void destroyDescriptorSetLayout();
+        XR_API void initDescriptorSetLayout();
+        XR_API void destroyDescriptorSetLayout();
 
-        void initGraphicsPiplineCache();
-        void destroyGraphicsPiplineCache();
+        XR_API void initGraphicsPiplineCache();
+        XR_API void destroyGraphicsPiplineCache();
 
-        void initGraphicsPipline();
-        void destroyGraphicsPipline();
+        XR_API void initGraphicsPipline();
+        XR_API void destroyGraphicsPipline();
 
-        void initFrameBuffers();
-        void destroyFrameBuffers();
+        XR_API void initFrameBuffers();
+        XR_API void destroyFrameBuffers();
 
-        void initCommandPool();
-        void destroyCommandPool();
+        XR_API void initCommandPool();
+        XR_API void destroyCommandPool();
 
-        void initDepthStencilImage();
-        void destoryDepthStencilImage();
+        XR_API void initDepthStencilImage();
+        XR_API void destoryDepthStencilImage();
 
-        void initMSAAColorImage();
-        void destoryMSAAColorImage();
+        XR_API void initMSAAColorImage();
+        XR_API void destoryMSAAColorImage();
 
-        void initTextureImage();
-        void destroyTextureImage();
+        XR_API void initTextureImage(const char* textureFilePath);
+        XR_API void destroyTextureImage();
 
-        void initTextureImageView();
-        void destroyTextureImageView();
+        XR_API void initTextureImageView();
+        XR_API void destroyTextureImageView();
 
-        void initTextureSampler();
-        void destoryTextureSampler();
+        XR_API void initTextureSampler();
+        XR_API void destoryTextureSampler();
 
-        void loadModel();
+        XR_API void loadModel(const char* modelFilePath);
 
-        void initVertexBuffer();
-        void destroyVertexBuffer();
+        XR_API void initVertexBuffer();
+        XR_API void destroyVertexBuffer();
 
-        void initIndexBuffer();
-        void destroyIndexBuffer();
+        XR_API void initIndexBuffer();
+        XR_API void destroyIndexBuffer();
 
-        void initUniformBuffers();
-        void destroyUniformBuffers();
+        XR_API void initUniformBuffers();
+        XR_API void destroyUniformBuffers();
 
-        void initDescriptorPool();
-        void destroyDescriptorPool();
+        XR_API void initDescriptorPool();
+        XR_API void destroyDescriptorPool();
 
-        void initDescriptorSets();
-        void destroyDescriptorSets();
+        XR_API void initDescriptorSets();
+        XR_API void destroyDescriptorSets();
 
-        void initCommandBuffers();
-        void destroyCommandBuffers();
+        XR_API void initCommandBuffers();
+        XR_API void destroyCommandBuffers();
 
-        void initSynchronizations();
-        void destroySynchronizations();
+        XR_API void initSynchronizations();
+        XR_API void destroySynchronizations();
 
-        void recreateSwapChain();
-        void cleanupSwapChain();
+        XR_API void recreateSwapChain();
+        XR_API void cleanupSwapChain();
 
-        void render();
+        XR_API void render();
+
+        XR_API VkShaderModule createShaderModule(const std::vector<char>& code);
+        XR_API void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer *buffer, VkDeviceMemory *bufferMemory);
+        XR_API void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+        XR_API void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
+        XR_API void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
+        XR_API void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     private:
         VulkanState *vkState = nullptr;
-
-        const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
-        const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
 
         void setupLayersAndExtensions();
         void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
@@ -117,13 +121,6 @@ namespace xr {
         bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
         bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
         bool hasStencilComponent(VkFormat format);
-
-        VkShaderModule createShaderModule(const std::vector<char>& code);
-        void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-        void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
-        void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
-        void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
-        void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
         // Debug methods
 
