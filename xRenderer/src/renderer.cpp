@@ -137,25 +137,21 @@ namespace xr {
 
         vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
         std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
-        std::vector<VkBool32> supportsPresentQueue(familyCount);
-
-        for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
-        {
-            vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &supportsPresentQueue.data()[queueCounter]);
-        }
-
         vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
 
         for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
         {
             const VkQueueFamilyProperties nextFamilyProperties = familyPropertiesList[queueCounter];
 
-            if(nextFamilyProperties.queueCount > 0 && nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            if(nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
                 graphicsFamilyIndex = queueCounter;
             }
 
-            if(nextFamilyProperties.queueCount > 0 && supportsPresentQueue.data()[queueCounter] == VK_TRUE)
+            VkBool32 presentSupport = VK_FALSE;
+            vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &presentSupport);
+
+            if(presentSupport == VK_TRUE)
             {
                 graphicsFamilyIndex = queueCounter;
                 presentFamilyIndex = queueCounter;
@@ -167,7 +163,10 @@ namespace xr {
         {
             for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
             {
-                if(supportsPresentQueue.data()[queueCounter] == VK_TRUE)
+                VkBool32 presentSupport = VK_FALSE;
+                vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &presentSupport);
+
+                if(presentSupport == VK_TRUE)
                 {
                     presentFamilyIndex = queueCounter;
                     break;
