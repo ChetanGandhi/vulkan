@@ -2006,6 +2006,7 @@ namespace xr {
         this->vkState->imageAvailableSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
         this->vkState->renderFinishedSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
         this->vkState->inFlightFences.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
+        this->vkState->inFlightImages.resize(this->vkState->swapchainImages.size(), VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreCreateInfo = {};
         semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -2108,28 +2109,27 @@ namespace xr {
         // Update the uniform buffer for current image.
         updateUniformBuffer(activeSwapchainImageId);
 
-        std::vector<VkSemaphore> waitSemaphores = {
-            this->vkState->imageAvailableSemaphores[this->vkState->currentFrame]
-        };
+        if (this->vkState->inFlightImages[activeSwapchainImageId] != VK_NULL_HANDLE)
+        {
+            vkWaitForFences(this->vkState->device, 1, &this->vkState->inFlightImages[activeSwapchainImageId], VK_TRUE, UINT64_MAX);
+        }
 
-        std::vector<VkSemaphore> signalSemaphores = {
-            this->vkState->renderFinishedSemaphores[this->vkState->currentFrame]
-        };
+        this->vkState->inFlightImages[activeSwapchainImageId] = this->vkState->inFlightFences[this->vkState->currentFrame];
 
-        std::vector<VkPipelineStageFlags> waitPipelineStages = {
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-        };
+        VkSemaphore waitSemaphores[] = { this->vkState->imageAvailableSemaphores[this->vkState->currentFrame] };
+        VkSemaphore signalSemaphores[] = { this->vkState->renderFinishedSemaphores[this->vkState->currentFrame] };
+        VkPipelineStageFlags waitPipelineStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.pNext = nullptr;
-        submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
-        submitInfo.pWaitSemaphores = waitSemaphores.data();
-        submitInfo.pWaitDstStageMask = waitPipelineStages.data();
+        submitInfo.waitSemaphoreCount = static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(waitSemaphores[0]));
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitPipelineStages;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &(this->vkState->commandBuffers[activeSwapchainImageId]);
-        submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
-        submitInfo.pSignalSemaphores = signalSemaphores.data();
+        submitInfo.signalSemaphoreCount = static_cast<uint32_t>(sizeof(signalSemaphores) / sizeof(signalSemaphores[0]));
+        submitInfo.pSignalSemaphores = signalSemaphores;
 
         vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
@@ -2141,15 +2141,15 @@ namespace xr {
         );
         CHECK_ERROR(result);
 
-        std::vector<VkSwapchainKHR> swapchains = {this->vkState->swapchain};
+        VkSwapchainKHR swapchains[] = { this->vkState->swapchain };
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.pNext = nullptr;
-        presentInfo.waitSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
-        presentInfo.pWaitSemaphores = signalSemaphores.data();
-        presentInfo.swapchainCount = static_cast<uint32_t>(swapchains.size());
-        presentInfo.pSwapchains = swapchains.data();
+        presentInfo.waitSemaphoreCount = static_cast<uint32_t>(sizeof(signalSemaphores) / sizeof(signalSemaphores[0]));
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.swapchainCount = static_cast<uint32_t>(sizeof(swapchains) / sizeof(swapchains[0]));
+        presentInfo.pSwapchains = swapchains;
         presentInfo.pImageIndices = &activeSwapchainImageId;
         presentInfo.pResults = nullptr;
 

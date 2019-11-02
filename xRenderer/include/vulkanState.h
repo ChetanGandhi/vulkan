@@ -50,6 +50,7 @@ namespace xr {
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
+        std::vector<VkFence> inFlightImages;
         std::vector<VkFramebuffer> framebuffers;
         std::vector<VkCommandBuffer> commandBuffers;
         std::vector<VkBuffer> uniformBuffers;
