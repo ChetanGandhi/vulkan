@@ -2081,7 +2081,6 @@ void Renderer::cleanupSwapChain()
 void Renderer::render()
 {
     vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
-    vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
     uint32_t activeSwapchainImageId = UINT32_MAX;
 
@@ -2129,6 +2128,8 @@ void Renderer::render()
     submitInfo.pCommandBuffers = &(this->vkState->commandBuffers[activeSwapchainImageId]);
     submitInfo.signalSemaphoreCount = signalSemaphores.size();
     submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+    vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
     result = vkQueueSubmit(
         this->vkState->graphicsQueue,

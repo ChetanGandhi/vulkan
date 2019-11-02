@@ -2083,7 +2083,6 @@ namespace xr {
     XR_API void Renderer::render()
     {
         vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
-        vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
         uint32_t activeSwapchainImageId = UINT32_MAX;
 
@@ -2131,6 +2130,8 @@ namespace xr {
         submitInfo.pCommandBuffers = &(this->vkState->commandBuffers[activeSwapchainImageId]);
         submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
         submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+        vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
         result = vkQueueSubmit(
             this->vkState->graphicsQueue,
