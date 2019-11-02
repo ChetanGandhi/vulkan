@@ -51,7 +51,7 @@ public:
     void initMSAAColorImage();
     void destoryMSAAColorImage();
 
-    void initTextureImage();
+    void initTextureImage(const char* textureFilePath);
     void destroyTextureImage();
 
     void initTextureImageView();
@@ -60,7 +60,7 @@ public:
     void initTextureSampler();
     void destoryTextureSampler();
 
-    void loadModel();
+    void loadModel(const char* modelFilePath);
 
     void initVertexBuffer();
     void destroyVertexBuffer();
@@ -88,11 +88,15 @@ public:
 
     void render();
 
+    VkShaderModule createShaderModule(const std::vector<char>& code);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer *buffer, VkDeviceMemory *bufferMemory);
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+    void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
+    void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
 private:
     VulkanState *vkState = nullptr;
-
-    const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
-    const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
 
     void setupLayersAndExtensions();
     void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
@@ -116,13 +120,6 @@ private:
     bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
     bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
     bool hasStencilComponent(VkFormat format);
-
-    VkShaderModule createShaderModule(const std::vector<char>& code);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
-    void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
-    void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     // Debug methods
 

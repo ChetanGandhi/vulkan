@@ -60,6 +60,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     vkState->surfaceSize = {};
     vkState->surfaceSize.width = 800;
     vkState->surfaceSize.height = 600;
+    vkState->vertexShaderFilePath = "./shaders/vert.spv";
+    vkState->fragmentShaderFile  ="./shaders/frag.spv";
 
     hGlobalInstance = hInstance;
 
@@ -159,10 +161,10 @@ void initializeVulkan()
     renderer->initDepthStencilImage();
     renderer->initMSAAColorImage();
     renderer->initFrameBuffers();
-    renderer->initTextureImage();
+    renderer->initTextureImage("./resources/textures/chalet/chalet.jpg");
     renderer->initTextureImageView();
     renderer->initTextureSampler();
-    renderer->loadModel();
+    renderer->loadModel("./resources/models/chalet/chalet.obj");
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffers();

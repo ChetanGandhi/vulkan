@@ -61,8 +61,12 @@ int main(void)
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | XWindows";
 
-    surfaceSize.width = 800;
-    surfaceSize.height = 600;
+    vkState = new xr::VulkanState();
+    vkState->surfaceSize = {};
+    vkState->surfaceSize.width = 800;
+    vkState->surfaceSize.height = 600;
+    vkState->vertexShaderFilePath = "./shaders/vert.spv";
+    vkState->fragmentShaderFile  ="./shaders/frag.spv";
 
     initializePlatformSpecificWindow();
     initializeVulkan();
@@ -77,9 +81,6 @@ int main(void)
 
 void initializePlatformSpecificWindow()
 {
-    assert(surfaceSize.width > 0);
-    assert(surfaceSize.height > 0);
-
     uint32_t valueMask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     uint32_t valueList[32] = {0};
 
@@ -119,16 +120,18 @@ void initializePlatformSpecificWindow()
     | XCB_EVENT_MASK_BUTTON_PRESS
     | XCB_EVENT_MASK_BUTTON_RELEASE;
 
-    cookieForError = xcb_create_window(xcbConnection,
+    cookieForError = xcb_create_window(
+        xcbConnection,
         XCB_COPY_FROM_PARENT,
         xcbWindow, xcbScreen->root,
-        0, 0, surfaceSize.width, surfaceSize.height, 0,
+        0, 0, vkState->surfaceSize.width, vkState->surfaceSize.height, 0,
         XCB_WINDOW_CLASS_INPUT_OUTPUT,
         xcbScreen->root_visual,
         valueMask, valueList
     );
 
     error = xcb_request_check(xcbConnection, cookieForError);
+
     if (error)
     {
         logf("Error: Cannot create window [%d]", error->error_code);
@@ -145,7 +148,8 @@ void initializePlatformSpecificWindow()
     xcb_intern_atom_cookie_t atom_wm_delete_window_cookie = xcb_intern_atom(xcbConnection, 0, strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
     atom_wm_delete_window_reply = xcb_intern_atom_reply(xcbConnection, atom_wm_delete_window_cookie, NULL);
 
-    xcb_change_property(xcbConnection,
+    xcb_change_property(
+        xcbConnection,
         XCB_PROP_MODE_REPLACE,
         xcbWindow,
         atom_wm_protocols_reply->atom,
@@ -156,7 +160,8 @@ void initializePlatformSpecificWindow()
     );
 
     // Update the window title.
-    xcb_change_property(xcbConnection,
+    xcb_change_property(
+        xcbConnection,
         XCB_PROP_MODE_REPLACE,
         xcbWindow, XCB_ATOM_WM_NAME,
         XCB_ATOM_STRING,
@@ -186,11 +191,10 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
-    renderer = new Renderer(surfaceSize);
+    renderer = new Renderer(vkState);
 
-    initPlatformSpecificSurface();
+    initPlatformSpecificSurface(&(vkState->instance->vkInstance);
 
-    renderer->setSurface(surface);
     renderer->initDevice();
     renderer->initLogicalDevice();
     renderer->initSwapchain();
@@ -203,10 +207,10 @@ void initializeVulkan()
     renderer->initDepthStencilImage();
     renderer->initMSAAColorImage();
     renderer->initFrameBuffers();
-    renderer->initTextureImage();
+    renderer->initTextureImage("./resources/textures/chalet/chalet.jpg");
     renderer->initTextureImageView();
     renderer->initTextureSampler();
-    renderer->loadModel();
+    renderer->loadModel("./resources/models/chalet/chalet.obj");
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffers();
@@ -218,7 +222,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    logf("---------- Cleanup Started ----------");
+    logf("---------- Cleanup started ----------");
 
     if(isFullscreen)
     {
@@ -259,7 +263,12 @@ void cleanUp()
     delete renderer;
     renderer = nullptr;
 
+    delete vkState;
+    vkState = nullptr;
+
     destroyPlatformSpecificWindow();
+
+    logf("---------- Cleanup done ----------");
 }
 
 int mainLoop()
@@ -291,12 +300,14 @@ int mainLoop()
             fpsTitle = windowTitle + " | FPS - " + std::to_string(fps);
             xcb_change_property(xcbConnection,
                 XCB_PROP_MODE_REPLACE,
-                xcbWindow, XCB_ATOM_WM_NAME,
+                xcbWindow,
+                XCB_ATOM_WM_NAME,
                 XCB_ATOM_STRING,
                 8,
                 fpsTitle.size(),
                 fpsTitle.c_str()
             );
+
             xcb_flush(xcbConnection);
         }
 
@@ -307,7 +318,7 @@ int mainLoop()
     return EXIT_SUCCESS;
 }
 
-void initPlatformSpecificSurface()
+void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 {
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
@@ -316,14 +327,14 @@ void initPlatformSpecificSurface()
     surfaceCreateInfo.connection = xcbConnection;
     surfaceCreateInfo.window = xcbWindow;
 
-    VkResult result = vkCreateXcbSurfaceKHR(renderer->getVulkanInstance(), &surfaceCreateInfo, nullptr, &surface);
-
+    VkResult result = vkCreateXcbSurfaceKHR(*instance, &surfaceCreateInfo, nullptr, surface);
     CHECK_ERROR(result);
 }
 
 void destroyPlatformSpecificSurface()
 {
-    vkDestroySurfaceKHR(renderer->getVulkanInstance(), surface, nullptr);
+    vkDestroySurfaceKHR(vkState->instance->vkInstance, vkState->surface, nullptr);
+    vkState->surface = VK_NULL_HANDLE;
 }
 
 void resize(uint32_t width, uint32_t height)
@@ -333,17 +344,16 @@ void resize(uint32_t width, uint32_t height)
         return;
     }
 
-    if(width == surfaceSize.width && height == surfaceSize.height)
+    if(width == vkState->surfaceSize.width && height == vkState->surfaceSize.height)
     {
         return;
     }
 
-    surfaceSize.width = width;
-    surfaceSize.height = height;
+    vkState->surfaceSize.width = width;
+    vkState->surfaceSize.height = height;
 
     if(renderer != nullptr)
     {
-        renderer->setSurfaceSize(surfaceSize);
         renderer->recreateSwapChain();
     }
 }

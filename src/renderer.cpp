@@ -136,25 +136,21 @@ bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices
 
     vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
     std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
-    std::vector<VkBool32> supportsPresentQueue(familyCount);
-
-    for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
-    {
-        vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &supportsPresentQueue.data()[queueCounter]);
-    }
-
     vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
 
     for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
     {
         const VkQueueFamilyProperties nextFamilyProperties = familyPropertiesList[queueCounter];
 
-        if(nextFamilyProperties.queueCount > 0 && nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if(nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             graphicsFamilyIndex = queueCounter;
         }
 
-        if(nextFamilyProperties.queueCount > 0 && supportsPresentQueue.data()[queueCounter] == VK_TRUE)
+        VkBool32 presentSupport = VK_FALSE;
+        vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &presentSupport);
+
+        if(presentSupport == VK_TRUE)
         {
             graphicsFamilyIndex = queueCounter;
             presentFamilyIndex = queueCounter;
@@ -166,7 +162,10 @@ bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices
     {
         for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
         {
-            if(supportsPresentQueue.data()[queueCounter] == VK_TRUE)
+            VkBool32 presentSupport = VK_FALSE;
+            vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &presentSupport);
+
+            if(presentSupport == VK_TRUE)
             {
                 presentFamilyIndex = queueCounter;
                 break;
@@ -257,7 +256,7 @@ void Renderer::initDevice()
         std::vector<GpuDetails> gpuDetailsList(0);
         listAllPhysicalDevices(&gpuDetailsList);
 
-        uint32_t gpuCount = gpuDetailsList.size();
+        uint32_t gpuCount = static_cast<uint32_t>(gpuDetailsList.size());
         uint32_t selectedGpuIndex = 0;
 
         logf("---------- Total GPU Found [%d]----------", gpuCount);
@@ -381,7 +380,7 @@ void Renderer::initLogicalDevice()
     deviceCreateInfo.flags = 0;
     deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
     deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
-    deviceCreateInfo.enabledExtensionCount = this->vkState->deviceExtensions.size();
+    deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(this->vkState->deviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = this->vkState->deviceExtensions.data();
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -591,7 +590,7 @@ void Renderer::initSwapchain()
         };
 
         swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        swapchainCreateInfo.queueFamilyIndexCount = indices.size(); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+        swapchainCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(indices.size()); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
         swapchainCreateInfo.pQueueFamilyIndices = indices.data();
     }
     else
@@ -699,18 +698,20 @@ void Renderer::initGraphicsPipline()
     std::vector<char> vertexShaderCode;
     std::vector<char> fragmentShaderCode;
 
-    if(!readFile("shaders/vert.spv", &vertexShaderCode))
+    if(!readFile(this->vkState->vertexShaderFilePath, &vertexShaderCode))
     {
+        logf("Cannot open vertex shader file: %s", this->vkState->vertexShaderFilePath);
         assert(0 && "Cannot open vertex shader.");
     }
 
-    if(!readFile("shaders/frag.spv", &fragmentShaderCode))
+    if(!readFile(this->vkState->fragmentShaderFile, &fragmentShaderCode))
     {
+        logf("Cannot open fragment shader file: %s", this->vkState->fragmentShaderFile);
         assert(0 && "Cannot open fragment shader.");
     }
 
-    VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
-    VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
+    VkShaderModule vertexShaderModule = this->createShaderModule(vertexShaderCode);
+    VkShaderModule fragmentShaderModule = this->createShaderModule(fragmentShaderCode);
 
     VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
     vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -741,7 +742,7 @@ void Renderer::initGraphicsPipline()
     vertexInputStateCreateInfo.flags = 0;
     vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
     vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexBindingDescription;
-    vertexInputStateCreateInfo.vertexAttributeDescriptionCount = vertexAttributeDescription.size();
+    vertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescription.size());
     vertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexAttributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
@@ -847,7 +848,7 @@ void Renderer::initGraphicsPipline()
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.pNext = nullptr;
     dynamicStateCreateInfo.flags = 0;
-    dynamicStateCreateInfo.dynamicStateCount = dynamicStates.size();
+    dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
@@ -1094,7 +1095,7 @@ void Renderer::initRenderPass()
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassCreateInfo.pNext = nullptr;
     renderPassCreateInfo.flags = 0;
-    renderPassCreateInfo.attachmentCount = attachments.size();
+    renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     renderPassCreateInfo.pAttachments = attachments.data();
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpassDescription;
@@ -1133,7 +1134,7 @@ void Renderer::initDescriptorSetLayout()
     descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCreateInfo.pNext = nullptr;
     descriptorSetLayoutCreateInfo.flags = 0;
-    descriptorSetLayoutCreateInfo.bindingCount = layoutBindings.size();
+    descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
     descriptorSetLayoutCreateInfo.pBindings = layoutBindings.data();
 
     VkResult result = vkCreateDescriptorSetLayout(this->vkState->device, &descriptorSetLayoutCreateInfo, nullptr, &this->vkState->descriptorSetLayout);
@@ -1163,7 +1164,7 @@ void Renderer::initFrameBuffers()
         framebufferCreateInfo.pNext = nullptr;
         framebufferCreateInfo.flags = 0;
         framebufferCreateInfo.renderPass = this->vkState->renderPass;
-        framebufferCreateInfo.attachmentCount = attachments.size();
+        framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferCreateInfo.pAttachments = attachments.data();
         framebufferCreateInfo.width = this->vkState->surfaceSize.width;
         framebufferCreateInfo.height = this->vkState->surfaceSize.height;
@@ -1271,13 +1272,13 @@ void Renderer::createImageView(VkImage image, VkFormat format, VkImageView &imag
     CHECK_ERROR(result);
 }
 
-void Renderer::initTextureImage()
+void Renderer::initTextureImage(const char* textureFilePath)
 {
     int textureWidth = 0;
     int textureHeight = 0;
     int textureChannels = 0;
 
-    stbi_uc *pixels = stbi_load(chaletTextureResourcePath.c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(textureFilePath, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
 
     if(!pixels)
     {
@@ -1292,7 +1293,7 @@ void Renderer::initTextureImage()
     VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
 
-    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingImageBuffer, stagingImageBufferMemory);
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingImageBuffer, &stagingImageBufferMemory);
 
     void *data = nullptr;
     vkMapMemory(this->vkState->device, stagingImageBufferMemory, 0, size, 0, &data);
@@ -1498,7 +1499,7 @@ void Renderer::destoryTextureSampler()
     this->vkState->textureSampler = VK_NULL_HANDLE;
 }
 
-void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer *buffer, VkDeviceMemory *bufferMemory)
 {
     VkBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1510,11 +1511,11 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, V
     bufferCreateInfo.queueFamilyIndexCount = 0;
     bufferCreateInfo.pQueueFamilyIndices = nullptr; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
 
-    VkResult result = vkCreateBuffer(this->vkState->device, &bufferCreateInfo, nullptr, &buffer);
+    VkResult result = vkCreateBuffer(this->vkState->device, &bufferCreateInfo, nullptr, buffer);
     CHECK_ERROR(result);
 
     VkMemoryRequirements bufferMemoryRequirements = {};
-    vkGetBufferMemoryRequirements(this->vkState->device, buffer, &bufferMemoryRequirements);
+    vkGetBufferMemoryRequirements(this->vkState->device, *buffer, &bufferMemoryRequirements);
 
     uint32_t memoryIndex = findMemoryTypeIndex(&(this->vkState->gpuDetails.memoryProperties), &bufferMemoryRequirements, memoryProperties);
 
@@ -1524,10 +1525,10 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, V
     memoryAllocationInfo.allocationSize = bufferMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
-    result = vkAllocateMemory(this->vkState->device, &memoryAllocationInfo, nullptr, &bufferMemory);
+    result = vkAllocateMemory(this->vkState->device, &memoryAllocationInfo, nullptr, bufferMemory);
     CHECK_ERROR(result);
 
-    result = vkBindBufferMemory(this->vkState->device, buffer, bufferMemory, 0);
+    result = vkBindBufferMemory(this->vkState->device, *buffer, *bufferMemory, 0);
     CHECK_ERROR(result);
 }
 
@@ -1671,14 +1672,14 @@ void Renderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
     endOneTimeCommand(commandBuffer);
 }
 
-void Renderer::loadModel()
+void Renderer::loadModel(const char* modelFilePath)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string error;
 
-    bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, chaletModelResourcePath.c_str());
+    bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, modelFilePath);
 
     if(!loaded)
     {
@@ -1730,7 +1731,7 @@ void Renderer::initVertexBuffer()
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
-    createBuffer(size, stagingBufferUsage, stagingMemoryProperties, stagingBuffer, stagingBufferMemory);
+    createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
 
     void *stagingBufferData = nullptr;
     VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
@@ -1742,7 +1743,7 @@ void Renderer::initVertexBuffer()
     VkBufferUsageFlags vertexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     VkMemoryPropertyFlags vertexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    createBuffer(size, vertexBufferUsage, vertexMemoryProperties, this->vkState->vertexBuffer, this->vkState->vertexBufferMemory);
+    createBuffer(size, vertexBufferUsage, vertexMemoryProperties, &(this->vkState->vertexBuffer), &(this->vkState->vertexBufferMemory));
     copyBuffer(stagingBuffer, this->vkState->vertexBuffer, size);
     vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
     vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
@@ -1765,7 +1766,7 @@ void Renderer::initIndexBuffer()
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
-    createBuffer(size, stagingBufferUsage, stagingMemoryProperties, stagingBuffer, stagingBufferMemory);
+    createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
 
     void *stagingBufferData = nullptr;
     VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
@@ -1777,7 +1778,7 @@ void Renderer::initIndexBuffer()
     VkBufferUsageFlags indexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkMemoryPropertyFlags indexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    createBuffer(size, indexBufferUsage, indexMemoryProperties, this->vkState->indexBuffer, this->vkState->indexBufferMemory);
+    createBuffer(size, indexBufferUsage, indexMemoryProperties, &(this->vkState->indexBuffer), &(this->vkState->indexBufferMemory));
     copyBuffer(stagingBuffer, this->vkState->indexBuffer, size);
     vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
     vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
@@ -1802,7 +1803,7 @@ void Renderer::initUniformBuffers()
 
     for(size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
     {
-        createBuffer(size, uniformBufferUsage, uniformMemoryProperties, this->vkState->uniformBuffers[counter], this->vkState->uniformBuffersMemory[counter]);
+        createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(this->vkState->uniformBuffers[counter]), &(this->vkState->uniformBuffersMemory[counter]));
     }
 }
 
@@ -1840,7 +1841,7 @@ void Renderer::initDescriptorPool()
     // We are not going to used this for now.
     // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     poolCreateInfo.maxSets = static_cast<uint32_t>(this->vkState->swapchainImages.size());
-    poolCreateInfo.poolSizeCount = poolSizes.size();
+    poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolCreateInfo.pPoolSizes = poolSizes.data();
 
     VkResult result = vkCreateDescriptorPool(this->vkState->device, &poolCreateInfo, nullptr, &(this->vkState->descriptorPool));
@@ -1906,7 +1907,7 @@ void Renderer::initDescriptorSets()
         textureImageDescriptorWrite.pTexelBufferView = nullptr;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites = {uniformBudderDescriptorWrite, textureImageDescriptorWrite};
-        vkUpdateDescriptorSets(this->vkState->device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(this->vkState->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
 
@@ -1936,7 +1937,7 @@ void Renderer::initCommandBuffers()
     commandBufferAllocateInfo.pNext = nullptr;
     commandBufferAllocateInfo.commandPool = this->vkState->commandPool;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferAllocateInfo.commandBufferCount = this->vkState->commandBuffers.size();
+    commandBufferAllocateInfo.commandBufferCount = static_cast<uint32_t>(this->vkState->commandBuffers.size());
 
     VkResult result = vkAllocateCommandBuffers(this->vkState->device, &commandBufferAllocateInfo, this->vkState->commandBuffers.data());
     CHECK_ERROR(result);
@@ -1967,7 +1968,7 @@ void Renderer::initCommandBuffers()
         renderPassBeginInfo.renderPass = this->vkState->renderPass;
         renderPassBeginInfo.framebuffer = this->vkState->framebuffers[counter];
         renderPassBeginInfo.renderArea = renderArea;
-        renderPassBeginInfo.clearValueCount = clearValue.size();
+        renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValue.size());
         renderPassBeginInfo.pClearValues = clearValue.data();
 
         vkCmdBeginRenderPass(this->vkState->commandBuffers[counter], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -1979,7 +1980,7 @@ void Renderer::initCommandBuffers()
         vkCmdBindIndexBuffer(this->vkState->commandBuffers[counter], this->vkState->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(this->vkState->commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, this->vkState->pipelineLayout, 0, 1, &(this->vkState->descriptorSets[counter]), 0, nullptr);
 
-        vkCmdDrawIndexed(this->vkState->commandBuffers[counter], this->vkState->vertexIndices.size(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(this->vkState->commandBuffers[counter], static_cast<uint32_t>(this->vkState->vertexIndices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(this->vkState->commandBuffers[counter]);
 
         VkResult result = vkEndCommandBuffer(this->vkState->commandBuffers[counter]);
@@ -1992,7 +1993,7 @@ void Renderer::destroyCommandBuffers()
     vkFreeCommandBuffers(
         this->vkState->device,
         this->vkState->commandPool,
-        this->vkState->commandBuffers.size(),
+        static_cast<uint32_t>(this->vkState->commandBuffers.size()),
         this->vkState->commandBuffers.data()
     );
 
@@ -2004,6 +2005,7 @@ void Renderer::initSynchronizations()
     this->vkState->imageAvailableSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
     this->vkState->renderFinishedSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
     this->vkState->inFlightFences.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
+    this->vkState->inFlightImages.resize(this->vkState->swapchainImages.size(), VK_NULL_HANDLE);
 
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -2106,28 +2108,27 @@ void Renderer::render()
     // Update the uniform buffer for current image.
     updateUniformBuffer(activeSwapchainImageId);
 
-    std::vector<VkSemaphore> waitSemaphores = {
-        this->vkState->imageAvailableSemaphores[this->vkState->currentFrame]
-    };
+    if (this->vkState->inFlightImages[activeSwapchainImageId] != VK_NULL_HANDLE)
+    {
+        vkWaitForFences(this->vkState->device, 1, &this->vkState->inFlightImages[activeSwapchainImageId], VK_TRUE, UINT64_MAX);
+    }
 
-    std::vector<VkSemaphore> signalSemaphores = {
-        this->vkState->renderFinishedSemaphores[this->vkState->currentFrame]
-    };
+    this->vkState->inFlightImages[activeSwapchainImageId] = this->vkState->inFlightFences[this->vkState->currentFrame];
 
-    std::vector<VkPipelineStageFlags> waitPipelineStages = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-    };
+    VkSemaphore waitSemaphores[] = { this->vkState->imageAvailableSemaphores[this->vkState->currentFrame] };
+    VkSemaphore signalSemaphores[] = { this->vkState->renderFinishedSemaphores[this->vkState->currentFrame] };
+    VkPipelineStageFlags waitPipelineStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.pNext = nullptr;
-    submitInfo.waitSemaphoreCount = waitSemaphores.size();
-    submitInfo.pWaitSemaphores = waitSemaphores.data();
-    submitInfo.pWaitDstStageMask = waitPipelineStages.data();
+    submitInfo.waitSemaphoreCount = static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(waitSemaphores[0]));
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitPipelineStages;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &(this->vkState->commandBuffers[activeSwapchainImageId]);
-    submitInfo.signalSemaphoreCount = signalSemaphores.size();
-    submitInfo.pSignalSemaphores = signalSemaphores.data();
+    submitInfo.signalSemaphoreCount = static_cast<uint32_t>(sizeof(signalSemaphores) / sizeof(signalSemaphores[0]));
+    submitInfo.pSignalSemaphores = signalSemaphores;
 
     vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
@@ -2139,15 +2140,15 @@ void Renderer::render()
     );
     CHECK_ERROR(result);
 
-    std::vector<VkSwapchainKHR> swapchains = {this->vkState->swapchain};
+    VkSwapchainKHR swapchains[] = { this->vkState->swapchain };
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pNext = nullptr;
-    presentInfo.waitSemaphoreCount = signalSemaphores.size();
-    presentInfo.pWaitSemaphores = signalSemaphores.data();
-    presentInfo.swapchainCount = swapchains.size();
-    presentInfo.pSwapchains = swapchains.data();
+    presentInfo.waitSemaphoreCount = static_cast<uint32_t>(sizeof(signalSemaphores) / sizeof(signalSemaphores[0]));
+    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.swapchainCount = static_cast<uint32_t>(sizeof(swapchains) / sizeof(swapchains[0]));
+    presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &activeSwapchainImageId;
     presentInfo.pResults = nullptr;
 

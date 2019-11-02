@@ -10,6 +10,8 @@ class VulkanState {
     public:
 
     const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+    const char* vertexShaderFilePath = NULL;
+    const char* fragmentShaderFile = NULL;
 
     Instance *instance = nullptr;
     VkDevice device = VK_NULL_HANDLE;
@@ -47,6 +49,7 @@ class VulkanState {
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> inFlightImages;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkBuffer> uniformBuffers;
