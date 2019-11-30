@@ -8,6 +8,7 @@ namespace xr {
     XR_API Renderer::Renderer(VulkanState *vkState)
     {
         this->vkState = vkState;
+        this->vkState->debugger = new Debugger();
         setupLayersAndExtensions();
         initInstance();
     }
@@ -26,6 +27,7 @@ namespace xr {
     {
         this->vkState->instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
         this->vkState->instanceExtensions.push_back(PLATFORM_SURFACE_EXTENSION_NAME);
+        this->vkState->instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         this->vkState->deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }
@@ -41,13 +43,32 @@ namespace xr {
         applicationInfo.pEngineName = nullptr;
         applicationInfo.engineVersion = 0;
 
-        this->vkState->instance = new Instance(this->vkState->instanceLayers, this->vkState->instanceExtensions);
-        VkResult result = this->vkState->instance->initVulkanInstance(&applicationInfo);
+        VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo = {};
+        this->vkState->debugger->fillCreateInfo(&debugUtilsMessengerCreateInfo);
+
+        if(this->vkState->debugger->checkValidationLayerSupport())
+        {
+            this->vkState->instanceLayers.push_back(this->vkState->debugger->validationLayerName);
+        }
+
+        this->vkState->instance = new Instance();
+        VkResult result = this->vkState->instance->initVulkanInstance(
+            &applicationInfo,
+            &(this->vkState->instanceLayers),
+            &(this->vkState->instanceExtensions),
+            &debugUtilsMessengerCreateInfo
+        );
         CHECK_ERROR(result);
+
+        this->vkState->debugger->initialize(&(this->vkState->instance->vkInstance), &debugUtilsMessengerCreateInfo);
     }
 
     XR_API void Renderer::destroyInstance()
     {
+        this->vkState->debugger->destory(&(this->vkState->instance->vkInstance));
+        delete this->vkState->debugger;
+        this->vkState->debugger = nullptr;
+
         delete this->vkState->instance;
         this->vkState->instance = nullptr;
     }
@@ -188,37 +209,14 @@ namespace xr {
 
     VkSampleCountFlagBits Renderer::findMaxMSAASampleCount(VkPhysicalDeviceProperties properties)
     {
-        VkSampleCountFlags sampleCountFlags = std::min(properties.limits.framebufferColorSampleCounts, properties.limits.framebufferDepthSampleCounts);
+        VkSampleCountFlags sampleCountFlags = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
 
-        if(sampleCountFlags & VK_SAMPLE_COUNT_64_BIT)
-        {
-            return VK_SAMPLE_COUNT_64_BIT;
-        }
-
-        if(sampleCountFlags & VK_SAMPLE_COUNT_32_BIT)
-        {
-            return VK_SAMPLE_COUNT_32_BIT;
-        }
-
-        if(sampleCountFlags & VK_SAMPLE_COUNT_16_BIT)
-        {
-            return VK_SAMPLE_COUNT_16_BIT;
-        }
-
-        if(sampleCountFlags & VK_SAMPLE_COUNT_8_BIT)
-        {
-            return VK_SAMPLE_COUNT_8_BIT;
-        }
-
-        if(sampleCountFlags & VK_SAMPLE_COUNT_4_BIT)
-        {
-            return VK_SAMPLE_COUNT_4_BIT;
-        }
-
-        if(sampleCountFlags & VK_SAMPLE_COUNT_2_BIT)
-        {
-            return VK_SAMPLE_COUNT_2_BIT;
-        }
+        if(sampleCountFlags & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+        if(sampleCountFlags & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+        if(sampleCountFlags & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+        if(sampleCountFlags & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+        if(sampleCountFlags & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+        if(sampleCountFlags & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
 
         return VK_SAMPLE_COUNT_1_BIT;
     }
@@ -292,36 +290,7 @@ namespace xr {
             logf("---------- Selected GPU Properties End ----------");
 
             logf("---------- MSAA Count ----------");
-
-            if(this->vkState->msaaSamples & VK_SAMPLE_COUNT_64_BIT)
-            {
-                logf("MSAA samples count: 64");
-            }
-            else if(this->vkState->msaaSamples & VK_SAMPLE_COUNT_32_BIT)
-            {
-                logf("MSAA samples count: 32");
-            }
-            else if(this->vkState->msaaSamples & VK_SAMPLE_COUNT_16_BIT)
-            {
-                logf("MSAA samples count: 16");
-            }
-            else if(this->vkState->msaaSamples & VK_SAMPLE_COUNT_8_BIT)
-            {
-                logf("MSAA samples count: 8");
-            }
-            else if(this->vkState->msaaSamples & VK_SAMPLE_COUNT_4_BIT)
-            {
-                logf("MSAA samples count: 4");
-            }
-            else if(this->vkState->msaaSamples & VK_SAMPLE_COUNT_2_BIT)
-            {
-                logf("MSAA samples count: 2");
-            }
-            else
-            {
-                logf("MSAA samples count: 1");
-            }
-
+            logf("MSAA samples count: %d", this->vkState->msaaSamples);
             logf("---------- MSAA Count End ----------");
         }
 
@@ -999,14 +968,6 @@ namespace xr {
             VK_IMAGE_ASPECT_COLOR_BIT,
             1
         );
-
-        transitionImageLayout(
-            this->vkState->msaaColorImage,
-            this->vkState->surfaceFormat.format,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            1
-        );
     }
 
     XR_API void Renderer::destoryMSAAColorImage()
@@ -1614,14 +1575,6 @@ namespace xr {
 
             sourceStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        }
-        else if(oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-        {
-            imageMemoryBarrier.srcAccessMask = 0;
-            imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-            sourceStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         }
         else
         {

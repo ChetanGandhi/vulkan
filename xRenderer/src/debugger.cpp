@@ -7,35 +7,35 @@ namespace xr {
 
         if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            stream<<"[ERROR]";
+            stream<<"[ERROR] | ";
         }
         else if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
-            stream<<"[WARNING]";
+            stream<<"[WARNING] | ";
         }
         else if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
-            stream<<"[INFO]";
+            stream<<"[INFO] | ";
         }
         else if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
-            stream<<"[DEBUG]";
+            stream<<"[VERBOSE] | ";
         }
 
         if(messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
         {
-            stream<<"[GENERAL]";
+            stream<<"[GENERAL] | ";
         }
         else if(messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
         {
-            stream<<"[VALIDATION]";
+            stream<<"[VALIDATION] | ";
         }
         else if(messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
         {
-            stream<<"[PERFORMANCE]";
+            stream<<"[PERFORMANCE] | ";
         }
 
-        stream<<" | "<<pCallbackData->pMessage;
+        stream<<pCallbackData->pMessage;
         logf(stream.str().c_str());
 
         #if defined (_WIN32)
@@ -56,15 +56,16 @@ namespace xr {
 
         #ifndef NDEBUG
 
-        std::vector<VkLayerProperties> availableLayers;
         uint32_t layerCount = 0;
-
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-        availableLayers.reserve(layerCount);
+
+        std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-        for(const VkLayerProperties& layerProperties : availableLayers) {
-            if(strcmp(this->validationLayerName, layerProperties.layerName) == 0) {
+        for(const VkLayerProperties& layerProperties : availableLayers)
+        {
+            if(strcmp(this->validationLayerName, layerProperties.layerName) == 0)
+            {
                 layerFound = true;
                 break;
             }
@@ -75,17 +76,47 @@ namespace xr {
         return layerFound;
     }
 
+    void Debugger::fillCreateInfo(VkDebugUtilsMessengerCreateInfoEXT *createInfo)
+    {
+        createInfo->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo->pNext = nullptr;
+        createInfo->flags = 0;
+        createInfo->messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+        createInfo->pfnUserCallback = xr::debugMessangerCallback;
+        createInfo->pUserData = nullptr;
+        createInfo->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+        #ifdef ENABLE_DEBUG_REPORT_VERBOSE_BIT
+
+        createInfo->messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+
+        #endif
+
+        #ifdef ENABLE_DEBUG_REPORT_INFORMATION_BIT
+
+        createInfo->messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+
+        #endif
+    }
+
     VkResult Debugger::initialize(VkInstance *instance, VkDebugUtilsMessengerCreateInfoEXT *createInfo)
     {
         #ifndef NDEBUG
 
         PFN_vkCreateDebugUtilsMessengerEXT _vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkCreateDebugUtilsMessengerEXT");
 
-        if (_vkCreateDebugUtilsMessengerEXT == nullptr) {
+        if (_vkCreateDebugUtilsMessengerEXT == nullptr)
+        {
             return VK_ERROR_EXTENSION_NOT_PRESENT;
         }
-
-        return _vkCreateDebugUtilsMessengerEXT(*instance, createInfo, nullptr, &this->pDebugMessenger);
+        else
+        {
+            return _vkCreateDebugUtilsMessengerEXT(*instance, createInfo, nullptr, &(this->pDebugMessenger));
+        }
 
         #endif
 
@@ -102,31 +133,8 @@ namespace xr {
         {
             _vkDestroyDebugUtilsMessengerEXT(*instance, this->pDebugMessenger, nullptr);
             _vkDestroyDebugUtilsMessengerEXT = nullptr;
-            logf("Debugger::destory");
         }
 
         #endif
-    }
-
-    void Debugger::createInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
-    {
-        createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.pNext = nullptr;
-        createInfo.flags = 0;
-
-        createInfo.messageSeverity = 0
-            | (VK_DEBUG_REPORT_INFORMATION_BIT_EXT & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-            | (VK_DEBUG_REPORT_DEBUG_BIT_EXT & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-
-        createInfo.messageType = 0
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-
-        createInfo.pfnUserCallback = debugMessangerCallback;
-        createInfo.pUserData = nullptr;
     }
 }

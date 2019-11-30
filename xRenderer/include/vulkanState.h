@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "vertex.h"
 #include "instance.h"
+#include "debugger.h"
 
 namespace xr {
     class VulkanState {
@@ -15,6 +16,7 @@ namespace xr {
         const char* fragmentShaderFile = NULL;
 
         Instance *instance = nullptr;
+        Debugger *debugger = nullptr;
         VkDevice device = VK_NULL_HANDLE;
         VkSurfaceKHR surface = VK_NULL_HANDLE;
         VkQueue graphicsQueue = VK_NULL_HANDLE;

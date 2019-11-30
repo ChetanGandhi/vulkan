@@ -30,6 +30,8 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
+else()
+    add_definitions(-DNDEBUG)
 endif()
 
 # Check for Vulkan package
@@ -78,6 +80,7 @@ target_sources(
         ${PROJECT_SOURCE_DIR}/win32Window.cpp
         ${PROJECT_SOURCE_DIR}/xWindow.cpp
         ${PROJECT_SOURCE_DIR}/resource.h
+        ${PROJECT_SOURCE_DIR}/resource.rc
         ${PROJECT_SOURCE_DIR}/lib/stb/stb_image.h
         ${PROJECT_SOURCE_DIR}/lib/tinyobj/tiny_obj_loader.h
 )
@@ -95,11 +98,12 @@ target_include_directories(
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} ${glm_LIBRARIES} ${xRenderer_LIBRARIES})
 else(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ENV{XRENDERER_PATH}/lib'")
     target_link_libraries(${PROJECT_NAME} ${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${glm_LIBRARIES} ${xRenderer_LIBRARIES})
 endif(WIN32)
 
 install(
-    TARGETS ${PROJECT_NAME}
+    TARGETS ${PROJECT_NAME} RUNTIME
     RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/bin
 )
 

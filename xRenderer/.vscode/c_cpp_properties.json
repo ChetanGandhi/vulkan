@@ -4,6 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
                 "${VULKAN_SDK}/Include/*",
                 "${GLM_PATH}/"
             ],

@@ -7,18 +7,10 @@ namespace xr {
     class Instance
     {
     public:
-        Instance(std::vector<const char*> instanceLayers, std::vector<const char*> instanceExtensions);
+        Instance();
         ~Instance();
 
-        VkResult initVulkanInstance(VkApplicationInfo *applicationInfo);
+        VkResult initVulkanInstance(VkApplicationInfo *applicationInfo, std::vector<const char*> *instanceLayers, std::vector<const char*> *instanceExtensions, VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo);
         VkInstance vkInstance = VK_NULL_HANDLE;
-
-    private:
-        std::vector<const char*> instanceLayers;
-        std::vector<const char*> instanceExtensions;
-
-        Debugger *debugger = nullptr;
-
-        void setupDebugging();
     };
 }

@@ -1,51 +1,24 @@
 #include "instance.h"
 
 namespace xr {
-    Instance::Instance(std::vector<const char*> instanceLayers, std::vector<const char*> instanceExtensions)
-    {
-        this->instanceLayers = instanceLayers;
-        this->instanceExtensions = instanceExtensions;
-
-        this->debugger = new Debugger();
-        if(this->debugger->checkValidationLayerSupport())
-        {
-            this->instanceExtensions.push_back(this->debugger->validationLayerName);
-        }
-        else
-        {
-            logf("Validation layer not supported!!!");
-        }
-    }
-
+    Instance::Instance() {}
     Instance::~Instance()
     {
-        this->debugger->destory(&(this->vkInstance));
-        delete this->debugger;
-        this->debugger = nullptr;
-
         vkDestroyInstance(this->vkInstance, VK_NULL_HANDLE);
         this->vkInstance = VK_NULL_HANDLE;
     }
 
-    VkResult Instance::initVulkanInstance(VkApplicationInfo *applicationInfo)
+    VkResult Instance::initVulkanInstance(VkApplicationInfo *applicationInfo, std::vector<const char*> *instanceLayers, std::vector<const char*> *instanceExtensions, VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo)
     {
         VkInstanceCreateInfo instanceCreateInfo = {};
         instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-
-        #ifndef NDEBUG
-
-        VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo;
-        this->debugger->createInfo(debugUtilsMessengerCreateInfo);
-        instanceCreateInfo.pNext = &debugUtilsMessengerCreateInfo;
-
-        #endif
-
+        instanceCreateInfo.pNext = debugUtilsMessengerCreateInfo;
         instanceCreateInfo.flags = 0;
         instanceCreateInfo.pApplicationInfo = applicationInfo;
-        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(this->instanceLayers.size());
-        instanceCreateInfo.ppEnabledLayerNames = this->instanceLayers.data();
-        instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(this->instanceExtensions.size());
-        instanceCreateInfo.ppEnabledExtensionNames = this->instanceExtensions.data();
+        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayers->size());
+        instanceCreateInfo.ppEnabledLayerNames = instanceLayers->data();
+        instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions->size());
+        instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions->data();
 
         return vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &this->vkInstance);
     }

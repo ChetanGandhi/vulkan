@@ -32,6 +32,8 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
+else()
+    add_definitions(-DNDEBUG)
 endif()
 
 # Check for Vulkan package
