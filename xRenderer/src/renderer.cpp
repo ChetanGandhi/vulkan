@@ -60,8 +60,6 @@ namespace xr
 
     XR_API void Renderer::destroyInstance()
     {
-        this->vkState->models.clear();
-
         this->vkState->debugger->destory(&(this->vkState->instance->vkInstance));
         delete this->vkState->debugger;
         this->vkState->debugger = nullptr;
@@ -601,6 +599,7 @@ namespace xr
     {
         vkDestroySwapchainKHR(this->vkState->device, this->vkState->swapchain, nullptr);
         this->vkState->swapchain = VK_NULL_HANDLE;
+        this->vkState->swapchainImages.clear();
     }
 
     XR_API void Renderer::initSwapchainImageViews()
@@ -1619,138 +1618,112 @@ namespace xr
         endOneTimeCommand(commandBuffer);
     }
 
-    XR_API void Renderer::initVertexBuffer()
+    XR_API void Renderer::initVertexBuffer(Model *model)
     {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
+        VkDeviceSize size = sizeof(model->vertices[0]) * model->vertices.size();
+        VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
+
+        createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
+
+        void *stagingBufferData = nullptr;
+        VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
+        CHECK_ERROR(result);
+
+        memcpy(stagingBufferData, model->vertices.data(), (size_t)size);
+        vkUnmapMemory(this->vkState->device, stagingBufferMemory);
+
+        VkBufferUsageFlags vertexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        VkMemoryPropertyFlags vertexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        createBuffer(size, vertexBufferUsage, vertexMemoryProperties, &(model->vertexBuffer), &(model->vertexBufferMemory));
+        copyBuffer(stagingBuffer, model->vertexBuffer, size);
+        vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
+        vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
+    }
+
+    XR_API void Renderer::destroyVertexBuffer(Model *model)
+    {
+        vkDestroyBuffer(this->vkState->device, model->vertexBuffer, nullptr);
+        vkFreeMemory(this->vkState->device, model->vertexBufferMemory, nullptr);
+        model->vertexBuffer = VK_NULL_HANDLE;
+        model->vertexBufferMemory = VK_NULL_HANDLE;
+    }
+
+    XR_API void Renderer::initIndexBuffer(Model *model)
+    {
+        VkDeviceSize size = sizeof(model->vertexIndices[0]) * model->vertexIndices.size();
+        VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
+
+        createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
+
+        void *stagingBufferData = nullptr;
+        VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
+        CHECK_ERROR(result);
+
+        memcpy(stagingBufferData, model->vertexIndices.data(), (size_t)size);
+        vkUnmapMemory(this->vkState->device, stagingBufferMemory);
+
+        VkBufferUsageFlags indexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        VkMemoryPropertyFlags indexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        createBuffer(size, indexBufferUsage, indexMemoryProperties, &(model->indexBuffer), &(model->indexBufferMemory));
+        copyBuffer(stagingBuffer, model->indexBuffer, size);
+        vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
+        vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
+    }
+
+    XR_API void Renderer::destroyIndexBuffer(Model *model)
+    {
+        vkDestroyBuffer(this->vkState->device, model->indexBuffer, nullptr);
+        vkFreeMemory(this->vkState->device, model->indexBufferMemory, nullptr);
+        model->indexBuffer = VK_NULL_HANDLE;
+        model->indexBufferMemory = VK_NULL_HANDLE;
+    }
+
+    XR_API void Renderer::initUniformBuffers(Model *model)
+    {
+        VkDeviceSize size = sizeof(xr::UniformBufferObject);
+        VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        model->uniformBuffers.resize(this->vkState->swapchainImages.size());
+        model->uniformBuffersMemory.resize(this->vkState->swapchainImages.size());
+
+        for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
-            Model *model = this->vkState->models[index];
-            VkDeviceSize size = sizeof(model->vertices[0]) * model->vertices.size();
-            VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-            VkBuffer stagingBuffer = VK_NULL_HANDLE;
-            VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
-
-            createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
-
-            void *stagingBufferData = nullptr;
-            VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
-            CHECK_ERROR(result);
-
-            memcpy(stagingBufferData, model->vertices.data(), (size_t)size);
-            vkUnmapMemory(this->vkState->device, stagingBufferMemory);
-
-            VkBufferUsageFlags vertexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-            VkMemoryPropertyFlags vertexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-            createBuffer(size, vertexBufferUsage, vertexMemoryProperties, &(model->vertexBuffer), &(model->vertexBufferMemory));
-            copyBuffer(stagingBuffer, model->vertexBuffer, size);
-            vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
-            vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
+            createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(model->uniformBuffers[counter]), &(model->uniformBuffersMemory[counter]));
         }
     }
 
-    XR_API void Renderer::destroyVertexBuffer()
+    XR_API void Renderer::destroyUniformBuffers(Model *model)
     {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
+        for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
-            Model *model = this->vkState->models[index];
-            vkDestroyBuffer(this->vkState->device, model->vertexBuffer, nullptr);
-            vkFreeMemory(this->vkState->device, model->vertexBufferMemory, nullptr);
-            model->vertexBuffer = VK_NULL_HANDLE;
-            model->vertexBufferMemory = VK_NULL_HANDLE;
-        }
-    }
-
-    XR_API void Renderer::initIndexBuffer()
-    {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
-        {
-            Model *model = this->vkState->models[index];
-            VkDeviceSize size = sizeof(model->vertexIndices[0]) * model->vertexIndices.size();
-            VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-            VkBuffer stagingBuffer = VK_NULL_HANDLE;
-            VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
-
-            createBuffer(size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
-
-            void *stagingBufferData = nullptr;
-            VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
-            CHECK_ERROR(result);
-
-            memcpy(stagingBufferData, model->vertexIndices.data(), (size_t)size);
-            vkUnmapMemory(this->vkState->device, stagingBufferMemory);
-
-            VkBufferUsageFlags indexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-            VkMemoryPropertyFlags indexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-            createBuffer(size, indexBufferUsage, indexMemoryProperties, &(model->indexBuffer), &(model->indexBufferMemory));
-            copyBuffer(stagingBuffer, model->indexBuffer, size);
-            vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
-            vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
-        }
-    }
-
-    XR_API void Renderer::destroyIndexBuffer()
-    {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
-        {
-            Model *model = this->vkState->models[index];
-            vkDestroyBuffer(this->vkState->device, model->indexBuffer, nullptr);
-            vkFreeMemory(this->vkState->device, model->indexBufferMemory, nullptr);
-            model->indexBuffer = VK_NULL_HANDLE;
-            model->indexBufferMemory = VK_NULL_HANDLE;
-        }
-    }
-
-    XR_API void Renderer::initUniformBuffers()
-    {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
-        {
-            Model *model = this->vkState->models[index];
-            VkDeviceSize size = sizeof(xr::UniformBufferObject);
-            VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-            model->uniformBuffers.resize(this->vkState->swapchainImages.size());
-            model->uniformBuffersMemory.resize(this->vkState->swapchainImages.size());
-
-            for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
-            {
-                createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(model->uniformBuffers[counter]), &(model->uniformBuffersMemory[counter]));
-            }
-        }
-    }
-
-    XR_API void Renderer::destroyUniformBuffers()
-    {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
-        {
-            Model *model = this->vkState->models[index];
-            for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
-            {
-                vkDestroyBuffer(this->vkState->device, model->uniformBuffers[counter], nullptr);
-                vkFreeMemory(this->vkState->device, model->uniformBuffersMemory[counter], nullptr);
-            }
-
-            model->uniformBuffers.clear();
-            model->uniformBuffersMemory.clear();
+            vkDestroyBuffer(this->vkState->device, model->uniformBuffers[counter], nullptr);
+            vkFreeMemory(this->vkState->device, model->uniformBuffersMemory[counter], nullptr);
         }
 
-        this->vkState->swapchainImages.clear();
+        model->uniformBuffers.clear();
+        model->uniformBuffersMemory.clear();
     }
 
-    XR_API void Renderer::initDescriptorPool()
+    XR_API void Renderer::initDescriptorPool(size_t models)
     {
         VkDescriptorPoolSize uboPoolSize = {};
         uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size());
+        uboPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size() * models);
 
         VkDescriptorPoolSize samplerPoolSize = {};
         samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size());
+        samplerPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size() * models);
         ;
 
         std::array<VkDescriptorPoolSize, 2> poolSizes = { uboPoolSize, samplerPoolSize };
@@ -1763,7 +1736,7 @@ namespace xr
         // else you will get runtime error while destroying the descriptorSet.
         // We are not going to used this for now.
         // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        poolCreateInfo.maxSets = static_cast<uint32_t>(this->vkState->swapchainImages.size());
+        poolCreateInfo.maxSets = static_cast<uint32_t>(this->vkState->swapchainImages.size() * models);
         poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolCreateInfo.pPoolSizes = poolSizes.data();
 
@@ -1777,13 +1750,13 @@ namespace xr
         this->vkState->descriptorPool = VK_NULL_HANDLE;
     }
 
-    XR_API void Renderer::initDescriptorSets()
+    XR_API void Renderer::initDescriptorSets(std::vector<Model *> models)
     {
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts(this->vkState->swapchainImages.size(), this->vkState->descriptorSetLayout);
 
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
+        for (size_t index = 0; index < models.size(); ++index)
         {
-            Model *model = this->vkState->models[index];
+            Model *model = models[index];
             VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
             descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             descriptorSetAllocateInfo.pNext = nullptr;
@@ -1838,11 +1811,11 @@ namespace xr
         }
     }
 
-    XR_API void Renderer::destroyDescriptorSets()
+    XR_API void Renderer::destroyDescriptorSets(std::vector<Model *> models)
     {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
+        for (size_t index = 0; index < models.size(); ++index)
         {
-            Model *model = this->vkState->models[index];
+            Model *model = models[index];
 
             // If you want to explicitly destroy the descriptorSet, then set
             // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
@@ -1860,7 +1833,7 @@ namespace xr
         }
     }
 
-    XR_API void Renderer::initCommandBuffers()
+    XR_API void Renderer::initCommandBuffers(std::vector<Model *> models)
     {
         this->vkState->commandBuffers.resize(this->vkState->framebuffers.size());
 
@@ -1908,9 +1881,9 @@ namespace xr
 
             VkDeviceSize offset = { 0 };
 
-            for (size_t index = 0; index < this->vkState->models.size(); ++index)
+            for (size_t index = 0; index < models.size(); ++index)
             {
-                Model *model = this->vkState->models[index];
+                Model *model = models[index];
                 vkCmdBindVertexBuffers(this->vkState->commandBuffers[counter], 0, 1, &(model->vertexBuffer), &offset);
                 vkCmdBindIndexBuffer(this->vkState->commandBuffers[counter], model->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 vkCmdBindDescriptorSets(
@@ -1987,11 +1960,11 @@ namespace xr
         this->vkState->inFlightFences.clear();
     }
 
-    XR_API void Renderer::recreateSwapChain()
+    XR_API void Renderer::recreateSwapChain(std::vector<Model *> models)
     {
         logf("---------- Recreate SwapChain --------");
         vkDeviceWaitIdle(this->vkState->device);
-        cleanupSwapChain();
+        cleanupSwapChain(models);
         initSwapchain();
         initSwapchainImageViews();
         initRenderPass();
@@ -2000,19 +1973,29 @@ namespace xr
         initDepthStencilImage();
         initMSAAColorImage();
         initFrameBuffers();
-        initUniformBuffers();
-        initDescriptorPool();
-        initDescriptorSets();
-        initCommandBuffers();
+
+        for (size_t index = 0; index < models.size(); ++index)
+        {
+            initUniformBuffers(models[index]);
+        }
+
+        initDescriptorPool(models.size());
+        initDescriptorSets(models);
+        initCommandBuffers(models);
     }
 
-    XR_API void Renderer::cleanupSwapChain()
+    XR_API void Renderer::cleanupSwapChain(std::vector<Model *> models)
     {
         waitForIdle();
         destroyCommandBuffers();
-        destroyDescriptorSets();
+        destroyDescriptorSets(models);
         destroyDescriptorPool();
-        destroyUniformBuffers();
+
+        for (size_t index = 0; index < models.size(); ++index)
+        {
+            destroyUniformBuffers(models[index]);
+        }
+
         destroyFrameBuffers();
         destroyMSAAColorImage();
         destroyDepthStencilImage();
@@ -2023,7 +2006,7 @@ namespace xr
         destroySwapchain();
     }
 
-    XR_API void Renderer::render()
+    XR_API void Renderer::render(std::vector<Model *> models)
     {
         vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
 
@@ -2042,14 +2025,14 @@ namespace xr
         // as current swap chain cannot be used with current surface.
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            recreateSwapChain();
+            recreateSwapChain(models);
             return;
         }
 
         CHECK_ERROR(result);
 
         // Update the uniform buffer for current image.
-        updateUniformBuffer(activeSwapchainImageId);
+        updateUniformBuffer(models, activeSwapchainImageId);
 
         if (this->vkState->inFlightImages[activeSwapchainImageId] != VK_NULL_HANDLE)
         {
@@ -2096,7 +2079,7 @@ namespace xr
         // because we want the best possible result.
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
-            recreateSwapChain();
+            recreateSwapChain(models);
         }
         else
         {
@@ -2106,13 +2089,12 @@ namespace xr
         this->vkState->currentFrame = (this->vkState->currentFrame + 1) % this->vkState->MAX_FRAMES_IN_FLIGHT;
     }
 
-    void Renderer::updateUniformBuffer(uint32_t imageIndex)
+    void Renderer::updateUniformBuffer(std::vector<Model *> models, uint32_t imageIndex)
     {
-        for (size_t index = 0; index < this->vkState->models.size(); ++index)
+        for (size_t index = 0; index < models.size(); ++index)
         {
+            Model *model = models[index];
             void *data = nullptr;
-            Model *model = this->vkState->models[index];
-
             vkMapMemory(this->vkState->device, model->uniformBuffersMemory[imageIndex], 0, sizeof(xr::UniformBufferObject), 0, &data);
             memcpy(data, &model->ubo, sizeof(xr::UniformBufferObject));
             vkUnmapMemory(this->vkState->device, model->uniformBuffersMemory[imageIndex]);

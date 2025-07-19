@@ -36,6 +36,7 @@ namespace xr
                                         attrib.vertices[3 * nextIndex.vertex_index + 0],
                                         attrib.vertices[3 * nextIndex.vertex_index + 1],
                                         attrib.vertices[3 * nextIndex.vertex_index + 2]
+
                 };
 
                 nextVertex.textureCoordinates = { // the attrib.texcoords array is an array of float values instead of something like glm::vec2,

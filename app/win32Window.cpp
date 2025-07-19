@@ -8,7 +8,7 @@
 #include "resource.h"
 
 xr::Model *homeModel;
-xr::Model *vikinRoomModel;
+xr::Model *vikingRoomModel;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -169,21 +169,24 @@ void initializeVulkan()
     renderer->initFrameBuffers();
 
     homeModel = new xr::Model("../resources/models/chalet/chalet.obj");
-    vkState->modals.push_back(homeModel);
-
     renderer->initTextureImage(homeModel, "../resources/textures/chalet/chalet.jpg");
     renderer->initTextureImageView(homeModel);
     renderer->initTextureSampler(homeModel);
+    renderer->initVertexBuffer(homeModel);
+    renderer->initIndexBuffer(homeModel);
+    renderer->initUniformBuffers(homeModel);
 
-    // vikinRoomModel = new xr::Model("../resources/models/vikingRoom/vikingRoom.obj");
-    // vkState->modals.push_back(vikinRoomModel);
+    vikingRoomModel = new xr::Model("../resources/models/vikingRoom/vikingRoom.obj");
+    renderer->initTextureImage(vikingRoomModel, "../resources/textures/vikingRoom/vikingRoom.png");
+    renderer->initTextureImageView(vikingRoomModel);
+    renderer->initTextureSampler(vikingRoomModel);
+    renderer->initVertexBuffer(vikingRoomModel);
+    renderer->initIndexBuffer(vikingRoomModel);
+    renderer->initUniformBuffers(vikingRoomModel);
 
-    renderer->initVertexBuffer();
-    renderer->initIndexBuffer();
-    renderer->initUniformBuffers();
-    renderer->initDescriptorPool();
-    renderer->initDescriptorSets();
-    renderer->initCommandBuffers();
+    renderer->initDescriptorPool(2);
+    renderer->initDescriptorSets({ homeModel, vikingRoomModel });
+    renderer->initCommandBuffers({ homeModel, vikingRoomModel });
     renderer->initSynchronizations();
 }
 
@@ -202,14 +205,23 @@ void cleanUp()
         renderer->waitForIdle();
         renderer->destroySynchronizations();
         renderer->destroyCommandBuffers();
-        renderer->destroyDescriptorSets();
+        renderer->destroyDescriptorSets({ homeModel, vikingRoomModel });
         renderer->destroyDescriptorPool();
-        renderer->destroyUniformBuffers();
-        renderer->destroyIndexBuffer();
-        renderer->destroyVertexBuffer();
+
+        renderer->destroyUniformBuffers(homeModel);
+        renderer->destroyIndexBuffer(homeModel);
+        renderer->destroyVertexBuffer(homeModel);
         renderer->destroyTextureSampler(homeModel);
         renderer->destroyTextureImageView(homeModel);
         renderer->destroyTextureImage(homeModel);
+
+        renderer->destroyUniformBuffers(vikingRoomModel);
+        renderer->destroyIndexBuffer(vikingRoomModel);
+        renderer->destroyVertexBuffer(vikingRoomModel);
+        renderer->destroyTextureSampler(vikingRoomModel);
+        renderer->destroyTextureImageView(vikingRoomModel);
+        renderer->destroyTextureImage(vikingRoomModel);
+
         renderer->destroyFrameBuffers();
         renderer->destroyMSAAColorImage();
         renderer->destroyDepthStencilImage();
@@ -232,10 +244,10 @@ void cleanUp()
         homeModel = nullptr;
     }
 
-    if (vikinRoomModel)
+    if (vikingRoomModel)
     {
-        delete vikinRoomModel;
-        vikinRoomModel = nullptr;
+        delete vikingRoomModel;
+        vikingRoomModel = nullptr;
     }
 
     if (renderer)
@@ -258,50 +270,47 @@ void cleanUp()
 
 void updateHomeModel()
 {
-    xr::Model *model = homeModel;
-
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.0f, -6.0f, 0.0f));
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, -1.0f));
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(model->ubo), 0, sizeof(xr::UniformBufferObject));
-    model->ubo.model = translationMatrix * rotationMatrix;
-    model->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    model->ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+    memset((void *)&(homeModel->ubo), 0, sizeof(xr::UniformBufferObject));
+    homeModel->ubo.model = translationMatrix * rotationMatrix;
+    homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
     // The easy way to fix this is to flip the sign on the scaling factor of Y axis
     // in the projection matrix.
-    model->ubo.projection[1][1] *= -1.0f;
+    homeModel->ubo.projection[1][1] *= -1.0f;
 }
 
-void updateVikinRoomModel()
+void updateVikingRoomModel()
 {
-    xr::Model *model = vikinRoomModel;
-
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.0f, -6.0f, 0.0f));
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 1.5f, -1.0f));
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(model->ubo), 0, sizeof(xr::UniformBufferObject));
-    model->ubo.model = translationMatrix * rotationMatrix;
-    model->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    model->ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(xr::UniformBufferObject));
+    vikingRoomModel->ubo.model = translationMatrix * rotationMatrix;
+    vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    vikingRoomModel->ubo.projection =
+        glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
     // The easy way to fix this is to flip the sign on the scaling factor of Y axis
     // in the projection matrix.
-    model->ubo.projection[1][1] *= -1.0f;
+    vikingRoomModel->ubo.projection[1][1] *= -1.0f;
 }
 
 int mainLoop()
@@ -350,8 +359,8 @@ int mainLoop()
 
                     // This will also update uniform buffer as per current inflight image.
                     updateHomeModel();
-                    // updateVikinRoomModel();
-                    renderer->render();
+                    updateVikingRoomModel();
+                    renderer->render({ homeModel, vikingRoomModel });
                 }
             }
         }
@@ -396,7 +405,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (renderer != nullptr)
     {
-        renderer->recreateSwapChain();
+        renderer->recreateSwapChain({ homeModel, vikingRoomModel });
     }
 }
 

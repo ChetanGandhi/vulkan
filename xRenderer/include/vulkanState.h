@@ -48,7 +48,6 @@ namespace xr
         std::vector<VkFence> inFlightImages;
         std::vector<VkFramebuffer> framebuffers;
         std::vector<VkCommandBuffer> commandBuffers;
-        std::vector<Model *> models;
 
         uint32_t swapchainImageCount = 2;
         size_t currentFrame = 0;

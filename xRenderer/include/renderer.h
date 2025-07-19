@@ -61,31 +61,31 @@ namespace xr
         XR_API void initTextureSampler(Model *model);
         XR_API void destroyTextureSampler(Model *model);
 
-        XR_API void initVertexBuffer();
-        XR_API void destroyVertexBuffer();
+        XR_API void initVertexBuffer(Model *model);
+        XR_API void destroyVertexBuffer(Model *model);
 
-        XR_API void initIndexBuffer();
-        XR_API void destroyIndexBuffer();
+        XR_API void initIndexBuffer(Model *model);
+        XR_API void destroyIndexBuffer(Model *model);
 
-        XR_API void initUniformBuffers();
-        XR_API void destroyUniformBuffers();
+        XR_API void initUniformBuffers(Model *model);
+        XR_API void destroyUniformBuffers(Model *model);
 
-        XR_API void initDescriptorPool();
+        XR_API void initDescriptorPool(size_t models);
         XR_API void destroyDescriptorPool();
 
-        XR_API void initDescriptorSets();
-        XR_API void destroyDescriptorSets();
+        XR_API void initDescriptorSets(std::vector<Model *> models);
+        XR_API void destroyDescriptorSets(std::vector<Model *> models);
 
-        XR_API void initCommandBuffers();
+        XR_API void initCommandBuffers(std::vector<Model *> models);
         XR_API void destroyCommandBuffers();
 
         XR_API void initSynchronizations();
         XR_API void destroySynchronizations();
 
-        XR_API void recreateSwapChain();
-        XR_API void cleanupSwapChain();
+        XR_API void recreateSwapChain(std::vector<Model *> models);
+        XR_API void cleanupSwapChain(std::vector<Model *> models);
 
-        XR_API void render();
+        XR_API void render(std::vector<Model *> models);
 
         XR_API VkShaderModule createShaderModule(const std::vector<char> &code);
         XR_API void createBuffer(
@@ -117,7 +117,7 @@ namespace xr
         void setupLayersAndExtensions();
         void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
         void endOneTimeCommand(VkCommandBuffer &commandBuffer);
-        void updateUniformBuffer(uint32_t imageIndex);
+        void updateUniformBuffer(std::vector<Model *> models, uint32_t imageIndex);
 
         void generateMipmaps(VkImage &image, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
 
