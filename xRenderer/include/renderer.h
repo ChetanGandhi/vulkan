@@ -47,19 +47,19 @@ namespace xr
         XR_API void destroyCommandPool();
 
         XR_API void initDepthStencilImage();
-        XR_API void destoryDepthStencilImage();
+        XR_API void destroyDepthStencilImage();
 
         XR_API void initMSAAColorImage();
-        XR_API void destoryMSAAColorImage();
+        XR_API void destroyMSAAColorImage();
 
-        XR_API void initTextureImage(const char *textureFilePath);
-        XR_API void destroyTextureImage();
+        XR_API void initTextureImage(Model *model, const char *textureFilePath);
+        XR_API void destroyTextureImage(Model *model);
 
-        XR_API void initTextureImageView();
-        XR_API void destroyTextureImageView();
+        XR_API void initTextureImageView(Model *model);
+        XR_API void destroyTextureImageView(Model *model);
 
-        XR_API void initTextureSampler();
-        XR_API void destoryTextureSampler();
+        XR_API void initTextureSampler(Model *model);
+        XR_API void destroyTextureSampler(Model *model);
 
         XR_API void initVertexBuffer();
         XR_API void destroyVertexBuffer();

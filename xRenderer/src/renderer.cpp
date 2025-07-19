@@ -60,7 +60,7 @@ namespace xr
 
     XR_API void Renderer::destroyInstance()
     {
-        this->vkState->modals.clear();
+        this->vkState->models.clear();
 
         this->vkState->debugger->destory(&(this->vkState->instance->vkInstance));
         delete this->vkState->debugger;
@@ -929,7 +929,7 @@ namespace xr
         createImageView(this->vkState->depthImage, depthStencilFormat, this->vkState->depthImageView, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
-    XR_API void Renderer::destoryDepthStencilImage()
+    XR_API void Renderer::destroyDepthStencilImage()
     {
         vkDestroyImageView(this->vkState->device, this->vkState->depthImageView, nullptr);
         vkDestroyImage(this->vkState->device, this->vkState->depthImage, nullptr);
@@ -957,7 +957,7 @@ namespace xr
         createImageView(this->vkState->msaaColorImage, this->vkState->surfaceFormat.format, this->vkState->msaaColorImageView, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
 
-    XR_API void Renderer::destoryMSAAColorImage()
+    XR_API void Renderer::destroyMSAAColorImage()
     {
         vkDestroyImageView(this->vkState->device, this->vkState->msaaColorImageView, nullptr);
         vkDestroyImage(this->vkState->device, this->vkState->msaaColorImage, nullptr);
@@ -1224,7 +1224,7 @@ namespace xr
         CHECK_ERROR(result);
     }
 
-    XR_API void Renderer::initTextureImage(const char *textureFilePath)
+    XR_API void Renderer::initTextureImage(Model *model, const char *textureFilePath)
     {
         int textureWidth = 0;
         int textureHeight = 0;
@@ -1238,9 +1238,9 @@ namespace xr
         }
 
         VkDeviceSize size = textureWidth * textureHeight * 4;
-        this->vkState->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
+        model->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
 
-        logf("---------- mipLevels: %d----------", this->vkState->mipLevels);
+        logf("---------- mipLevels: %d----------", model->mipLevels);
 
         VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
         VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
@@ -1262,35 +1262,33 @@ namespace xr
         createImage(
             static_cast<uint32_t>(textureWidth),
             static_cast<uint32_t>(textureHeight),
-            this->vkState->mipLevels,
+            model->mipLevels,
             VK_SAMPLE_COUNT_1_BIT,
             VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            this->vkState->textureImage,
-            this->vkState->textureImageMemory
+            model->textureImage,
+            model->textureImageMemory
         );
 
-        transitionImageLayout(
-            this->vkState->textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, this->vkState->mipLevels
-        );
+        transitionImageLayout(model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, model->mipLevels);
 
-        copyBufferToImage(stagingImageBuffer, this->vkState->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
+        copyBufferToImage(stagingImageBuffer, model->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
 
         // Generate the mipmaps images and then transition image layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
-        generateMipmaps(this->vkState->textureImage, textureWidth, textureHeight, this->vkState->mipLevels);
+        generateMipmaps(model->textureImage, textureWidth, textureHeight, model->mipLevels);
 
         vkDestroyBuffer(this->vkState->device, stagingImageBuffer, nullptr);
         vkFreeMemory(this->vkState->device, stagingImageBufferMemory, nullptr);
     }
 
-    XR_API void Renderer::destroyTextureImage()
+    XR_API void Renderer::destroyTextureImage(Model *model)
     {
-        vkDestroyImage(this->vkState->device, this->vkState->textureImage, nullptr);
-        vkFreeMemory(this->vkState->device, this->vkState->textureImageMemory, nullptr);
-        this->vkState->textureImage = VK_NULL_HANDLE;
-        this->vkState->textureImageMemory = VK_NULL_HANDLE;
+        vkDestroyImage(this->vkState->device, model->textureImage, nullptr);
+        vkFreeMemory(this->vkState->device, model->textureImageMemory, nullptr);
+        model->textureImage = VK_NULL_HANDLE;
+        model->textureImageMemory = VK_NULL_HANDLE;
     }
 
     void Renderer::generateMipmaps(VkImage &image, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels)
@@ -1407,20 +1405,18 @@ namespace xr
         endOneTimeCommand(commandBuffer);
     }
 
-    XR_API void Renderer::initTextureImageView()
+    XR_API void Renderer::initTextureImageView(Model *model)
     {
-        createImageView(
-            this->vkState->textureImage, VK_FORMAT_R8G8B8A8_UNORM, this->vkState->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, this->vkState->mipLevels
-        );
+        createImageView(model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, model->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, model->mipLevels);
     }
 
-    XR_API void Renderer::destroyTextureImageView()
+    XR_API void Renderer::destroyTextureImageView(Model *model)
     {
-        vkDestroyImageView(this->vkState->device, this->vkState->textureImageView, nullptr);
-        this->vkState->textureImageView = VK_NULL_HANDLE;
+        vkDestroyImageView(this->vkState->device, model->textureImageView, nullptr);
+        model->textureImageView = VK_NULL_HANDLE;
     }
 
-    XR_API void Renderer::initTextureSampler()
+    XR_API void Renderer::initTextureSampler(Model *model)
     {
         VkSamplerCreateInfo samplerCreateInfo = {};
         samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1437,19 +1433,19 @@ namespace xr
         samplerCreateInfo.compareEnable = VK_FALSE;
         samplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
         samplerCreateInfo.minLod = 0;
-        samplerCreateInfo.maxLod = static_cast<float>(this->vkState->mipLevels);
+        samplerCreateInfo.maxLod = static_cast<float>(model->mipLevels);
         samplerCreateInfo.mipLodBias = 0.0f;
         samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
         samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 
-        VkResult result = vkCreateSampler(this->vkState->device, &samplerCreateInfo, nullptr, &(this->vkState->textureSampler));
+        VkResult result = vkCreateSampler(this->vkState->device, &samplerCreateInfo, nullptr, &(model->textureSampler));
         CHECK_ERROR(result);
     }
 
-    XR_API void Renderer::destoryTextureSampler()
+    XR_API void Renderer::destroyTextureSampler(Model *model)
     {
-        vkDestroySampler(this->vkState->device, this->vkState->textureSampler, nullptr);
-        this->vkState->textureSampler = VK_NULL_HANDLE;
+        vkDestroySampler(this->vkState->device, model->textureSampler, nullptr);
+        model->textureSampler = VK_NULL_HANDLE;
     }
 
     XR_API void Renderer::createBuffer(
@@ -1625,9 +1621,9 @@ namespace xr
 
     XR_API void Renderer::initVertexBuffer()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             VkDeviceSize size = sizeof(model->vertices[0]) * model->vertices.size();
             VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -1656,9 +1652,9 @@ namespace xr
 
     XR_API void Renderer::destroyVertexBuffer()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             vkDestroyBuffer(this->vkState->device, model->vertexBuffer, nullptr);
             vkFreeMemory(this->vkState->device, model->vertexBufferMemory, nullptr);
             model->vertexBuffer = VK_NULL_HANDLE;
@@ -1668,9 +1664,9 @@ namespace xr
 
     XR_API void Renderer::initIndexBuffer()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             VkDeviceSize size = sizeof(model->vertexIndices[0]) * model->vertexIndices.size();
             VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -1699,9 +1695,9 @@ namespace xr
 
     XR_API void Renderer::destroyIndexBuffer()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             vkDestroyBuffer(this->vkState->device, model->indexBuffer, nullptr);
             vkFreeMemory(this->vkState->device, model->indexBufferMemory, nullptr);
             model->indexBuffer = VK_NULL_HANDLE;
@@ -1711,9 +1707,9 @@ namespace xr
 
     XR_API void Renderer::initUniformBuffers()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             VkDeviceSize size = sizeof(xr::UniformBufferObject);
             VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -1730,9 +1726,9 @@ namespace xr
 
     XR_API void Renderer::destroyUniformBuffers()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
             {
                 vkDestroyBuffer(this->vkState->device, model->uniformBuffers[counter], nullptr);
@@ -1785,9 +1781,9 @@ namespace xr
     {
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts(this->vkState->swapchainImages.size(), this->vkState->descriptorSetLayout);
 
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
             VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
             descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             descriptorSetAllocateInfo.pNext = nullptr;
@@ -1809,8 +1805,8 @@ namespace xr
 
                 VkDescriptorImageInfo descriptorImageInfo = {};
                 descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                descriptorImageInfo.imageView = this->vkState->textureImageView;
-                descriptorImageInfo.sampler = this->vkState->textureSampler;
+                descriptorImageInfo.imageView = model->textureImageView;
+                descriptorImageInfo.sampler = model->textureSampler;
 
                 VkWriteDescriptorSet uniformBudderDescriptorWrite = {};
                 uniformBudderDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1844,9 +1840,9 @@ namespace xr
 
     XR_API void Renderer::destroyDescriptorSets()
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
 
             // If you want to explicitly destroy the descriptorSet, then set
             // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
@@ -1912,9 +1908,9 @@ namespace xr
 
             VkDeviceSize offset = { 0 };
 
-            for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+            for (size_t index = 0; index < this->vkState->models.size(); ++index)
             {
-                Model *model = this->vkState->modals[index];
+                Model *model = this->vkState->models[index];
                 vkCmdBindVertexBuffers(this->vkState->commandBuffers[counter], 0, 1, &(model->vertexBuffer), &offset);
                 vkCmdBindIndexBuffer(this->vkState->commandBuffers[counter], model->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 vkCmdBindDescriptorSets(
@@ -2018,8 +2014,8 @@ namespace xr
         destroyDescriptorPool();
         destroyUniformBuffers();
         destroyFrameBuffers();
-        destoryMSAAColorImage();
-        destoryDepthStencilImage();
+        destroyMSAAColorImage();
+        destroyDepthStencilImage();
         destroyGraphicsPipline();
         destroyGraphicsPiplineCache();
         destroyRenderPass();
@@ -2112,10 +2108,10 @@ namespace xr
 
     void Renderer::updateUniformBuffer(uint32_t imageIndex)
     {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
+        for (size_t index = 0; index < this->vkState->models.size(); ++index)
         {
             void *data = nullptr;
-            Model *model = this->vkState->modals[index];
+            Model *model = this->vkState->models[index];
 
             vkMapMemory(this->vkState->device, model->uniformBuffersMemory[imageIndex], 0, sizeof(xr::UniformBufferObject), 0, &data);
             memcpy(data, &model->ubo, sizeof(xr::UniformBufferObject));

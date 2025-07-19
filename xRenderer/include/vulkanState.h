@@ -33,10 +33,6 @@ namespace xr
         VkImage depthImage = VK_NULL_HANDLE;
         VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
         VkImageView depthImageView = VK_NULL_HANDLE;
-        VkImage textureImage = VK_NULL_HANDLE;
-        VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
-        VkImageView textureImageView = VK_NULL_HANDLE;
-        VkSampler textureSampler = VK_NULL_HANDLE;
         VkImage msaaColorImage = VK_NULL_HANDLE;
         VkDeviceMemory msaaColorImageMemory = VK_NULL_HANDLE;
         VkImageView msaaColorImageView = VK_NULL_HANDLE;
@@ -52,10 +48,9 @@ namespace xr
         std::vector<VkFence> inFlightImages;
         std::vector<VkFramebuffer> framebuffers;
         std::vector<VkCommandBuffer> commandBuffers;
-        std::vector<Model *> modals;
+        std::vector<Model *> models;
 
         uint32_t swapchainImageCount = 2;
-        uint32_t mipLevels = 1;
         size_t currentFrame = 0;
 
         VkSurfaceFormatKHR surfaceFormat = {};
