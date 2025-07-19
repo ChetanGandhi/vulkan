@@ -3,14 +3,20 @@
 #include "platform.h"
 #include "debugger.h"
 
-namespace xr {
+namespace xr
+{
     class Instance
     {
-    public:
+      public:
         Instance();
         ~Instance();
 
-        VkResult initVulkanInstance(VkApplicationInfo *applicationInfo, std::vector<const char*> *instanceLayers, std::vector<const char*> *instanceExtensions, VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo);
+        VkResult initVulkanInstance(
+            VkApplicationInfo *applicationInfo,
+            std::vector<const char *> *instanceLayers,
+            std::vector<const char *> *instanceExtensions,
+            VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo
+        );
         VkInstance vkInstance = VK_NULL_HANDLE;
     };
-}
+} // namespace xr

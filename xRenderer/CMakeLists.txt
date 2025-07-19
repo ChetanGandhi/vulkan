@@ -50,12 +50,15 @@ target_compile_definitions(
 target_sources(
         ${PROJECT_NAME}
     PRIVATE
+        ${PROJECT_SOURCE_DIR}/lib/stb/stb_image.h
+        ${PROJECT_SOURCE_DIR}/lib/tinyobj/tiny_obj_loader.h
         ${PROJECT_SOURCE_DIR}/src/logger.cpp
         ${PROJECT_SOURCE_DIR}/src/utils.cpp
         ${PROJECT_SOURCE_DIR}/src/renderer.cpp
         ${PROJECT_SOURCE_DIR}/src/core.cpp
         ${PROJECT_SOURCE_DIR}/src/debugger.cpp
         ${PROJECT_SOURCE_DIR}/src/instance.cpp
+        ${PROJECT_SOURCE_DIR}/src/model.cpp
         ${PROJECT_SOURCE_DIR}/include/buildParam.h
         ${PROJECT_SOURCE_DIR}/include/common.h
         ${PROJECT_SOURCE_DIR}/include/logger.h
@@ -63,11 +66,10 @@ target_sources(
         ${PROJECT_SOURCE_DIR}/include/core.h
         ${PROJECT_SOURCE_DIR}/include/debugger.h
         ${PROJECT_SOURCE_DIR}/include/instance.h
+        ${PROJECT_SOURCE_DIR}/include/model.h
         ${PROJECT_SOURCE_DIR}/include/utils.h
         ${PROJECT_SOURCE_DIR}/include/vertex.h
         ${PROJECT_SOURCE_DIR}/include/vulkanWindow.h
-        ${PROJECT_SOURCE_DIR}/lib/stb/stb_image.h
-        ${PROJECT_SOURCE_DIR}/lib/tinyobj/tiny_obj_loader.h
 )
 
 target_include_directories(

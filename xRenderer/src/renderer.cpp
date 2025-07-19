@@ -1,6 +1,6 @@
-#include "renderer.h"
 #include "lib/stb/stb_image.h"
 #include "lib/tinyobj/tiny_obj_loader.h"
+#include "renderer.h"
 #include "utils.h"
 #include "logger.h"
 
@@ -60,6 +60,8 @@ namespace xr
 
     XR_API void Renderer::destroyInstance()
     {
+        this->vkState->modals.clear();
+
         this->vkState->debugger->destory(&(this->vkState->instance->vkInstance));
         delete this->vkState->debugger;
         this->vkState->debugger = nullptr;
@@ -1621,78 +1623,12 @@ namespace xr
         endOneTimeCommand(commandBuffer);
     }
 
-    XR_API void Renderer::loadModel(const char *modelFilePath)
-    {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string error;
-
-        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, modelFilePath);
-
-        if (!loaded)
-        {
-            logf("Model load error: %s", error.c_str());
-            assert(0 && "Not able to load model.");
-        }
-
-        std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
-
-        Modal *modal = new Modal();
-
-        for (const tinyobj::shape_t &nextShape : shapes)
-        {
-            for (const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
-            {
-                Vertex nextVertex = {};
-                nextVertex.position = { // the attrib.vertices array is an array of float values instead of something like glm::vec3,
-                                        // so you need to multiply the index by 3 to create group of 3 values.
-                                        attrib.vertices[3 * nextIndex.vertex_index + 0],
-                                        attrib.vertices[3 * nextIndex.vertex_index + 1],
-                                        attrib.vertices[3 * nextIndex.vertex_index + 2]
-                };
-
-                nextVertex.textureCoordinates = { // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
-                                                  // so you need to multiply the index by 2 to create group of 2 values.
-                                                  attrib.texcoords[2 * nextIndex.texcoord_index + 0],
-                                                  1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]
-                };
-
-                nextVertex.color = { 1.0f, 1.0f, 1.0f };
-
-                if (uniqueVertices.count(nextVertex) == 0)
-                {
-                    uniqueVertices[nextVertex] = static_cast<uint32_t>(modal->vertices.size());
-                    modal->vertices.push_back(nextVertex);
-                }
-
-                modal->vertexIndices.push_back(uniqueVertices[nextVertex]);
-            }
-        }
-
-        this->vkState->modals.push_back(modal);
-    }
-
-    XR_API void Renderer::destroyModals()
-    {
-        for (size_t index = 0; index < this->vkState->modals.size(); ++index)
-        {
-            Modal *modal = this->vkState->modals[index];
-            modal->vertices.clear();
-            modal->vertexIndices.clear();
-
-            delete modal;
-        }
-
-        this->vkState->modals.clear();
-    }
-
     XR_API void Renderer::initVertexBuffer()
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
-            VkDeviceSize size = sizeof(modal->vertices[0]) * modal->vertices.size();
+            Model *model = this->vkState->modals[index];
+            VkDeviceSize size = sizeof(model->vertices[0]) * model->vertices.size();
             VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
@@ -1705,14 +1641,14 @@ namespace xr
             VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
             CHECK_ERROR(result);
 
-            memcpy(stagingBufferData, modal->vertices.data(), (size_t)size);
+            memcpy(stagingBufferData, model->vertices.data(), (size_t)size);
             vkUnmapMemory(this->vkState->device, stagingBufferMemory);
 
             VkBufferUsageFlags vertexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             VkMemoryPropertyFlags vertexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-            createBuffer(size, vertexBufferUsage, vertexMemoryProperties, &(modal->vertexBuffer), &(modal->vertexBufferMemory));
-            copyBuffer(stagingBuffer, modal->vertexBuffer, size);
+            createBuffer(size, vertexBufferUsage, vertexMemoryProperties, &(model->vertexBuffer), &(model->vertexBufferMemory));
+            copyBuffer(stagingBuffer, model->vertexBuffer, size);
             vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
             vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
         }
@@ -1722,11 +1658,11 @@ namespace xr
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
-            vkDestroyBuffer(this->vkState->device, modal->vertexBuffer, nullptr);
-            vkFreeMemory(this->vkState->device, modal->vertexBufferMemory, nullptr);
-            modal->vertexBuffer = VK_NULL_HANDLE;
-            modal->vertexBufferMemory = VK_NULL_HANDLE;
+            Model *model = this->vkState->modals[index];
+            vkDestroyBuffer(this->vkState->device, model->vertexBuffer, nullptr);
+            vkFreeMemory(this->vkState->device, model->vertexBufferMemory, nullptr);
+            model->vertexBuffer = VK_NULL_HANDLE;
+            model->vertexBufferMemory = VK_NULL_HANDLE;
         }
     }
 
@@ -1734,8 +1670,8 @@ namespace xr
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
-            VkDeviceSize size = sizeof(modal->vertexIndices[0]) * modal->vertexIndices.size();
+            Model *model = this->vkState->modals[index];
+            VkDeviceSize size = sizeof(model->vertexIndices[0]) * model->vertexIndices.size();
             VkBufferUsageFlags stagingBufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             VkMemoryPropertyFlags stagingMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
@@ -1748,14 +1684,14 @@ namespace xr
             VkResult result = vkMapMemory(this->vkState->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
             CHECK_ERROR(result);
 
-            memcpy(stagingBufferData, modal->vertexIndices.data(), (size_t)size);
+            memcpy(stagingBufferData, model->vertexIndices.data(), (size_t)size);
             vkUnmapMemory(this->vkState->device, stagingBufferMemory);
 
             VkBufferUsageFlags indexBufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             VkMemoryPropertyFlags indexMemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-            createBuffer(size, indexBufferUsage, indexMemoryProperties, &(modal->indexBuffer), &(modal->indexBufferMemory));
-            copyBuffer(stagingBuffer, modal->indexBuffer, size);
+            createBuffer(size, indexBufferUsage, indexMemoryProperties, &(model->indexBuffer), &(model->indexBufferMemory));
+            copyBuffer(stagingBuffer, model->indexBuffer, size);
             vkDestroyBuffer(this->vkState->device, stagingBuffer, nullptr);
             vkFreeMemory(this->vkState->device, stagingBufferMemory, nullptr);
         }
@@ -1765,11 +1701,11 @@ namespace xr
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
-            vkDestroyBuffer(this->vkState->device, modal->indexBuffer, nullptr);
-            vkFreeMemory(this->vkState->device, modal->indexBufferMemory, nullptr);
-            modal->indexBuffer = VK_NULL_HANDLE;
-            modal->indexBufferMemory = VK_NULL_HANDLE;
+            Model *model = this->vkState->modals[index];
+            vkDestroyBuffer(this->vkState->device, model->indexBuffer, nullptr);
+            vkFreeMemory(this->vkState->device, model->indexBufferMemory, nullptr);
+            model->indexBuffer = VK_NULL_HANDLE;
+            model->indexBufferMemory = VK_NULL_HANDLE;
         }
     }
 
@@ -1777,17 +1713,17 @@ namespace xr
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
+            Model *model = this->vkState->modals[index];
             VkDeviceSize size = sizeof(xr::UniformBufferObject);
             VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-            modal->uniformBuffers.resize(this->vkState->swapchainImages.size());
-            modal->uniformBuffersMemory.resize(this->vkState->swapchainImages.size());
+            model->uniformBuffers.resize(this->vkState->swapchainImages.size());
+            model->uniformBuffersMemory.resize(this->vkState->swapchainImages.size());
 
             for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
             {
-                createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(modal->uniformBuffers[counter]), &(modal->uniformBuffersMemory[counter]));
+                createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(model->uniformBuffers[counter]), &(model->uniformBuffersMemory[counter]));
             }
         }
     }
@@ -1796,15 +1732,15 @@ namespace xr
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
+            Model *model = this->vkState->modals[index];
             for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
             {
-                vkDestroyBuffer(this->vkState->device, modal->uniformBuffers[counter], nullptr);
-                vkFreeMemory(this->vkState->device, modal->uniformBuffersMemory[counter], nullptr);
+                vkDestroyBuffer(this->vkState->device, model->uniformBuffers[counter], nullptr);
+                vkFreeMemory(this->vkState->device, model->uniformBuffersMemory[counter], nullptr);
             }
 
-            modal->uniformBuffers.clear();
-            modal->uniformBuffersMemory.clear();
+            model->uniformBuffers.clear();
+            model->uniformBuffersMemory.clear();
         }
 
         this->vkState->swapchainImages.clear();
@@ -1851,7 +1787,7 @@ namespace xr
 
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *modal = this->vkState->modals[index];
+            Model *model = this->vkState->modals[index];
             VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
             descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             descriptorSetAllocateInfo.pNext = nullptr;
@@ -1859,15 +1795,15 @@ namespace xr
             descriptorSetAllocateInfo.descriptorSetCount = static_cast<uint32_t>(this->vkState->swapchainImages.size());
             descriptorSetAllocateInfo.pSetLayouts = descriptorSetLayouts.data();
 
-            modal->descriptorSets.resize(this->vkState->swapchainImages.size());
+            model->descriptorSets.resize(this->vkState->swapchainImages.size());
 
-            VkResult result = vkAllocateDescriptorSets(this->vkState->device, &descriptorSetAllocateInfo, modal->descriptorSets.data());
+            VkResult result = vkAllocateDescriptorSets(this->vkState->device, &descriptorSetAllocateInfo, model->descriptorSets.data());
             CHECK_ERROR(result);
 
             for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
             {
                 VkDescriptorBufferInfo descriptorBufferInfo = {};
-                descriptorBufferInfo.buffer = modal->uniformBuffers[counter];
+                descriptorBufferInfo.buffer = model->uniformBuffers[counter];
                 descriptorBufferInfo.offset = 0;
                 descriptorBufferInfo.range = sizeof(xr::UniformBufferObject);
 
@@ -1879,7 +1815,7 @@ namespace xr
                 VkWriteDescriptorSet uniformBudderDescriptorWrite = {};
                 uniformBudderDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 uniformBudderDescriptorWrite.pNext = nullptr;
-                uniformBudderDescriptorWrite.dstSet = modal->descriptorSets[counter];
+                uniformBudderDescriptorWrite.dstSet = model->descriptorSets[counter];
                 uniformBudderDescriptorWrite.dstBinding = 0;
                 uniformBudderDescriptorWrite.dstArrayElement = 0;
                 uniformBudderDescriptorWrite.descriptorCount = 1;
@@ -1891,7 +1827,7 @@ namespace xr
                 VkWriteDescriptorSet textureImageDescriptorWrite = {};
                 textureImageDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 textureImageDescriptorWrite.pNext = nullptr;
-                textureImageDescriptorWrite.dstSet = modal->descriptorSets[counter];
+                textureImageDescriptorWrite.dstSet = model->descriptorSets[counter];
                 textureImageDescriptorWrite.dstBinding = 1;
                 textureImageDescriptorWrite.dstArrayElement = 0;
                 textureImageDescriptorWrite.descriptorCount = 1;
@@ -1910,7 +1846,7 @@ namespace xr
     {
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
-            Modal *model = this->vkState->modals[index];
+            Model *model = this->vkState->modals[index];
 
             // If you want to explicitly destroy the descriptorSet, then set
             // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
@@ -1978,21 +1914,21 @@ namespace xr
 
             for (size_t index = 0; index < this->vkState->modals.size(); ++index)
             {
-                Modal *modal = this->vkState->modals[index];
-                vkCmdBindVertexBuffers(this->vkState->commandBuffers[counter], 0, 1, &(modal->vertexBuffer), &offset);
-                vkCmdBindIndexBuffer(this->vkState->commandBuffers[counter], modal->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+                Model *model = this->vkState->modals[index];
+                vkCmdBindVertexBuffers(this->vkState->commandBuffers[counter], 0, 1, &(model->vertexBuffer), &offset);
+                vkCmdBindIndexBuffer(this->vkState->commandBuffers[counter], model->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 vkCmdBindDescriptorSets(
                     this->vkState->commandBuffers[counter],
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     this->vkState->pipelineLayout,
                     0,
                     1,
-                    &(modal->descriptorSets[counter]),
+                    &(model->descriptorSets[counter]),
                     0,
                     nullptr
                 );
 
-                vkCmdDrawIndexed(this->vkState->commandBuffers[counter], static_cast<uint32_t>(modal->vertexIndices.size()), 1, 0, 0, 0);
+                vkCmdDrawIndexed(this->vkState->commandBuffers[counter], static_cast<uint32_t>(model->vertexIndices.size()), 1, 0, 0, 0);
             }
 
             vkCmdEndRenderPass(this->vkState->commandBuffers[counter]);
@@ -2179,11 +2115,11 @@ namespace xr
         for (size_t index = 0; index < this->vkState->modals.size(); ++index)
         {
             void *data = nullptr;
-            Modal *modal = this->vkState->modals[index];
+            Model *model = this->vkState->modals[index];
 
-            vkMapMemory(this->vkState->device, modal->uniformBuffersMemory[imageIndex], 0, sizeof(xr::UniformBufferObject), 0, &data);
-            memcpy(data, &modal->ubo, sizeof(xr::UniformBufferObject));
-            vkUnmapMemory(this->vkState->device, modal->uniformBuffersMemory[imageIndex]);
+            vkMapMemory(this->vkState->device, model->uniformBuffersMemory[imageIndex], 0, sizeof(xr::UniformBufferObject), 0, &data);
+            memcpy(data, &model->ubo, sizeof(xr::UniformBufferObject));
+            vkUnmapMemory(this->vkState->device, model->uniformBuffersMemory[imageIndex]);
         }
     }
 

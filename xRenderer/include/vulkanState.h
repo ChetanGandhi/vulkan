@@ -3,8 +3,7 @@
 #include "platform.h"
 #include "common.h"
 #include "logger.h"
-#include "vertex.h"
-#include "modal.h"
+#include "model.h"
 #include "instance.h"
 #include "debugger.h"
 
@@ -53,7 +52,7 @@ namespace xr
         std::vector<VkFence> inFlightImages;
         std::vector<VkFramebuffer> framebuffers;
         std::vector<VkCommandBuffer> commandBuffers;
-        std::vector<Modal *> modals;
+        std::vector<Model *> modals;
 
         uint32_t swapchainImageCount = 2;
         uint32_t mipLevels = 1;

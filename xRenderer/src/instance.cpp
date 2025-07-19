@@ -1,14 +1,23 @@
 #include "instance.h"
 
-namespace xr {
-    Instance::Instance() {}
+namespace xr
+{
+    Instance::Instance()
+    {
+    }
+
     Instance::~Instance()
     {
         vkDestroyInstance(this->vkInstance, VK_NULL_HANDLE);
         this->vkInstance = VK_NULL_HANDLE;
     }
 
-    VkResult Instance::initVulkanInstance(VkApplicationInfo *applicationInfo, std::vector<const char*> *instanceLayers, std::vector<const char*> *instanceExtensions, VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo)
+    VkResult Instance::initVulkanInstance(
+        VkApplicationInfo *applicationInfo,
+        std::vector<const char *> *instanceLayers,
+        std::vector<const char *> *instanceExtensions,
+        VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo
+    )
     {
         VkInstanceCreateInfo instanceCreateInfo = {};
         instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -22,4 +31,4 @@ namespace xr {
 
         return vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &this->vkInstance);
     }
-}
+} // namespace xr

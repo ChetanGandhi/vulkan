@@ -2,7 +2,8 @@
 
 #include "platform.h"
 
-namespace xr {
+namespace xr
+{
     struct QueueFamilyIndices {
         uint32_t graphicsFamilyIndex = UINT32_MAX;
         uint32_t presentFamilyIndex = UINT32_MAX;
@@ -31,4 +32,4 @@ namespace xr {
         glm::mat4 view;
         glm::mat4 projection;
     };
-}
+} // namespace xr

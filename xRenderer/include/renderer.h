@@ -3,7 +3,6 @@
 #include "platform.h"
 #include "common.h"
 #include "vertex.h"
-#include "modal.h"
 #include "vulkanState.h"
 
 namespace xr
@@ -61,9 +60,6 @@ namespace xr
 
         XR_API void initTextureSampler();
         XR_API void destoryTextureSampler();
-
-        XR_API void loadModel(const char *modelFilePath);
-        XR_API void destroyModals();
 
         XR_API void initVertexBuffer();
         XR_API void destroyVertexBuffer();

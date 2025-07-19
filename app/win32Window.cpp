@@ -7,6 +7,8 @@
 #include <xRenderer/vulkanWindow.h>
 #include "resource.h"
 
+xr::Model *homeModel;
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (iMsg)
@@ -167,7 +169,10 @@ void initializeVulkan()
     renderer->initTextureImage("../resources/textures/chalet/chalet.jpg");
     renderer->initTextureImageView();
     renderer->initTextureSampler();
-    renderer->loadModel("../resources/models/chalet/chalet.obj");
+
+    homeModel = new xr::Model("../resources/models/chalet/chalet.obj");
+    vkState->modals.push_back(homeModel);
+
     renderer->initVertexBuffer();
     renderer->initIndexBuffer();
     renderer->initUniformBuffers();
@@ -197,7 +202,6 @@ void cleanUp()
         renderer->destroyUniformBuffers();
         renderer->destroyIndexBuffer();
         renderer->destroyVertexBuffer();
-        renderer->destroyModals();
         renderer->destoryTextureSampler();
         renderer->destroyTextureImageView();
         renderer->destroyTextureImage();
@@ -214,26 +218,57 @@ void cleanUp()
         renderer->destroyDevice();
     }
 
-    // The surface need to be destoyed before instance is deleted.
+    // The surface need to be destroyed before instance is deleted.
     destroyPlatformSpecificSurface();
 
-    // Instance is deleted in destructor of Renderer class.
+    if (homeModel)
+    {
+        delete homeModel;
+        homeModel = nullptr;
+    }
+
+    if (renderer)
+    {
+        // Instance is deleted in destructor of Renderer class.
     delete renderer;
     renderer = nullptr;
+    }
 
+    if (vkState)
+    {
     delete vkState;
     vkState = nullptr;
+    }
 
     destroyPlatformSpecificWindow();
 
     logf("---------- Cleanup done ----------");
 }
 
-void update()
+void updateHomeModel()
 {
-    for (size_t index = 0; index < vkState->modals.size(); ++index)
-    {
-        xr::Modal *modal = vkState->modals[index];
+    xr::Model *model = homeModel;
+
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.0f, -6.0f, 0.0f));
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
+    memset((void *)&(model->ubo), 0, sizeof(xr::UniformBufferObject));
+    model->ubo.model = translationMatrix * rotationMatrix;
+    model->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    model->ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+
+    // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
+    // If we do not fix this then the image will be rendered upside-down.
+    // The easy way to fix this is to flip the sign on the scaling factor of Y axis
+    // in the projection matrix.
+    model->ubo.projection[1][1] *= -1.0f;
+}
+
 
         static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -301,7 +336,7 @@ int mainLoop()
                     }
 
                     // This will also update uniform buffer as per current inflight image.
-                    update();
+                    updateHomeModel();
                     renderer->render();
                 }
             }

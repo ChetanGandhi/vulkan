@@ -7,8 +7,12 @@
 
 namespace xr
 {
-    struct Modal {
+    class Model
+    {
       public:
+        XR_API Model(const char *modelFilePath);
+        XR_API ~Model();
+
         std::vector<VkDescriptorSet> descriptorSets;
         xr::UniformBufferObject ubo;
 
