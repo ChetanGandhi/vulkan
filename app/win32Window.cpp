@@ -7,8 +7,6 @@
 #include <xRenderer/vulkanWindow.h>
 #include "resource.h"
 
-xr::UniformBufferObject ubo;
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (iMsg)
@@ -199,6 +197,7 @@ void cleanUp()
         renderer->destroyUniformBuffers();
         renderer->destroyIndexBuffer();
         renderer->destroyVertexBuffer();
+        renderer->destroyModals();
         renderer->destoryTextureSampler();
         renderer->destroyTextureImageView();
         renderer->destroyTextureImage();
@@ -232,24 +231,29 @@ void cleanUp()
 
 void update()
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+    for (size_t index = 0; index < vkState->modals.size(); ++index)
+    {
+        xr::Modal *modal = vkState->modals[index];
 
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.0f, -6.0f, 0.0f));
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
-    // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&ubo, 0, sizeof(xr::UniformBufferObject));
-    ubo.model = translationMatrix * rotationMatrix;
-    ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.0f, -6.0f, 0.0f));
+        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
-    // If we do not fix this then the image will be rendered upside-down.
-    // The easy way to fix this is to flip the sign on the scaling factor of Y axis
-    // in the projection matrix.
-    ubo.projection[1][1] *= -1.0f;
+        // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
+        memset((void *)&(modal->ubo), 0, sizeof(xr::UniformBufferObject));
+        modal->ubo.model = translationMatrix * rotationMatrix;
+        modal->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        modal->ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+
+        // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
+        // If we do not fix this then the image will be rendered upside-down.
+        // The easy way to fix this is to flip the sign on the scaling factor of Y axis
+        // in the projection matrix.
+        modal->ubo.projection[1][1] *= -1.0f;
+    }
 }
 
 int mainLoop()
@@ -298,7 +302,7 @@ int mainLoop()
 
                     // This will also update uniform buffer as per current inflight image.
                     update();
-                    renderer->render(&ubo);
+                    renderer->render();
                 }
             }
         }

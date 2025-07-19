@@ -3,6 +3,7 @@
 #include "platform.h"
 #include "common.h"
 #include "vertex.h"
+#include "modal.h"
 #include "vulkanState.h"
 
 namespace xr
@@ -62,6 +63,7 @@ namespace xr
         XR_API void destoryTextureSampler();
 
         XR_API void loadModel(const char *modelFilePath);
+        XR_API void destroyModals();
 
         XR_API void initVertexBuffer();
         XR_API void destroyVertexBuffer();
@@ -87,7 +89,7 @@ namespace xr
         XR_API void recreateSwapChain();
         XR_API void cleanupSwapChain();
 
-        XR_API void render(xr::UniformBufferObject *ubo);
+        XR_API void render();
 
         XR_API VkShaderModule createShaderModule(const std::vector<char> &code);
         XR_API void createBuffer(
@@ -119,7 +121,7 @@ namespace xr
         void setupLayersAndExtensions();
         void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
         void endOneTimeCommand(VkCommandBuffer &commandBuffer);
-        void updateUniformBuffer(uint32_t imageIndex, xr::UniformBufferObject *ubo);
+        void updateUniformBuffer(uint32_t imageIndex);
 
         void generateMipmaps(VkImage &image, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
 

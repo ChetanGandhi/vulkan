@@ -4,16 +4,18 @@
 #include "common.h"
 #include "logger.h"
 #include "vertex.h"
+#include "modal.h"
 #include "instance.h"
 #include "debugger.h"
 
-namespace xr {
-    class VulkanState {
-        public:
-
+namespace xr
+{
+    class VulkanState
+    {
+      public:
         const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-        const char* vertexShaderFilePath = NULL;
-        const char* fragmentShaderFile = NULL;
+        const char *vertexShaderFilePath = NULL;
+        const char *fragmentShaderFile = NULL;
 
         Instance *instance = nullptr;
         Debugger *debugger = nullptr;
@@ -21,7 +23,6 @@ namespace xr {
         VkSurfaceKHR surface = VK_NULL_HANDLE;
         VkQueue graphicsQueue = VK_NULL_HANDLE;
         VkQueue presentQueue = VK_NULL_HANDLE;
-        VkBuffer vertexBuffer = VK_NULL_HANDLE;
         VkSwapchainKHR swapchain = VK_NULL_HANDLE;
         VkRenderPass renderPass = VK_NULL_HANDLE;
         VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
@@ -29,9 +30,6 @@ namespace xr {
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipeline pipeline = VK_NULL_HANDLE;
         VkCommandPool commandPool = VK_NULL_HANDLE;
-        VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
-        VkBuffer indexBuffer = VK_NULL_HANDLE;
-        VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
         VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
         VkImage depthImage = VK_NULL_HANDLE;
         VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
@@ -44,9 +42,9 @@ namespace xr {
         VkDeviceMemory msaaColorImageMemory = VK_NULL_HANDLE;
         VkImageView msaaColorImageView = VK_NULL_HANDLE;
 
-        std::vector<const char*> instanceLayers;
-        std::vector<const char*> instanceExtensions;
-        std::vector<const char*> deviceExtensions;
+        std::vector<const char *> instanceLayers;
+        std::vector<const char *> instanceExtensions;
+        std::vector<const char *> deviceExtensions;
         std::vector<VkImage> swapchainImages;
         std::vector<VkImageView> swapchainImageViews;
         std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -55,11 +53,7 @@ namespace xr {
         std::vector<VkFence> inFlightImages;
         std::vector<VkFramebuffer> framebuffers;
         std::vector<VkCommandBuffer> commandBuffers;
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VkDeviceMemory> uniformBuffersMemory;
-        std::vector<VkDescriptorSet> descriptorSets;
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> vertexIndices;
+        std::vector<Modal *> modals;
 
         uint32_t swapchainImageCount = 2;
         uint32_t mipLevels = 1;
@@ -73,4 +67,4 @@ namespace xr {
         SurfaceSize surfaceSize = {};
         QueueFamilyIndices queueFamilyIndices = {};
     };
-}
+} // namespace xr
