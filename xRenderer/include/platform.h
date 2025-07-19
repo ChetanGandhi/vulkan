@@ -3,6 +3,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_CXX17
 
 // Vulkan expects the data in your structure to be aligned in memory in a specific way
 // We can use alignas(x) in structure before the variable deceleration
@@ -12,41 +13,41 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
 
-#if defined (_WIN32)
-    #ifdef XR_EXPORTS
-        #define XR_API __declspec(dllexport)
-    #else
-        #define XR_API __declspec(dllimport)
-    #endif
-#elif defined (__linux)
-    #ifdef XR_EXPORTS
-        #define XR_API __attribute__((visibility("default")))
-    #else
-        #define XR_API
-    #endif
+#if defined(_WIN32)
+#ifdef XR_EXPORTS
+#define XR_API __declspec(dllexport)
+#else
+#define XR_API __declspec(dllimport)
+#endif
+#elif defined(__linux)
+#ifdef XR_EXPORTS
+#define XR_API __attribute__((visibility("default")))
+#else
+#define XR_API
+#endif
 #elif
-    #define XR_API
+#define XR_API
 #endif
 
-#if defined (_WIN32) // check for Windows
+#if defined(_WIN32) // check for Windows
 
-    #define VK_USE_PLATFORM_WIN32_KHR 1
-    #define PLATFORM_SURFACE_EXTENSION_NAME VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#define VK_USE_PLATFORM_WIN32_KHR 1
+#define PLATFORM_SURFACE_EXTENSION_NAME VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 
-    #include <windows.h>
+#include <windows.h>
 
-#elif defined (__linux) // check for Linux
+#elif defined(__linux) // check for Linux
 
-    #define VK_USE_PLATFORM_XCB_KHR 1
-    #define PLATFORM_SURFACE_EXTENSION_NAME VK_KHR_XCB_SURFACE_EXTENSION_NAME
+#define VK_USE_PLATFORM_XCB_KHR 1
+#define PLATFORM_SURFACE_EXTENSION_NAME VK_KHR_XCB_SURFACE_EXTENSION_NAME
 
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <xcb/xcb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <xcb/xcb.h>
 
 #else // platform not supported
 
-    #error Platform not supported yet.
+#error Platform not supported yet.
 
 #endif
 

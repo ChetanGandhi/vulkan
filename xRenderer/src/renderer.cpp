@@ -4,7 +4,8 @@
 #include "utils.h"
 #include "logger.h"
 
-namespace xr {
+namespace xr
+{
     XR_API Renderer::Renderer(VulkanState *vkState)
     {
         this->vkState = vkState;
@@ -46,17 +47,14 @@ namespace xr {
         VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo = {};
         this->vkState->debugger->fillCreateInfo(&debugUtilsMessengerCreateInfo);
 
-        if(this->vkState->debugger->checkValidationLayerSupport())
+        if (this->vkState->debugger->checkValidationLayerSupport())
         {
             this->vkState->instanceLayers.push_back(this->vkState->debugger->validationLayerName);
         }
 
         this->vkState->instance = new Instance();
         VkResult result = this->vkState->instance->initVulkanInstance(
-            &applicationInfo,
-            &(this->vkState->instanceLayers),
-            &(this->vkState->instanceExtensions),
-            &debugUtilsMessengerCreateInfo
+            &applicationInfo, &(this->vkState->instanceLayers), &(this->vkState->instanceExtensions), &debugUtilsMessengerCreateInfo
         );
         CHECK_ERROR(result);
 
@@ -77,7 +75,7 @@ namespace xr {
     {
         vkQueueWaitIdle(this->vkState->graphicsQueue);
 
-        if(this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
+        if (this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
         {
             vkQueueWaitIdle(this->vkState->presentQueue);
         }
@@ -90,7 +88,7 @@ namespace xr {
         uint32_t gpuCount = 0;
         vkEnumeratePhysicalDevices(this->vkState->instance->vkInstance, &gpuCount, VK_NULL_HANDLE);
 
-        if(gpuCount == 0)
+        if (gpuCount == 0)
         {
             return;
         }
@@ -98,7 +96,7 @@ namespace xr {
         std::vector<VkPhysicalDevice> deviceList(gpuCount);
         vkEnumeratePhysicalDevices(this->vkState->instance->vkInstance, &gpuCount, deviceList.data());
 
-        for(uint32_t counter = 0; counter < gpuCount; ++counter)
+        for (uint32_t counter = 0; counter < gpuCount; ++counter)
         {
             VkPhysicalDevice nextGpu = deviceList[counter];
             VkPhysicalDeviceProperties nextGpuProperties = {};
@@ -121,7 +119,7 @@ namespace xr {
 
         bool suitableDeviceQueuesFound = findSuitableDeviceQueues(gpu, &indices);
 
-        if(suitableDeviceQueuesFound)
+        if (suitableDeviceQueuesFound)
         {
             this->vkState->queueFamilyIndices.graphicsFamilyIndex = indices.graphicsFamilyIndex;
             this->vkState->queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
@@ -137,7 +135,7 @@ namespace xr {
         bool extensionSupported = checkDeviceExtensionSupport(gpu);
         bool swapchainSupported = true;
 
-        if(extensionSupported)
+        if (extensionSupported)
         {
             SwapchainSupportDetails details = {};
             querySwapchainSupportDetails(gpu, &details);
@@ -160,11 +158,11 @@ namespace xr {
         std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
 
-        for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
+        for (uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
         {
             const VkQueueFamilyProperties nextFamilyProperties = familyPropertiesList[queueCounter];
 
-            if(nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            if (nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
                 graphicsFamilyIndex = queueCounter;
             }
@@ -172,7 +170,7 @@ namespace xr {
             VkBool32 presentSupport = VK_FALSE;
             vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &presentSupport);
 
-            if(presentSupport == VK_TRUE)
+            if (presentSupport == VK_TRUE)
             {
                 graphicsFamilyIndex = queueCounter;
                 presentFamilyIndex = queueCounter;
@@ -180,14 +178,14 @@ namespace xr {
             }
         }
 
-        if(presentFamilyIndex == UINT32_MAX)
+        if (presentFamilyIndex == UINT32_MAX)
         {
-            for(uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
+            for (uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
             {
                 VkBool32 presentSupport = VK_FALSE;
                 vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->vkState->surface, &presentSupport);
 
-                if(presentSupport == VK_TRUE)
+                if (presentSupport == VK_TRUE)
                 {
                     presentFamilyIndex = queueCounter;
                     break;
@@ -195,7 +193,7 @@ namespace xr {
             }
         }
 
-        if(graphicsFamilyIndex == UINT32_MAX || presentFamilyIndex == UINT32_MAX)
+        if (graphicsFamilyIndex == UINT32_MAX || presentFamilyIndex == UINT32_MAX)
         {
             return false;
         }
@@ -211,12 +209,30 @@ namespace xr {
     {
         VkSampleCountFlags sampleCountFlags = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
 
-        if(sampleCountFlags & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-        if(sampleCountFlags & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-        if(sampleCountFlags & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
-        if(sampleCountFlags & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
-        if(sampleCountFlags & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
-        if(sampleCountFlags & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+        if (sampleCountFlags & VK_SAMPLE_COUNT_64_BIT)
+        {
+            return VK_SAMPLE_COUNT_64_BIT;
+        }
+        if (sampleCountFlags & VK_SAMPLE_COUNT_32_BIT)
+        {
+            return VK_SAMPLE_COUNT_32_BIT;
+        }
+        if (sampleCountFlags & VK_SAMPLE_COUNT_16_BIT)
+        {
+            return VK_SAMPLE_COUNT_16_BIT;
+        }
+        if (sampleCountFlags & VK_SAMPLE_COUNT_8_BIT)
+        {
+            return VK_SAMPLE_COUNT_8_BIT;
+        }
+        if (sampleCountFlags & VK_SAMPLE_COUNT_4_BIT)
+        {
+            return VK_SAMPLE_COUNT_4_BIT;
+        }
+        if (sampleCountFlags & VK_SAMPLE_COUNT_2_BIT)
+        {
+            return VK_SAMPLE_COUNT_2_BIT;
+        }
 
         return VK_SAMPLE_COUNT_1_BIT;
     }
@@ -229,7 +245,7 @@ namespace xr {
 
         CHECK_ERROR(result);
 
-        if(availableDeviceExtensionsCount == 0)
+        if (availableDeviceExtensionsCount == 0)
         {
             return false;
         }
@@ -241,7 +257,7 @@ namespace xr {
 
         std::set<std::string> requiredExtensions(this->vkState->deviceExtensions.begin(), this->vkState->deviceExtensions.end());
 
-        for(const VkExtensionProperties &nextExtensionProperties : availableDeviceExtensions)
+        for (const VkExtensionProperties &nextExtensionProperties : availableDeviceExtensions)
         {
             requiredExtensions.erase(nextExtensionProperties.extensionName);
         }
@@ -260,17 +276,17 @@ namespace xr {
 
             logf("---------- Total GPU Found [%d]----------", gpuCount);
 
-            for(uint32_t counter = 0; counter < gpuCount; ++counter)
+            for (uint32_t counter = 0; counter < gpuCount; ++counter)
             {
                 GpuDetails nextGpuDetails = gpuDetailsList[counter];
                 printGpuProperties(&nextGpuDetails.properties, counter + 1, gpuCount);
             }
 
-            for(uint32_t counter = 0; counter < gpuCount; ++counter)
+            for (uint32_t counter = 0; counter < gpuCount; ++counter)
             {
                 GpuDetails nextGpuDetails = gpuDetailsList[counter];
 
-                if(isDeviceSuitable(nextGpuDetails.gpu))
+                if (isDeviceSuitable(nextGpuDetails.gpu))
                 {
                     this->vkState->gpuDetails = nextGpuDetails;
                     this->vkState->msaaSamples = findMaxMSAASampleCount(nextGpuDetails.properties);
@@ -279,7 +295,7 @@ namespace xr {
                 }
             }
 
-            if(this->vkState->gpuDetails.gpu == VK_NULL_HANDLE)
+            if (this->vkState->gpuDetails.gpu == VK_NULL_HANDLE)
             {
                 assert(0 && "Vulkan Error: Queue family supporting graphics device not found.");
                 std::exit(EXIT_FAILURE);
@@ -313,7 +329,7 @@ namespace xr {
 
     XR_API void Renderer::initLogicalDevice()
     {
-        std::vector<float> queuePriorities = {0.0f};
+        std::vector<float> queuePriorities = { 0.0f };
         std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos(0);
 
         VkDeviceQueueCreateInfo deviceGraphicQueueCreateInfo = {};
@@ -326,7 +342,7 @@ namespace xr {
 
         deviceQueueCreateInfos.push_back(deviceGraphicQueueCreateInfo);
 
-        if(this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
+        if (this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
         {
             VkDeviceQueueCreateInfo devicePresentQueueCreateInfo = {};
             devicePresentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -360,7 +376,7 @@ namespace xr {
         // Create the graphic queue using graphicsFamilyIndex for given physical device.
         vkGetDeviceQueue(this->vkState->device, this->vkState->queueFamilyIndices.graphicsFamilyIndex, 0, &(this->vkState->graphicsQueue));
 
-        if(!this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
+        if (!this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
         {
             this->vkState->presentQueue = this->vkState->graphicsQueue;
         }
@@ -407,18 +423,17 @@ namespace xr {
     {
         printSurfaceFormatsDetails(surfaceFormats);
 
-        if(surfaceFormats.size() == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
+        if (surfaceFormats.size() == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
         {
-
             VkSurfaceFormatKHR surfaceFormat = {};
             surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
             surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
             return surfaceFormat;
         }
 
-        for(const VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
+        for (const VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
         {
-            if(nextSurfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && nextSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            if (nextSurfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && nextSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
                 return nextSurfaceFormat;
             }
@@ -431,16 +446,16 @@ namespace xr {
     {
         VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-        for(const VkPresentModeKHR &nextPresentMode : presentModes)
+        for (const VkPresentModeKHR &nextPresentMode : presentModes)
         {
             // If nextPresentMode is VK_PRESENT_MODE_MAILBOX_KHR then use this as this is the best.
-            if(nextPresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            if (nextPresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
                 return nextPresentMode;
             }
 
             // If VK_PRESENT_MODE_MAILBOX_KHR was not found then use VK_PRESENT_MODE_IMMEDIATE_KHR.
-            if(nextPresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+            if (nextPresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
             {
                 defaultPresentMode = nextPresentMode;
             }
@@ -451,29 +466,29 @@ namespace xr {
 
     void Renderer::chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent)
     {
-        if(surfaceCapabilities.currentExtent.width < UINT32_MAX)
+        if (surfaceCapabilities.currentExtent.width < UINT32_MAX)
         {
             initialSurfaceExtent->width = surfaceCapabilities.currentExtent.width;
             initialSurfaceExtent->height = surfaceCapabilities.currentExtent.height;
         }
         else
         {
-            if(initialSurfaceExtent->width > surfaceCapabilities.maxImageExtent.width)
+            if (initialSurfaceExtent->width > surfaceCapabilities.maxImageExtent.width)
             {
                 initialSurfaceExtent->width = surfaceCapabilities.maxImageExtent.width;
             }
 
-            if(initialSurfaceExtent->width < surfaceCapabilities.minImageExtent.width)
+            if (initialSurfaceExtent->width < surfaceCapabilities.minImageExtent.width)
             {
                 initialSurfaceExtent->width = surfaceCapabilities.minImageExtent.width;
             }
 
-            if(initialSurfaceExtent->height > surfaceCapabilities.maxImageExtent.height)
+            if (initialSurfaceExtent->height > surfaceCapabilities.maxImageExtent.height)
             {
                 initialSurfaceExtent->height = surfaceCapabilities.maxImageExtent.height;
             }
 
-            if(initialSurfaceExtent->height < surfaceCapabilities.minImageExtent.height)
+            if (initialSurfaceExtent->height < surfaceCapabilities.minImageExtent.height)
             {
                 initialSurfaceExtent->height = surfaceCapabilities.minImageExtent.height;
             }
@@ -488,7 +503,7 @@ namespace xr {
 
         querySwapchainSupportDetails(this->vkState->gpuDetails.gpu, &(this->vkState->swapchainSupportDetails));
 
-        if(!this->vkState->swapchainSupportDetails.surfaceFormats.size())
+        if (!this->vkState->swapchainSupportDetails.surfaceFormats.size())
         {
             assert(0 && "Surface format missing.");
             std::exit(EXIT_FAILURE);
@@ -505,24 +520,27 @@ namespace xr {
         // surfaceCapabilities.maxImageCount can be 0.
         // In this case the implementation supports unlimited amount of swap-chain images, limited by memory.
         // The amount of swap-chain images can also be fixed.
-        if(this->vkState->swapchainImageCount < this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1)
+        if (this->vkState->swapchainImageCount < this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1)
         {
             this->vkState->swapchainImageCount = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1;
         }
 
-        if(this->vkState->swapchainImageCount > 0 && this->vkState->swapchainImageCount > this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount)
+        if (this->vkState->swapchainImageCount > 0 &&
+            this->vkState->swapchainImageCount > this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount)
         {
             this->vkState->swapchainImageCount = this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount;
         }
 
         printSwapChainImageCount(
-            this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount, this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount, this->vkState->swapchainImageCount
+            this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount,
+            this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount,
+            this->vkState->swapchainImageCount
         );
 
         {
             logf("---------- Presentation Mode ----------");
 
-            if(presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
                 logf("Mode: MAILBOX [%d]", presentMode);
             }
@@ -552,12 +570,9 @@ namespace xr {
         swapchainCreateInfo.clipped = VK_TRUE;
         swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        if(this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
+        if (this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
         {
-            std::vector<uint32_t> indices = {
-                this->vkState->queueFamilyIndices.graphicsFamilyIndex,
-                this->vkState->queueFamilyIndices.presentFamilyIndex
-            };
+            std::vector<uint32_t> indices = { this->vkState->queueFamilyIndices.graphicsFamilyIndex, this->vkState->queueFamilyIndices.presentFamilyIndex };
 
             swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             swapchainCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(indices.size()); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
@@ -566,32 +581,19 @@ namespace xr {
         else
         {
             swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            swapchainCreateInfo.queueFamilyIndexCount = 0; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+            swapchainCreateInfo.queueFamilyIndexCount = 0;     // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
             swapchainCreateInfo.pQueueFamilyIndices = nullptr; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
         }
 
-        VkResult result = vkCreateSwapchainKHR(
-            this->vkState->device,
-            &swapchainCreateInfo,
-            nullptr,
-            &(this->vkState->swapchain)
-        );
+        VkResult result = vkCreateSwapchainKHR(this->vkState->device, &swapchainCreateInfo, nullptr, &(this->vkState->swapchain));
         CHECK_ERROR(result);
 
-        result = vkGetSwapchainImagesKHR(
-            this->vkState->device,
-            this->vkState->swapchain,
-            &(this->vkState->swapchainImageCount),
-            nullptr
-        );
+        result = vkGetSwapchainImagesKHR(this->vkState->device, this->vkState->swapchain, &(this->vkState->swapchainImageCount), nullptr);
         CHECK_ERROR(result);
 
         this->vkState->swapchainImages.resize(this->vkState->swapchainImageCount);
         result = vkGetSwapchainImagesKHR(
-            this->vkState->device,
-            this->vkState->swapchain,
-            &(this->vkState->swapchainImageCount),
-            this->vkState->swapchainImages.data()
+            this->vkState->device, this->vkState->swapchain, &(this->vkState->swapchainImageCount), this->vkState->swapchainImages.data()
         );
         CHECK_ERROR(result);
     }
@@ -606,7 +608,7 @@ namespace xr {
     {
         this->vkState->swapchainImageViews.resize(this->vkState->swapchainImageCount);
 
-        for(uint32_t counter = 0; counter < this->vkState->swapchainImageCount; ++counter)
+        for (uint32_t counter = 0; counter < this->vkState->swapchainImageCount; ++counter)
         {
             createImageView(
                 this->vkState->swapchainImages[counter],
@@ -620,7 +622,7 @@ namespace xr {
 
     XR_API void Renderer::destroySwapchainImageViews()
     {
-        for(VkImageView imageView : this->vkState->swapchainImageViews)
+        for (VkImageView imageView : this->vkState->swapchainImageViews)
         {
             vkDestroyImageView(this->vkState->device, imageView, nullptr);
         }
@@ -635,7 +637,7 @@ namespace xr {
         shaderModuleCreateInfo.pNext = nullptr;
         shaderModuleCreateInfo.flags = 0;
         shaderModuleCreateInfo.codeSize = code.size();
-        shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
         VkShaderModule shaderModule;
         VkResult result = vkCreateShaderModule(this->vkState->device, &shaderModuleCreateInfo, nullptr, &shaderModule);
@@ -668,13 +670,13 @@ namespace xr {
         std::vector<char> vertexShaderCode;
         std::vector<char> fragmentShaderCode;
 
-        if(!readFile(this->vkState->vertexShaderFilePath, &vertexShaderCode))
+        if (!readFile(this->vkState->vertexShaderFilePath, &vertexShaderCode))
         {
             logf("Cannot open vertex shader file: %s", this->vkState->vertexShaderFilePath);
             assert(0 && "Cannot open vertex shader.");
         }
 
-        if(!readFile(this->vkState->fragmentShaderFile, &fragmentShaderCode))
+        if (!readFile(this->vkState->fragmentShaderFile, &fragmentShaderCode))
         {
             logf("Cannot open fragment shader file: %s", this->vkState->fragmentShaderFile);
             assert(0 && "Cannot open fragment shader.");
@@ -701,7 +703,7 @@ namespace xr {
         fragmentShaderStageCreateInfo.pName = "main";
         fragmentShaderStageCreateInfo.pSpecializationInfo = nullptr;
 
-        VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
+        VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = { vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
 
         VkVertexInputBindingDescription vertexBindingDescription = Vertex::getBindingDescription();
         std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescription = Vertex::getAttributeDescription();
@@ -731,7 +733,7 @@ namespace xr {
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor = {};
-        scissor.offset = {0, 0};
+        scissor.offset = { 0, 0 };
         scissor.extent.width = this->vkState->surfaceSize.width;
         scissor.extent.height = this->vkState->surfaceSize.height;
 
@@ -792,10 +794,7 @@ namespace xr {
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
-        | VK_COLOR_COMPONENT_G_BIT
-        | VK_COLOR_COMPONENT_B_BIT
-        | VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         VkPipelineColorBlendStateCreateInfo colorBlendingStateCreateInfo = {};
         colorBlendingStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -869,19 +868,24 @@ namespace xr {
         this->vkState->pipelineLayout = VK_NULL_HANDLE;
     }
 
-    VkFormat Renderer::findSupportedFormat(VkPhysicalDevice gpu, const std::vector<VkFormat> &formatsToCheck, VkImageTiling imageTiling, VkFormatFeatureFlags formatFeatureFlags)
+    VkFormat Renderer::findSupportedFormat(
+        VkPhysicalDevice gpu,
+        const std::vector<VkFormat> &formatsToCheck,
+        VkImageTiling imageTiling,
+        VkFormatFeatureFlags formatFeatureFlags
+    )
     {
-        for(VkFormat nextFormat : formatsToCheck)
+        for (VkFormat nextFormat : formatsToCheck)
         {
             VkFormatProperties formatProperties = {};
             vkGetPhysicalDeviceFormatProperties(gpu, nextFormat, &formatProperties);
 
-            if(imageTiling == VK_IMAGE_TILING_LINEAR && (formatProperties.linearTilingFeatures & formatFeatureFlags) == formatFeatureFlags)
+            if (imageTiling == VK_IMAGE_TILING_LINEAR && (formatProperties.linearTilingFeatures & formatFeatureFlags) == formatFeatureFlags)
             {
                 return nextFormat;
             }
 
-            if(imageTiling == VK_IMAGE_TILING_OPTIMAL && (formatProperties.optimalTilingFeatures & formatFeatureFlags) == formatFeatureFlags)
+            if (imageTiling == VK_IMAGE_TILING_OPTIMAL && (formatProperties.optimalTilingFeatures & formatFeatureFlags) == formatFeatureFlags)
             {
                 return nextFormat;
             }
@@ -892,11 +896,7 @@ namespace xr {
 
     VkFormat Renderer::findDepthFormat()
     {
-        std::vector<VkFormat> formatsToCheck = {
-            VK_FORMAT_D32_SFLOAT,
-            VK_FORMAT_D32_SFLOAT_S8_UINT,
-            VK_FORMAT_D24_UNORM_S8_UINT
-        };
+        std::vector<VkFormat> formatsToCheck = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
 
         return findSupportedFormat(this->vkState->gpuDetails.gpu, formatsToCheck, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
@@ -909,7 +909,7 @@ namespace xr {
     XR_API void Renderer::initDepthStencilImage()
     {
         VkFormat depthStencilFormat = findDepthFormat();
-        if(depthStencilFormat == VK_FORMAT_UNDEFINED)
+        if (depthStencilFormat == VK_FORMAT_UNDEFINED)
         {
             assert(0 && "Depth stencil format not selected.");
         }
@@ -927,13 +927,7 @@ namespace xr {
             this->vkState->depthImageMemory
         );
 
-        createImageView(
-            this->vkState->depthImage,
-            depthStencilFormat,
-            this->vkState->depthImageView,
-            VK_IMAGE_ASPECT_DEPTH_BIT,
-            1
-        );
+        createImageView(this->vkState->depthImage, depthStencilFormat, this->vkState->depthImageView, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
     XR_API void Renderer::destoryDepthStencilImage()
@@ -961,13 +955,7 @@ namespace xr {
             this->vkState->msaaColorImageMemory
         );
 
-        createImageView(
-            this->vkState->msaaColorImage,
-            this->vkState->surfaceFormat.format,
-            this->vkState->msaaColorImageView,
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            1
-        );
+        createImageView(this->vkState->msaaColorImage, this->vkState->surfaceFormat.format, this->vkState->msaaColorImageView, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
 
     XR_API void Renderer::destoryMSAAColorImage()
@@ -1039,11 +1027,9 @@ namespace xr {
         subpassDescription.preserveAttachmentCount = 0;
         subpassDescription.pPreserveAttachments = nullptr;
 
-        std::array<VkAttachmentDescription, 3> attachments = {
-            colorAttachmentDescription,
-            depthStencilAttachmentDescription,
-            colorAttachmentResolveDescription
-        };
+        std::array<VkAttachmentDescription, 3> attachments = { colorAttachmentDescription,
+                                                               depthStencilAttachmentDescription,
+                                                               colorAttachmentResolveDescription };
 
         VkSubpassDependency subpassDependency = {};
         subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -1090,7 +1076,7 @@ namespace xr {
         samplerDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         samplerDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 
-        std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = {uboDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding};
+        std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = { uboDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding };
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
         descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1113,13 +1099,11 @@ namespace xr {
     {
         this->vkState->framebuffers.resize(this->vkState->swapchainImageCount);
 
-        for(uint32_t swapchainImageCounter = 0; swapchainImageCounter < this->vkState->swapchainImageCount; ++swapchainImageCounter)
+        for (uint32_t swapchainImageCounter = 0; swapchainImageCounter < this->vkState->swapchainImageCount; ++swapchainImageCounter)
         {
-            std::array<VkImageView, 3> attachments = {
-                this->vkState->msaaColorImageView,
-                this->vkState->depthImageView,
-                this->vkState->swapchainImageViews[swapchainImageCounter]
-            };
+            std::array<VkImageView, 3> attachments = { this->vkState->msaaColorImageView,
+                                                       this->vkState->depthImageView,
+                                                       this->vkState->swapchainImageViews[swapchainImageCounter] };
 
             VkFramebufferCreateInfo framebufferCreateInfo = {};
             framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1132,19 +1116,15 @@ namespace xr {
             framebufferCreateInfo.height = this->vkState->surfaceSize.height;
             framebufferCreateInfo.layers = 1;
 
-            VkResult result = vkCreateFramebuffer(
-                this->vkState->device,
-                &framebufferCreateInfo,
-                nullptr,
-                &(this->vkState->framebuffers[swapchainImageCounter])
-            );
+            VkResult result =
+                vkCreateFramebuffer(this->vkState->device, &framebufferCreateInfo, nullptr, &(this->vkState->framebuffers[swapchainImageCounter]));
             CHECK_ERROR(result);
         }
     }
 
     XR_API void Renderer::destroyFrameBuffers()
     {
-        for(VkFramebuffer nextFrameBuffer : this->vkState->framebuffers)
+        for (VkFramebuffer nextFrameBuffer : this->vkState->framebuffers)
         {
             vkDestroyFramebuffer(this->vkState->device, nextFrameBuffer, nullptr);
         }
@@ -1170,7 +1150,18 @@ namespace xr {
         this->vkState->commandPool = VK_NULL_HANDLE;
     }
 
-    XR_API void Renderer::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory)
+    XR_API void Renderer::createImage(
+        uint32_t width,
+        uint32_t height,
+        uint32_t mipLevels,
+        VkSampleCountFlagBits samplesCount,
+        VkFormat format,
+        VkImageTiling tiling,
+        VkImageUsageFlags usage,
+        VkMemoryPropertyFlags memoryPropertyFlags,
+        VkImage &image,
+        VkDeviceMemory &imageMemory
+    )
     {
         VkImageCreateInfo imageCreateInfo = {};
         imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1234,7 +1225,7 @@ namespace xr {
         CHECK_ERROR(result);
     }
 
-    XR_API void Renderer::initTextureImage(const char* textureFilePath)
+    XR_API void Renderer::initTextureImage(const char *textureFilePath)
     {
         int textureWidth = 0;
         int textureHeight = 0;
@@ -1242,7 +1233,7 @@ namespace xr {
 
         stbi_uc *pixels = stbi_load(textureFilePath, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
 
-        if(!pixels)
+        if (!pixels)
         {
             assert(0 && "Not able to load texture");
         }
@@ -1255,7 +1246,13 @@ namespace xr {
         VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
         VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
 
-        createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingImageBuffer, &stagingImageBufferMemory);
+        createBuffer(
+            size,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &stagingImageBuffer,
+            &stagingImageBufferMemory
+        );
 
         void *data = nullptr;
         vkMapMemory(this->vkState->device, stagingImageBufferMemory, 0, size, 0, &data);
@@ -1277,19 +1274,10 @@ namespace xr {
         );
 
         transitionImageLayout(
-            this->vkState->textureImage,
-            VK_FORMAT_R8G8B8A8_UNORM,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            this->vkState->mipLevels
+            this->vkState->textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, this->vkState->mipLevels
         );
 
-        copyBufferToImage(
-            stagingImageBuffer,
-            this->vkState->textureImage,
-            static_cast<uint32_t>(textureWidth),
-            static_cast<uint32_t>(textureHeight)
-        );
+        copyBufferToImage(stagingImageBuffer, this->vkState->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
 
         // Generate the mipmaps images and then transition image layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
         generateMipmaps(this->vkState->textureImage, textureWidth, textureHeight, this->vkState->mipLevels);
@@ -1326,7 +1314,7 @@ namespace xr {
         imageMemoryBarrier.subresourceRange.levelCount = 1;
 
         // mip level starts from 1 not 0.
-        for(uint32_t counter = 1; counter < mipLevels; ++counter)
+        for (uint32_t counter = 1; counter < mipLevels; ++counter)
         {
             // First, we transition level counter - 1 to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL.
             // This transition will wait for level counter - 1 to be filled, either from the previous blit command,
@@ -1337,15 +1325,17 @@ namespace xr {
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
-            vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+            vkCmdPipelineBarrier(
+                commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+            );
 
             VkImageBlit imageBlit = {};
 
             // srcOffsets array determine the 3D region that data will be blitted from.
-            imageBlit.srcOffsets[0] = {0, 0, 0};
+            imageBlit.srcOffsets[0] = { 0, 0, 0 };
 
             // The z dimension of srcOffsets[1] must be 1, since a 2D image has a depth of 1
-            imageBlit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+            imageBlit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
             imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             // The source mip level is counter - 1
@@ -1354,7 +1344,7 @@ namespace xr {
             imageBlit.srcSubresource.layerCount = 1;
 
             // dstOffsets determines the region that data will be blitted to.
-            imageBlit.dstOffsets[0] = {0, 0, 0};
+            imageBlit.dstOffsets[0] = { 0, 0, 0 };
 
             // The x and y dimensions of the dstOffsets[1] are divided by two since
             // each mip level is half the size of the previous level.
@@ -1362,7 +1352,7 @@ namespace xr {
             // In case where we have odd texture dimensions, the mip dimension may reach 1.
             // this will cause 0 to be passed to VkImageBlit.dstOffsets which results in validation layer warning.
             // To avoid this, check is next mip level is non-zero, if it is, then use 1 instead of 0.
-            imageBlit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+            imageBlit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
             imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             // The destination mip level is counter
@@ -1370,7 +1360,9 @@ namespace xr {
             imageBlit.dstSubresource.baseArrayLayer = 0;
             imageBlit.dstSubresource.layerCount = 1;
 
-            vkCmdBlitImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
+            vkCmdBlitImage(
+                commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR
+            );
 
             imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1380,18 +1372,20 @@ namespace xr {
             // This barrier transitions mip level i - 1 to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
             // This transition waits on the current blit command to finish.
             // All sampling operations will wait on this transition to finish.
-            vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+            vkCmdPipelineBarrier(
+                commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+            );
 
             // Divide the current mip dimensions by 2
             // Check each dimension before the division to ensure that dimension never becomes 0.
             // This handles cases where the image is not square, since one of the mip dimensions would reach 1 before the other dimension.
             // When this happens, that dimension should remain 1 for all remaining levels.
-            if(mipWidth > 1)
+            if (mipWidth > 1)
             {
                 mipWidth = mipWidth / 2;
             }
 
-            if(mipHeight > 1)
+            if (mipHeight > 1)
             {
                 mipHeight = mipHeight / 2;
             }
@@ -1406,7 +1400,9 @@ namespace xr {
         imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+        vkCmdPipelineBarrier(
+            commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+        );
 
         // Now end the command buffer.
         endOneTimeCommand(commandBuffer);
@@ -1415,11 +1411,7 @@ namespace xr {
     XR_API void Renderer::initTextureImageView()
     {
         createImageView(
-            this->vkState->textureImage,
-            VK_FORMAT_R8G8B8A8_UNORM,
-            this->vkState->textureImageView,
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            this->vkState->mipLevels
+            this->vkState->textureImage, VK_FORMAT_R8G8B8A8_UNORM, this->vkState->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, this->vkState->mipLevels
         );
     }
 
@@ -1461,7 +1453,13 @@ namespace xr {
         this->vkState->textureSampler = VK_NULL_HANDLE;
     }
 
-    XR_API void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer *buffer, VkDeviceMemory *bufferMemory)
+    XR_API void Renderer::createBuffer(
+        VkDeviceSize size,
+        VkBufferUsageFlags bufferUsage,
+        VkMemoryPropertyFlags memoryProperties,
+        VkBuffer *buffer,
+        VkDeviceMemory *bufferMemory
+    )
     {
         VkBufferCreateInfo bufferCreateInfo = {};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1560,7 +1558,7 @@ namespace xr {
         VkPipelineStageFlags sourceStageMask;
         VkPipelineStageFlags destinationStageMask;
 
-        if(oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        if (oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             imageMemoryBarrier.srcAccessMask = 0;
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1568,7 +1566,7 @@ namespace xr {
             sourceStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
-        else if(oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        else if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -1626,7 +1624,7 @@ namespace xr {
         endOneTimeCommand(commandBuffer);
     }
 
-    XR_API void Renderer::loadModel(const char* modelFilePath)
+    XR_API void Renderer::loadModel(const char *modelFilePath)
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
@@ -1635,7 +1633,7 @@ namespace xr {
 
         bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, modelFilePath);
 
-        if(!loaded)
+        if (!loaded)
         {
             logf("Model load error: %s", error.c_str());
             assert(0 && "Not able to load model.");
@@ -1643,29 +1641,27 @@ namespace xr {
 
         std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
-        for(const tinyobj::shape_t &nextShape : shapes)
+        for (const tinyobj::shape_t &nextShape : shapes)
         {
-            for(const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
+            for (const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
             {
                 Vertex nextVertex = {};
-                nextVertex.position = {
-                    // the attrib.vertices array is an array of float values instead of something like glm::vec3,
-                    // so you need to multiply the index by 3 to create group of 3 values.
-                    attrib.vertices[3 * nextIndex.vertex_index + 0],
-                    attrib.vertices[3 * nextIndex.vertex_index + 1],
-                    attrib.vertices[3 * nextIndex.vertex_index + 2]
+                nextVertex.position = { // the attrib.vertices array is an array of float values instead of something like glm::vec3,
+                                        // so you need to multiply the index by 3 to create group of 3 values.
+                                        attrib.vertices[3 * nextIndex.vertex_index + 0],
+                                        attrib.vertices[3 * nextIndex.vertex_index + 1],
+                                        attrib.vertices[3 * nextIndex.vertex_index + 2]
                 };
 
-                nextVertex.textureCoordinates = {
-                    // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
-                    // so you need to multiply the index by 2 to create group of 2 values.
-                    attrib.texcoords[2 * nextIndex.texcoord_index + 0],
-                    1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]
+                nextVertex.textureCoordinates = { // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
+                                                  // so you need to multiply the index by 2 to create group of 2 values.
+                                                  attrib.texcoords[2 * nextIndex.texcoord_index + 0],
+                                                  1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]
                 };
 
-                nextVertex.color = {1.0f, 1.0f, 1.0f};
+                nextVertex.color = { 1.0f, 1.0f, 1.0f };
 
-                if(uniqueVertices.count(nextVertex) == 0)
+                if (uniqueVertices.count(nextVertex) == 0)
                 {
                     uniqueVertices[nextVertex] = static_cast<uint32_t>(this->vkState->vertices.size());
                     this->vkState->vertices.push_back(nextVertex);
@@ -1748,22 +1744,24 @@ namespace xr {
 
     XR_API void Renderer::initUniformBuffers()
     {
-        VkDeviceSize size = sizeof(UniformBufferObject);
+        VkDeviceSize size = sizeof(xr::UniformBufferObject);
         VkBufferUsageFlags uniformBufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         VkMemoryPropertyFlags uniformMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
         this->vkState->uniformBuffers.resize(this->vkState->swapchainImages.size());
         this->vkState->uniformBuffersMemory.resize(this->vkState->swapchainImages.size());
 
-        for(size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
+        for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
-            createBuffer(size, uniformBufferUsage, uniformMemoryProperties, &(this->vkState->uniformBuffers[counter]), &(this->vkState->uniformBuffersMemory[counter]));
+            createBuffer(
+                size, uniformBufferUsage, uniformMemoryProperties, &(this->vkState->uniformBuffers[counter]), &(this->vkState->uniformBuffersMemory[counter])
+            );
         }
     }
 
     XR_API void Renderer::destroyUniformBuffers()
     {
-        for(size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
+        for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
             vkDestroyBuffer(this->vkState->device, this->vkState->uniformBuffers[counter], nullptr);
             vkFreeMemory(this->vkState->device, this->vkState->uniformBuffersMemory[counter], nullptr);
@@ -1782,9 +1780,10 @@ namespace xr {
 
         VkDescriptorPoolSize samplerPoolSize = {};
         samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size());;
+        samplerPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size());
+        ;
 
-        std::array<VkDescriptorPoolSize, 2> poolSizes = {uboPoolSize, samplerPoolSize};
+        std::array<VkDescriptorPoolSize, 2> poolSizes = { uboPoolSize, samplerPoolSize };
 
         VkDescriptorPoolCreateInfo poolCreateInfo = {};
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1810,7 +1809,7 @@ namespace xr {
 
     XR_API void Renderer::initDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts(this->vkState->swapchainImages.size(),  this->vkState->descriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts(this->vkState->swapchainImages.size(), this->vkState->descriptorSetLayout);
 
         VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
         descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -1824,12 +1823,12 @@ namespace xr {
         VkResult result = vkAllocateDescriptorSets(this->vkState->device, &descriptorSetAllocateInfo, this->vkState->descriptorSets.data());
         CHECK_ERROR(result);
 
-        for(size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
+        for (size_t counter = 0; counter < this->vkState->swapchainImages.size(); ++counter)
         {
             VkDescriptorBufferInfo descriptorBufferInfo = {};
             descriptorBufferInfo.buffer = this->vkState->uniformBuffers[counter];
             descriptorBufferInfo.offset = 0;
-            descriptorBufferInfo.range = sizeof(UniformBufferObject);
+            descriptorBufferInfo.range = sizeof(xr::UniformBufferObject);
 
             VkDescriptorImageInfo descriptorImageInfo = {};
             descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1860,7 +1859,7 @@ namespace xr {
             textureImageDescriptorWrite.pBufferInfo = nullptr;
             textureImageDescriptorWrite.pTexelBufferView = nullptr;
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites = {uniformBudderDescriptorWrite, textureImageDescriptorWrite};
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites = { uniformBudderDescriptorWrite, textureImageDescriptorWrite };
             vkUpdateDescriptorSets(this->vkState->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
     }
@@ -1896,7 +1895,7 @@ namespace xr {
         VkResult result = vkAllocateCommandBuffers(this->vkState->device, &commandBufferAllocateInfo, this->vkState->commandBuffers.data());
         CHECK_ERROR(result);
 
-        for(uint32_t counter = 0; counter < this->vkState->commandBuffers.size(); ++counter)
+        for (uint32_t counter = 0; counter < this->vkState->commandBuffers.size(); ++counter)
         {
             VkCommandBufferBeginInfo commandBufferBeginInfo = {};
             commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1913,8 +1912,8 @@ namespace xr {
             renderArea.extent.height = this->vkState->surfaceSize.height;
 
             std::array<VkClearValue, 2> clearValue = {};
-            clearValue[0].color = {0.0f, 0.0f, 0.0f, 1.0f}; // {r, g, b, a}
-            clearValue[1].depthStencil = {1.0f, 0}; // {depth, stencil}
+            clearValue[0].color = { 0.0f, 0.0f, 0.0f, 1.0f }; // {r, g, b, a}
+            clearValue[1].depthStencil = { 1.0f, 0 };         // {depth, stencil}
 
             VkRenderPassBeginInfo renderPassBeginInfo = {};
             renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1928,11 +1927,20 @@ namespace xr {
             vkCmdBeginRenderPass(this->vkState->commandBuffers[counter], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(this->vkState->commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, this->vkState->pipeline);
 
-            std::vector<VkBuffer> vertexBuffers = {this->vkState->vertexBuffer};
-            std::vector<VkDeviceSize> offsets = {0};
+            std::vector<VkBuffer> vertexBuffers = { this->vkState->vertexBuffer };
+            std::vector<VkDeviceSize> offsets = { 0 };
             vkCmdBindVertexBuffers(this->vkState->commandBuffers[counter], 0, 1, vertexBuffers.data(), offsets.data());
             vkCmdBindIndexBuffer(this->vkState->commandBuffers[counter], this->vkState->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(this->vkState->commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, this->vkState->pipelineLayout, 0, 1, &(this->vkState->descriptorSets[counter]), 0, nullptr);
+            vkCmdBindDescriptorSets(
+                this->vkState->commandBuffers[counter],
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                this->vkState->pipelineLayout,
+                0,
+                1,
+                &(this->vkState->descriptorSets[counter]),
+                0,
+                nullptr
+            );
 
             vkCmdDrawIndexed(this->vkState->commandBuffers[counter], static_cast<uint32_t>(this->vkState->vertexIndices.size()), 1, 0, 0, 0);
             vkCmdEndRenderPass(this->vkState->commandBuffers[counter]);
@@ -1945,10 +1953,7 @@ namespace xr {
     XR_API void Renderer::destroyCommandBuffers()
     {
         vkFreeCommandBuffers(
-            this->vkState->device,
-            this->vkState->commandPool,
-            static_cast<uint32_t>(this->vkState->commandBuffers.size()),
-            this->vkState->commandBuffers.data()
+            this->vkState->device, this->vkState->commandPool, static_cast<uint32_t>(this->vkState->commandBuffers.size()), this->vkState->commandBuffers.data()
         );
 
         this->vkState->commandBuffers.clear();
@@ -1971,7 +1976,7 @@ namespace xr {
         fenceCreateInfo.pNext = nullptr;
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for(size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
+        for (size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
         {
             VkResult result = vkCreateSemaphore(this->vkState->device, &semaphoreCreateInfo, nullptr, &this->vkState->imageAvailableSemaphores[counter]);
             CHECK_ERROR(result);
@@ -1986,7 +1991,7 @@ namespace xr {
 
     XR_API void Renderer::destroySynchronizations()
     {
-        for(size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
+        for (size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
         {
             vkDestroySemaphore(this->vkState->device, this->vkState->imageAvailableSemaphores[counter], nullptr);
             vkDestroySemaphore(this->vkState->device, this->vkState->renderFinishedSemaphores[counter], nullptr);
@@ -2034,7 +2039,7 @@ namespace xr {
         destroySwapchain();
     }
 
-    XR_API void Renderer::render()
+    XR_API void Renderer::render(xr::UniformBufferObject *ubo)
     {
         vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
 
@@ -2051,7 +2056,7 @@ namespace xr {
 
         // If result is VK_ERROR_OUT_OF_DATE_KHR than just recreate swap chain
         // as current swap chain cannot be used with current surface.
-        if(result == VK_ERROR_OUT_OF_DATE_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             recreateSwapChain();
             return;
@@ -2060,7 +2065,7 @@ namespace xr {
         CHECK_ERROR(result);
 
         // Update the uniform buffer for current image.
-        updateUniformBuffer(activeSwapchainImageId);
+        updateUniformBuffer(activeSwapchainImageId, ubo);
 
         if (this->vkState->inFlightImages[activeSwapchainImageId] != VK_NULL_HANDLE)
         {
@@ -2086,12 +2091,7 @@ namespace xr {
 
         vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
-        result = vkQueueSubmit(
-            this->vkState->graphicsQueue,
-            1,
-            &submitInfo,
-            this->vkState->inFlightFences[this->vkState->currentFrame]
-        );
+        result = vkQueueSubmit(this->vkState->graphicsQueue, 1, &submitInfo, this->vkState->inFlightFences[this->vkState->currentFrame]);
         CHECK_ERROR(result);
 
         VkSwapchainKHR swapchains[] = { this->vkState->swapchain };
@@ -2110,7 +2110,7 @@ namespace xr {
 
         // Recreate the swap chain if result is suboptimal,
         // because we want the best possible result.
-        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
             recreateSwapChain();
         }
@@ -2122,32 +2122,11 @@ namespace xr {
         this->vkState->currentFrame = (this->vkState->currentFrame + 1) % this->vkState->MAX_FRAMES_IN_FLIGHT;
     }
 
-    void Renderer::updateUniformBuffer(uint32_t imageIndex)
+    void Renderer::updateUniformBuffer(uint32_t imageIndex, xr::UniformBufferObject *ubo)
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
-
-        // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-        UniformBufferObject ubo = {};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.projection = glm::perspective(
-            glm::radians(45.0f),
-            (float)this->vkState->surfaceSize.width / (float)this->vkState->surfaceSize.height,
-            0.1f,
-            100.0f
-        );
-
-        //The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
-        // If we do not fix this then the image will be rendered upside-down.
-        // The easy way to fix this is to flip the sign on the scaling factor of Y axis
-        // in the projection matrix.
-        ubo.projection[1][1] *= -1;
-
         void *data = nullptr;
-        vkMapMemory(this->vkState->device, this->vkState->uniformBuffersMemory[imageIndex], 0, sizeof(ubo), 0, &data);
-        memcpy(data, &ubo, sizeof(ubo));
+        vkMapMemory(this->vkState->device, this->vkState->uniformBuffersMemory[imageIndex], 0, sizeof(xr::UniformBufferObject), 0, &data);
+        memcpy(data, ubo, sizeof(xr::UniformBufferObject));
         vkUnmapMemory(this->vkState->device, this->vkState->uniformBuffersMemory[imageIndex]);
     }
 
@@ -2155,7 +2134,7 @@ namespace xr {
 
     void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount)
     {
-        if(!properties)
+        if (!properties)
         {
             logf("No GPU properties to show!!!");
             return;
@@ -2174,11 +2153,11 @@ namespace xr {
 
     void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)
     {
-        #ifndef NDEBUG
+#ifndef NDEBUG
 
         logf("---------- Instance Layer Properties ----------");
 
-        for(VkLayerProperties &nextProperty : properties)
+        for (VkLayerProperties &nextProperty : properties)
         {
             logf("Layer Name\t\t: %s", nextProperty.layerName);
             logf("Description\t\t: %s", nextProperty.description);
@@ -2189,16 +2168,16 @@ namespace xr {
 
         logf("---------- Instance Layer Properties End [%d] ----------", properties.size());
 
-        #endif
+#endif
     }
 
     void Renderer::printDeviceLayerProperties(std::vector<VkLayerProperties> properties)
     {
-        #ifndef NDEBUG
+#ifndef NDEBUG
 
         logf("---------- Device Layer Properties ----------");
 
-        for(VkLayerProperties &nextProperty : properties)
+        for (VkLayerProperties &nextProperty : properties)
         {
             logf("Layer Name\t\t: %s", nextProperty.layerName);
             logf("Description\t\t: %s", nextProperty.description);
@@ -2209,16 +2188,16 @@ namespace xr {
 
         logf("---------- Device Layer Properties End [%d] ----------", properties.size());
 
-        #endif
+#endif
     }
 
     void Renderer::printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats)
     {
-        #ifndef NDEBUG
+#ifndef NDEBUG
 
         logf("---------- Surface Formats ----------");
 
-        for(VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
+        for (VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
         {
             logf("format\t\t: %d", nextSurfaceFormat.format);
             logf("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
@@ -2227,12 +2206,12 @@ namespace xr {
 
         logf("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
 
-        #endif
+#endif
     }
 
     void Renderer::printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount)
     {
-        #ifndef NDEBUG
+#ifndef NDEBUG
 
         logf("---------- Swapchain Image Count ----------");
         logf("Min\t: %d", minImageCount);
@@ -2240,6 +2219,6 @@ namespace xr {
         logf("Current\t: %d", currentImageCount);
         logf("---------- Swapchain Image Count End ----------");
 
-        #endif
+#endif
     }
-}
+} // namespace xr

@@ -1,5 +1,3 @@
----
-Language: Cpp
 BasedOnStyle: Microsoft
 Cpp11BracedListStyle: false
 IndentWidth: 4
@@ -7,6 +5,7 @@ ColumnLimit: 160
 BinPackArguments: false
 BinPackParameters: false
 AlignAfterOpenBracket: BlockIndent
+NamespaceIndentation: All
 IndentCaseLabels: true
 AllowAllParametersOfDeclarationOnNextLine: false
 InsertBraces: true
@@ -25,6 +24,3 @@ SeparateDefinitionStyle: Always
 SpaceAroundPointerQualifiersStyle: Default
 DerivePointerAlignment: true
 SpacesInAnglesStyle: Never
----
-Language: GLSL
-BasedOnStyle: Microsoft

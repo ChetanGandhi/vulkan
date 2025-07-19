@@ -1,3 +1,5 @@
+#define GLM_FORCE_CXX17
+
 #include <xRenderer/platform.h>
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -5,43 +7,46 @@
 #include <xRenderer/vulkanWindow.h>
 #include "resource.h"
 
+xr::UniformBufferObject ubo;
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch(iMsg)
+    switch (iMsg)
     {
         case WM_DESTROY:
             PostQuitMessage(0);
-        break;
+            break;
 
         case WM_ACTIVATE:
             isActive = (HIWORD(wParam) == 0);
-        break;
+            break;
 
         case WM_SIZE:
             resize(LOWORD(lParam), HIWORD(lParam));
-        break;
+            break;
 
         case WM_KEYDOWN:
-            switch(wParam)
+            switch (wParam)
             {
                 case VK_ESCAPE:
-                    isEscapeKeyPressed = true;;
-                break;
+                    isEscapeKeyPressed = true;
+                    ;
+                    break;
 
                 // 0x46 is hex value for key 'F' or 'f'
                 case 0x46:
                     isFullscreen = !isFullscreen;
                     toggleFullscreen(isFullscreen);
-                break;
+                    break;
 
                 default:
-                break;
+                    break;
             }
 
-        break;
+            break;
 
         default:
-        break;
+            break;
     }
 
     return DefWindowProc(hWnd, iMsg, wParam, lParam);
@@ -59,7 +64,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     vkState->surfaceSize.width = 800;
     vkState->surfaceSize.height = 600;
     vkState->vertexShaderFilePath = "../shaders/vert.spv";
-    vkState->fragmentShaderFile  ="../shaders/frag.spv";
+    vkState->fragmentShaderFile = "../shaders/frag.spv";
 
     hGlobalInstance = hInstance;
 
@@ -76,7 +81,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 void initializePlatformSpecificWindow()
 {
-    WNDCLASSEX wndclassex {};
+    WNDCLASSEX wndclassex{};
 
     className = windowName + std::string("_") + std::to_string(win32ClassIdCounter);
     win32ClassIdCounter++;
@@ -94,7 +99,7 @@ void initializePlatformSpecificWindow()
     wndclassex.lpszClassName = className.c_str();
     wndclassex.lpszMenuName = NULL;
 
-    if(!RegisterClassEx(&wndclassex))
+    if (!RegisterClassEx(&wndclassex))
     {
         assert(1 && "Cannot register window class.\n");
         logf("Error: Unable to open XgDisplay.\n");
@@ -106,10 +111,11 @@ void initializePlatformSpecificWindow()
     DWORD dwStyleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
     dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 
-    RECT windowRect = {0, 0, LONG(vkState->surfaceSize.width), LONG(vkState->surfaceSize.height)};
+    RECT windowRect = { 0, 0, LONG(vkState->surfaceSize.width), LONG(vkState->surfaceSize.height) };
     AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwStyleExtra);
 
-    hWindow = CreateWindowEx(dwStyleExtra,
+    hWindow = CreateWindowEx(
+        dwStyleExtra,
         className.c_str(),
         windowTitle.c_str(),
         dwStyle,
@@ -120,9 +126,10 @@ void initializePlatformSpecificWindow()
         NULL,
         NULL,
         hGlobalInstance,
-        NULL);
+        NULL
+    );
 
-    if(!hWindow)
+    if (!hWindow)
     {
         assert(0 && "Cannot create window.\n");
         logf("Cannot create window.\n");
@@ -176,13 +183,13 @@ void cleanUp()
 {
     logf("---------- Cleanup started ----------");
 
-    if(isFullscreen)
+    if (isFullscreen)
     {
         isFullscreen = false;
         toggleFullscreen(isFullscreen);
     }
 
-    if(renderer != nullptr)
+    if (renderer != nullptr)
     {
         renderer->waitForIdle();
         renderer->destroySynchronizations();
@@ -223,6 +230,28 @@ void cleanUp()
     logf("---------- Cleanup done ----------");
 }
 
+void update()
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.0f, -6.0f, 0.0f));
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
+    memset((void *)&ubo, 0, sizeof(xr::UniformBufferObject));
+    ubo.model = translationMatrix * rotationMatrix;
+    ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+
+    // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
+    // If we do not fix this then the image will be rendered upside-down.
+    // The easy way to fix this is to flip the sign on the scaling factor of Y axis
+    // in the projection matrix.
+    ubo.projection[1][1] *= -1.0f;
+}
+
 int mainLoop()
 {
     MSG msg;
@@ -232,11 +261,11 @@ int mainLoop()
     uint64_t fps = 0;
     std::string fpsTitle;
 
-    while(isRunning)
+    while (isRunning)
     {
-        if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            if(msg.message == WM_QUIT)
+            if (msg.message == WM_QUIT)
             {
                 isRunning = false;
             }
@@ -248,9 +277,9 @@ int mainLoop()
         }
         else
         {
-            if(isActive)
+            if (isActive)
             {
-                if(isEscapeKeyPressed)
+                if (isEscapeKeyPressed)
                 {
                     isRunning = false;
                 }
@@ -258,7 +287,7 @@ int mainLoop()
                 {
                     ++frameCounter;
 
-                    if(lastTime + std::chrono::seconds(1) < timer.now())
+                    if (lastTime + std::chrono::seconds(1) < timer.now())
                     {
                         lastTime = timer.now();
                         fps = frameCounter;
@@ -268,7 +297,8 @@ int mainLoop()
                     }
 
                     // This will also update uniform buffer as per current inflight image.
-                    renderer->render();
+                    update();
+                    renderer->render(&ubo);
                 }
             }
         }
@@ -279,7 +309,7 @@ int mainLoop()
 
 void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 {
-    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo {};
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.pNext = nullptr;
     surfaceCreateInfo.flags = 0;
@@ -298,12 +328,12 @@ void destroyPlatformSpecificSurface()
 
 void resize(uint32_t width, uint32_t height)
 {
-    if(width == 0 || height == 0)
+    if (width == 0 || height == 0)
     {
         return;
     }
 
-    if(width == vkState->surfaceSize.width && height == vkState->surfaceSize.height)
+    if (width == vkState->surfaceSize.width && height == vkState->surfaceSize.height)
     {
         return;
     }
@@ -311,7 +341,7 @@ void resize(uint32_t width, uint32_t height)
     vkState->surfaceSize.width = width;
     vkState->surfaceSize.height = height;
 
-    if(renderer != nullptr)
+    if (renderer != nullptr)
     {
         renderer->recreateSwapChain();
     }
@@ -322,16 +352,24 @@ void toggleFullscreen(bool isFullscreen)
     MONITORINFO monitorInfo;
     dwStyle = GetWindowLong(hWindow, GWL_STYLE);
 
-    if(isFullscreen)
+    if (isFullscreen)
     {
-        if(dwStyle & WS_OVERLAPPEDWINDOW)
+        if (dwStyle & WS_OVERLAPPEDWINDOW)
         {
             monitorInfo = { sizeof(MONITORINFO) };
 
-            if(GetWindowPlacement(hWindow, &wpPrev) && GetMonitorInfo(MonitorFromWindow(hWindow, MONITORINFOF_PRIMARY), &monitorInfo))
+            if (GetWindowPlacement(hWindow, &wpPrev) && GetMonitorInfo(MonitorFromWindow(hWindow, MONITORINFOF_PRIMARY), &monitorInfo))
             {
                 SetWindowLong(hWindow, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
-                SetWindowPos(hWindow, HWND_TOP, monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top, SWP_NOZORDER | SWP_FRAMECHANGED);
+                SetWindowPos(
+                    hWindow,
+                    HWND_TOP,
+                    monitorInfo.rcMonitor.left,
+                    monitorInfo.rcMonitor.top,
+                    monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+                    monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+                    SWP_NOZORDER | SWP_FRAMECHANGED
+                );
             }
         }
 

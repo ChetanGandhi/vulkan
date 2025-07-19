@@ -19,7 +19,7 @@ void cleanUp();
 
 int mainLoop();
 
-void render();
+void render(xr::UniformBufferObject *ubo);
 void resize(uint32_t width, uint32_t height);
 void toggleFullscreen(bool isFullscreen);
 

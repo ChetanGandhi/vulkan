@@ -5,11 +5,11 @@
 #include "vertex.h"
 #include "vulkanState.h"
 
-namespace xr {
+namespace xr
+{
     class Renderer
     {
-
-    public:
+      public:
         XR_API Renderer(VulkanState *vkState);
         XR_API ~Renderer();
 
@@ -52,7 +52,7 @@ namespace xr {
         XR_API void initMSAAColorImage();
         XR_API void destoryMSAAColorImage();
 
-        XR_API void initTextureImage(const char* textureFilePath);
+        XR_API void initTextureImage(const char *textureFilePath);
         XR_API void destroyTextureImage();
 
         XR_API void initTextureImageView();
@@ -61,7 +61,7 @@ namespace xr {
         XR_API void initTextureSampler();
         XR_API void destoryTextureSampler();
 
-        XR_API void loadModel(const char* modelFilePath);
+        XR_API void loadModel(const char *modelFilePath);
 
         XR_API void initVertexBuffer();
         XR_API void destroyVertexBuffer();
@@ -87,22 +87,39 @@ namespace xr {
         XR_API void recreateSwapChain();
         XR_API void cleanupSwapChain();
 
-        XR_API void render();
+        XR_API void render(xr::UniformBufferObject *ubo);
 
-        XR_API VkShaderModule createShaderModule(const std::vector<char>& code);
-        XR_API void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer *buffer, VkDeviceMemory *bufferMemory);
-        XR_API void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits samplesCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+        XR_API VkShaderModule createShaderModule(const std::vector<char> &code);
+        XR_API void createBuffer(
+            VkDeviceSize size,
+            VkBufferUsageFlags bufferUsage,
+            VkMemoryPropertyFlags memoryProperties,
+            VkBuffer *buffer,
+            VkDeviceMemory *bufferMemory
+        );
+        XR_API void createImage(
+            uint32_t width,
+            uint32_t height,
+            uint32_t mipLevels,
+            VkSampleCountFlagBits samplesCount,
+            VkFormat format,
+            VkImageTiling tiling,
+            VkImageUsageFlags usage,
+            VkMemoryPropertyFlags memoryPropertyFlags,
+            VkImage &image,
+            VkDeviceMemory &imageMemory
+        );
         XR_API void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags, uint32_t mipLevels);
         XR_API void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
         XR_API void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-    private:
+      private:
         VulkanState *vkState = nullptr;
 
         void setupLayersAndExtensions();
         void beginOneTimeCommand(VkCommandBuffer &commandBuffer);
         void endOneTimeCommand(VkCommandBuffer &commandBuffer);
-        void updateUniformBuffer(uint32_t imageIndex);
+        void updateUniformBuffer(uint32_t imageIndex, xr::UniformBufferObject *ubo);
 
         void generateMipmaps(VkImage &image, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
 
@@ -110,7 +127,12 @@ namespace xr {
         void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
         void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
 
-        VkFormat findSupportedFormat(VkPhysicalDevice gpu, const std::vector<VkFormat> &formatsToCheck, VkImageTiling imageTiling, VkFormatFeatureFlags formatFeatureFlags);
+        VkFormat findSupportedFormat(
+            VkPhysicalDevice gpu,
+            const std::vector<VkFormat> &formatsToCheck,
+            VkImageTiling imageTiling,
+            VkFormatFeatureFlags formatFeatureFlags
+        );
         VkFormat findDepthFormat();
         VkSampleCountFlagBits findMaxMSAASampleCount(VkPhysicalDeviceProperties properties);
         VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
@@ -130,4 +152,4 @@ namespace xr {
         void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);
         void printSwapChainImageCount(uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount);
     };
-}
+} // namespace xr
