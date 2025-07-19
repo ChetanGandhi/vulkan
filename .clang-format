@@ -1,0 +1,30 @@
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+Cpp11BracedListStyle: false
+IndentWidth: 4
+ColumnLimit: 160
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: BlockIndent
+IndentCaseLabels: true
+AllowAllParametersOfDeclarationOnNextLine: false
+InsertBraces: true
+InsertNewlineAtEOF: true
+SortIncludes: false
+KeepEmptyLines:
+    AtEndOfFile: false
+    AtStartOfBlock: false
+    AtStartOfFile: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterStruct: false
+InsertTrailingCommas: None
+ReflowComments: IndentOnly
+SeparateDefinitionStyle: Always
+SpaceAroundPointerQualifiersStyle: Default
+DerivePointerAlignment: true
+SpacesInAnglesStyle: Never
+---
+Language: GLSL
+BasedOnStyle: Microsoft

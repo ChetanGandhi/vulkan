@@ -11,8 +11,7 @@
 
 class Renderer
 {
-
-public:
+  public:
     Renderer(SurfaceSize surfaceSize);
     ~Renderer();
 
@@ -91,41 +90,41 @@ public:
 
     const VkInstance getVulkanInstance() const;
 
-private:
+  private:
     SurfaceSize surfaceSize;
 
     const std::string chaletModelResourcePath = "resources/models/chalet/chalet.obj";
     const std::string chaletTextureResourcePath = "resources/textures/chalet/chalet.jpg";
 
-    VkInstance            instance                = VK_NULL_HANDLE;
-    VkDevice              device                  = VK_NULL_HANDLE;
-    VkSurfaceKHR          surface                 = VK_NULL_HANDLE;
-    VkQueue               graphicsQueue           = VK_NULL_HANDLE;
-    VkQueue               presentQueue            = VK_NULL_HANDLE;
-    VkBuffer              vertexBuffer            = VK_NULL_HANDLE;
-    VkSwapchainKHR        swapchain               = VK_NULL_HANDLE;
-    VkRenderPass          renderPass              = VK_NULL_HANDLE;
-    VkDescriptorSetLayout descriptorSetLayout     = VK_NULL_HANDLE;
-    VkPipelineCache       pipelineCache           = VK_NULL_HANDLE;
-    VkPipelineLayout      pipelineLayout          = VK_NULL_HANDLE;
-    VkPipeline            pipeline                = VK_NULL_HANDLE;
-    VkCommandPool         commandPool             = VK_NULL_HANDLE;
-    VkSemaphore           imageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore           renderFinishedSemaphore = VK_NULL_HANDLE;
-    VkDeviceMemory        vertexBufferMemory      = VK_NULL_HANDLE;
-    VkBuffer              indexBuffer             = VK_NULL_HANDLE;
-    VkDeviceMemory        indexBufferMemory       = VK_NULL_HANDLE;
-    VkBuffer              uniformBuffer           = VK_NULL_HANDLE;
-    VkDeviceMemory        uniformBufferMemory     = VK_NULL_HANDLE;
-    VkDescriptorPool      descriptorPool          = VK_NULL_HANDLE;
-    VkDescriptorSet       descriptorSet           = VK_NULL_HANDLE;
-    VkImage               depthImage              = VK_NULL_HANDLE;
-    VkDeviceMemory        depthImageMemory        = VK_NULL_HANDLE;
-    VkImageView           depthImageView          = VK_NULL_HANDLE;
-    VkImage               textureImage            = VK_NULL_HANDLE;
-    VkDeviceMemory        textureImageMemory      = VK_NULL_HANDLE;
-    VkImageView           textureImageView        = VK_NULL_HANDLE;
-    VkSampler             textureSampler          = VK_NULL_HANDLE;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkQueue presentQueue = VK_NULL_HANDLE;
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+    VkPipelineCache pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
+    VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer indexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer uniformBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory uniformBufferMemory = VK_NULL_HANDLE;
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+    VkImage depthImage = VK_NULL_HANDLE;
+    VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
+    VkImageView depthImageView = VK_NULL_HANDLE;
+    VkImage textureImage = VK_NULL_HANDLE;
+    VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
+    VkImageView textureImageView = VK_NULL_HANDLE;
+    VkSampler textureSampler = VK_NULL_HANDLE;
 
     struct GpuDetails {
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
@@ -144,10 +143,10 @@ private:
 
     QueueFamilyIndices queueFamilyIndices;
 
-    std::vector<const char*> instanceLayerList;
-    std::vector<const char*> deviceLayerList;
-    std::vector<const char*> instanceExtensionList;
-    std::vector<const char*> deviceExtensionList;
+    std::vector<const char *> instanceLayerList;
+    std::vector<const char *> deviceLayerList;
+    std::vector<const char *> instanceExtensionList;
+    std::vector<const char *> deviceExtensionList;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> framebuffers;
@@ -181,7 +180,12 @@ private:
     void listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList);
     void querySwapchainSupportDetails(VkPhysicalDevice gpu, SwapchainSupportDetails *details);
 
-    VkFormat findSupportedFormat(VkPhysicalDevice gpu, const std::vector<VkFormat> &formatsToCheck, VkImageTiling imageTiling, VkFormatFeatureFlags formatFeatureFlags);
+    VkFormat findSupportedFormat(
+        VkPhysicalDevice gpu,
+        const std::vector<VkFormat> &formatsToCheck,
+        VkImageTiling imageTiling,
+        VkFormatFeatureFlags formatFeatureFlags
+    );
     VkFormat findDepthFormat();
     VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
     VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> presentModes);
@@ -192,9 +196,24 @@ private:
     bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
     bool hasStencilComponent(VkFormat format);
 
-    VkShaderModule createShaderModule(const std::vector<char>& code);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling imageTiling, VkImageUsageFlags imageUsage, VkMemoryPropertyFlags memoryPropertyFlags, VkImage &image, VkDeviceMemory &imageMemory);
+    VkShaderModule createShaderModule(const std::vector<char> &code);
+    void createBuffer(
+        VkDeviceSize size,
+        VkBufferUsageFlags bufferUsage,
+        VkMemoryPropertyFlags memoryProperties,
+        VkBuffer &buffer,
+        VkDeviceMemory &bufferMemory
+    );
+    void createImage(
+        uint32_t width,
+        uint32_t height,
+        VkFormat format,
+        VkImageTiling imageTiling,
+        VkImageUsageFlags imageUsage,
+        VkMemoryPropertyFlags memoryPropertyFlags,
+        VkImage &image,
+        VkDeviceMemory &imageMemory
+    );
     void createImageView(VkImage image, VkFormat format, VkImageView &imageView, VkImageAspectFlags imageAspectFlags);
     void copyBuffer(VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);

@@ -43,13 +43,6 @@ else()
 	message(STATUS ${Vulkan_LIBRARY})
 endif()
 
-find_package(glm REQUIRED)
-if(NOT glm_FOUND)
-	message(FATAL_ERROR "Could not find GLM library!")
-else()
-	message(STATUS ${glm_LIBRARY})
-endif()
-
 if(NOT WIN32)
     find_package(XCB REQUIRED)
     if(NOT XCB_FOUND)
@@ -89,17 +82,16 @@ target_include_directories(
        ${PROJECT_NAME}
     PRIVATE
         ${Vulkan_INCLUDE_DIRS}
-        ${GLM_INCLUDE_DIRS}
         $ENV{XRENDERER_PATH}/include
         ${PROJECT_SOURCE_DIR}/lib
         ${PROJECT_SOURCE_DIR}
 )
 
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} ${glm_LIBRARIES} ${xRenderer_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} ${xRenderer_LIBRARIES})
 else(WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ENV{XRENDERER_PATH}/lib'")
-    target_link_libraries(${PROJECT_NAME} ${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${glm_LIBRARIES} ${xRenderer_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} ${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${xRenderer_LIBRARIES})
 endif(WIN32)
 
 install(

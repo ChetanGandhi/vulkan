@@ -39,7 +39,6 @@ endif()
 # Check for Vulkan package
 # Be aware that system libraries have priority on SDK in the finding.
 find_package(Vulkan REQUIRED)
-find_package(glm REQUIRED)
 
 # Build
 add_library(${PROJECT_NAME} SHARED "")
@@ -75,7 +74,6 @@ target_include_directories(
         ${PROJECT_NAME}
     PUBLIC
         ${Vulkan_INCLUDE_DIRS}
-        ${GLM_INCLUDE_DIRS}
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/lib
     PRIVATE
