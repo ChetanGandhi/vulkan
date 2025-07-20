@@ -44,7 +44,7 @@ else()
 endif()
 
 if(NOT WIN32)
-    find_package(XCB REQUIRED)
+    find_package(xcb REQUIRED)
     if(NOT XCB_FOUND)
     	message(FATAL_ERROR "Could not find XCB library!")
     else()

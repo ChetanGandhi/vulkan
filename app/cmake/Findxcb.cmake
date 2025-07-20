@@ -1,4 +1,8 @@
-# From: https://github.com/LunarG/VulkanSamples/blob/master/cmake/FindVulkan.cmake
+# From: https://github.com/LunarG/VulkanSamples/blob/master/cmake/FindXCB.cmake
+
+# - FindXCB
+#
+# Copyright (C) 2015 Valve Corporation
 
 find_package(PkgConfig)
 
