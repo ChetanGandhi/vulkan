@@ -5,8 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
-                "${VULKAN_SDK}/Include/*",
-                "${GLM_PATH}/"
+                "${workspaceFolder}/lib",
+                "${VULKAN_SDK}/Include/*"
             ],
             "defines": [
                 "_DEBUG",
@@ -16,19 +16,22 @@
             ],
             "windowsSdkVersion": "10.0.17763.0",
             "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x64/cl.exe",
-            "cStandard": "c11",
-            "cppStandard": "c++11",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
             "intelliSenseMode": "msvc-x64"
         },
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/lib",
+                "${VULKAN_SDK}/Include/*"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c11",
-            "cppStandard": "c++11",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64"
         }
     ],

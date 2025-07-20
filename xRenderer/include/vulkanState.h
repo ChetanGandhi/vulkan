@@ -12,7 +12,6 @@ namespace xr
     class VulkanState
     {
       public:
-        const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
         const char *vertexShaderFilePath = NULL;
         const char *fragmentShaderFile = NULL;
 
@@ -45,7 +44,6 @@ namespace xr
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
-        std::vector<VkFence> inFlightImages;
         std::vector<VkFramebuffer> framebuffers;
         std::vector<VkCommandBuffer> commandBuffers;
 

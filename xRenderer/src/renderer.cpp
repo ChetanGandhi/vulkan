@@ -70,14 +70,13 @@ namespace xr
 
     XR_API void Renderer::waitForIdle()
     {
+        vkDeviceWaitIdle(this->vkState->device);
         vkQueueWaitIdle(this->vkState->graphicsQueue);
 
         if (this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
         {
             vkQueueWaitIdle(this->vkState->presentQueue);
         }
-
-        vkDeviceWaitIdle(this->vkState->device);
     }
 
     void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
@@ -517,16 +516,21 @@ namespace xr
         // surfaceCapabilities.maxImageCount can be 0.
         // In this case the implementation supports unlimited amount of swap-chain images, limited by memory.
         // The amount of swap-chain images can also be fixed.
-        if (this->vkState->swapchainImageCount < this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1)
+
+        uint32_t expectedNumberOfSwapchainImages = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1;
+        uint32_t desiredNumberOfSwapchainImages = 0;
+
+        if (this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount > 0 &&
+            this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount < expectedNumberOfSwapchainImages)
         {
-            this->vkState->swapchainImageCount = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1;
+            desiredNumberOfSwapchainImages = this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount;
+        }
+        else
+        {
+            desiredNumberOfSwapchainImages = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount;
         }
 
-        if (this->vkState->swapchainImageCount > 0 &&
-            this->vkState->swapchainImageCount > this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount)
-        {
-            this->vkState->swapchainImageCount = this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount;
-        }
+        this->vkState->swapchainImageCount = desiredNumberOfSwapchainImages;
 
         printSwapChainImageCount(
             this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount,
@@ -1918,10 +1922,9 @@ namespace xr
 
     XR_API void Renderer::initSynchronizations()
     {
-        this->vkState->imageAvailableSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
-        this->vkState->renderFinishedSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
-        this->vkState->inFlightFences.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
-        this->vkState->inFlightImages.resize(this->vkState->swapchainImages.size(), VK_NULL_HANDLE);
+        this->vkState->imageAvailableSemaphores.resize(this->vkState->swapchainImageCount);
+        this->vkState->renderFinishedSemaphores.resize(this->vkState->swapchainImageCount);
+        this->vkState->inFlightFences.resize(this->vkState->swapchainImageCount);
 
         VkSemaphoreCreateInfo semaphoreCreateInfo = {};
         semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1933,7 +1936,7 @@ namespace xr
         fenceCreateInfo.pNext = nullptr;
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
+        for (size_t counter = 0; counter < this->vkState->swapchainImageCount; ++counter)
         {
             VkResult result = vkCreateSemaphore(this->vkState->device, &semaphoreCreateInfo, nullptr, &this->vkState->imageAvailableSemaphores[counter]);
             CHECK_ERROR(result);
@@ -1948,7 +1951,7 @@ namespace xr
 
     XR_API void Renderer::destroySynchronizations()
     {
-        for (size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
+        for (size_t counter = 0; counter < this->vkState->swapchainImageCount; ++counter)
         {
             vkDestroySemaphore(this->vkState->device, this->vkState->imageAvailableSemaphores[counter], nullptr);
             vkDestroySemaphore(this->vkState->device, this->vkState->renderFinishedSemaphores[counter], nullptr);
@@ -1963,7 +1966,6 @@ namespace xr
     XR_API void Renderer::recreateSwapChain(std::vector<Model *> models)
     {
         logf("---------- Recreate SwapChain --------");
-        vkDeviceWaitIdle(this->vkState->device);
         cleanupSwapChain(models);
         initSwapchain();
         initSwapchainImageViews();
@@ -1982,11 +1984,13 @@ namespace xr
         initDescriptorPool(models.size());
         initDescriptorSets(models);
         initCommandBuffers(models);
+        initSynchronizations();
     }
 
     XR_API void Renderer::cleanupSwapChain(std::vector<Model *> models)
     {
         waitForIdle();
+        destroySynchronizations();
         destroyCommandBuffers();
         destroyDescriptorSets(models);
         destroyDescriptorPool();
@@ -2008,11 +2012,17 @@ namespace xr
 
     XR_API void Renderer::render(std::vector<Model *> models)
     {
-        vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
+        VkResult result = VK_SUCCESS;
+
+        result = vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
+        CHECK_ERROR(result);
+
+        result = vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
+        CHECK_ERROR(result);
 
         uint32_t activeSwapchainImageId = UINT32_MAX;
 
-        VkResult result = vkAcquireNextImageKHR(
+        result = vkAcquireNextImageKHR(
             this->vkState->device,
             this->vkState->swapchain,
             UINT64_MAX,
@@ -2021,9 +2031,9 @@ namespace xr
             &activeSwapchainImageId
         );
 
-        // If result is VK_ERROR_OUT_OF_DATE_KHR than just recreate swap chain
+        // If result is VK_ERROR_OUT_OF_DATE_KHR or VK_SUBOPTIMAL_KHR than just recreate swap chain
         // as current swap chain cannot be used with current surface.
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
             recreateSwapChain(models);
             return;
@@ -2033,13 +2043,6 @@ namespace xr
 
         // Update the uniform buffer for current image.
         updateUniformBuffer(models, activeSwapchainImageId);
-
-        if (this->vkState->inFlightImages[activeSwapchainImageId] != VK_NULL_HANDLE)
-        {
-            vkWaitForFences(this->vkState->device, 1, &this->vkState->inFlightImages[activeSwapchainImageId], VK_TRUE, UINT64_MAX);
-        }
-
-        this->vkState->inFlightImages[activeSwapchainImageId] = this->vkState->inFlightFences[this->vkState->currentFrame];
 
         VkSemaphore waitSemaphores[] = { this->vkState->imageAvailableSemaphores[this->vkState->currentFrame] };
         VkSemaphore signalSemaphores[] = { this->vkState->renderFinishedSemaphores[this->vkState->currentFrame] };
@@ -2055,8 +2058,6 @@ namespace xr
         submitInfo.pCommandBuffers = &(this->vkState->commandBuffers[activeSwapchainImageId]);
         submitInfo.signalSemaphoreCount = static_cast<uint32_t>(sizeof(signalSemaphores) / sizeof(signalSemaphores[0]));
         submitInfo.pSignalSemaphores = signalSemaphores;
-
-        vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
 
         result = vkQueueSubmit(this->vkState->graphicsQueue, 1, &submitInfo, this->vkState->inFlightFences[this->vkState->currentFrame]);
         CHECK_ERROR(result);
@@ -2086,7 +2087,7 @@ namespace xr
             CHECK_ERROR(result);
         }
 
-        this->vkState->currentFrame = (this->vkState->currentFrame + 1) % this->vkState->MAX_FRAMES_IN_FLIGHT;
+        this->vkState->currentFrame = (this->vkState->currentFrame + 1) % this->vkState->swapchainImageCount;
     }
 
     void Renderer::updateUniformBuffer(std::vector<Model *> models, uint32_t imageIndex)

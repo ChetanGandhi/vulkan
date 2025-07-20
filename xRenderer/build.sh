@@ -1,10 +1,15 @@
 #!/bin/bash
 
-if [ ! -d "build_linux" ]; then
-    mkdir "build_linux"
+if [ ! -d "./build" ]; then
+    mkdir "build"
 fi
 
-cd build_linux
+if [ ! -d "./build/linux" ]; then
+    mkdir "build/linux"
+fi
+
+cd ./build/linux
+cmake ../..
 cmake --build . --target xRenderer
 cmake --build . --target install
 cd ..
