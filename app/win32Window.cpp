@@ -82,7 +82,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 void initializePlatformSpecificWindow()
 {
-    WNDCLASSEX wndclassex{};
+    WNDCLASSEX wndclassex = {};
 
     className = windowName + std::string("_") + std::to_string(win32ClassIdCounter);
     win32ClassIdCounter++;
@@ -357,7 +357,6 @@ int mainLoop()
                         SetWindowText(hWindow, fpsTitle.c_str());
                     }
 
-                    // This will also update uniform buffer as per current inflight image.
                     updateHomeModel();
                     updateVikingRoomModel();
                     renderer->render({ homeModel, vikingRoomModel });
@@ -371,7 +370,7 @@ int mainLoop()
 
 void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 {
-    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.pNext = nullptr;
     surfaceCreateInfo.flags = 0;
