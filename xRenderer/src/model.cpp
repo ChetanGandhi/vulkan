@@ -1,7 +1,8 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb/stb_image.h"
-
 #define TINYOBJLOADER_IMPLEMENTATION
+#define TINYOBJLOADER_USE_MAPBOX_EARCUT
+#define STB_IMAGE_IMPLEMENTATION
+
+#include "lib/stb/stb_image.h"
 #include "lib/tinyobj/tiny_obj_loader.h"
 
 #include "model.h"

@@ -10,9 +10,6 @@
 // but we can tell GLM to force alignment by this way.
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
-#define STB_IMAGE_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
-
 #if defined(_WIN32)
 #ifdef XR_EXPORTS
 #define XR_API __declspec(dllexport)
