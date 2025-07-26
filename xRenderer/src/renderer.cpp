@@ -71,12 +71,6 @@ namespace xr
     XR_API void Renderer::waitForIdle()
     {
         vkDeviceWaitIdle(this->vkState->device);
-        vkQueueWaitIdle(this->vkState->graphicsQueue);
-
-        if (this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
-        {
-            vkQueueWaitIdle(this->vkState->presentQueue);
-        }
     }
 
     void Renderer::listAllPhysicalDevices(std::vector<GpuDetails> *gpuDetailsList)
@@ -517,20 +511,15 @@ namespace xr
         // In this case the implementation supports unlimited amount of swap-chain images, limited by memory.
         // The amount of swap-chain images can also be fixed.
 
-        uint32_t expectedNumberOfSwapchainImages = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1;
-        uint32_t desiredNumberOfSwapchainImages = 0;
+        uint32_t imageCount = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount + 1;
 
         if (this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount > 0 &&
-            this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount < expectedNumberOfSwapchainImages)
+            imageCount > this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount)
         {
-            desiredNumberOfSwapchainImages = this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount;
-        }
-        else
-        {
-            desiredNumberOfSwapchainImages = this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount;
+            imageCount = this->vkState->swapchainSupportDetails.surfaceCapabilities.maxImageCount;
         }
 
-        this->vkState->swapchainImageCount = desiredNumberOfSwapchainImages;
+        this->vkState->swapchainImageCount = imageCount;
 
         printSwapChainImageCount(
             this->vkState->swapchainSupportDetails.surfaceCapabilities.minImageCount,
@@ -1922,9 +1911,9 @@ namespace xr
 
     XR_API void Renderer::initSynchronizations()
     {
-        this->vkState->imageAvailableSemaphores.resize(this->vkState->swapchainImageCount);
-        this->vkState->renderFinishedSemaphores.resize(this->vkState->swapchainImageCount);
-        this->vkState->inFlightFences.resize(this->vkState->swapchainImageCount);
+        this->vkState->imageAvailableSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
+        this->vkState->renderFinishedSemaphores.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
+        this->vkState->inFlightFences.resize(this->vkState->MAX_FRAMES_IN_FLIGHT);
 
         VkSemaphoreCreateInfo semaphoreCreateInfo = {};
         semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1936,7 +1925,7 @@ namespace xr
         fenceCreateInfo.pNext = nullptr;
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t counter = 0; counter < this->vkState->swapchainImageCount; ++counter)
+        for (size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
         {
             VkResult result = vkCreateSemaphore(this->vkState->device, &semaphoreCreateInfo, nullptr, &this->vkState->imageAvailableSemaphores[counter]);
             CHECK_ERROR(result);
@@ -1951,7 +1940,7 @@ namespace xr
 
     XR_API void Renderer::destroySynchronizations()
     {
-        for (size_t counter = 0; counter < this->vkState->swapchainImageCount; ++counter)
+        for (size_t counter = 0; counter < this->vkState->MAX_FRAMES_IN_FLIGHT; ++counter)
         {
             vkDestroySemaphore(this->vkState->device, this->vkState->imageAvailableSemaphores[counter], nullptr);
             vkDestroySemaphore(this->vkState->device, this->vkState->renderFinishedSemaphores[counter], nullptr);
@@ -2014,10 +2003,10 @@ namespace xr
     {
         VkResult result = VK_SUCCESS;
 
-        result = vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
-        CHECK_ERROR(result);
+        // Update the current frame count at start as we might return in between and fail to update the counter
+        this->vkState->currentFrame = (this->vkState->currentFrame + 1) % this->vkState->MAX_FRAMES_IN_FLIGHT;
 
-        result = vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
+        result = vkWaitForFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]), VK_TRUE, UINT64_MAX);
         CHECK_ERROR(result);
 
         uint32_t activeSwapchainImageId = UINT32_MAX;
@@ -2031,14 +2020,25 @@ namespace xr
             &activeSwapchainImageId
         );
 
-        // If result is VK_ERROR_OUT_OF_DATE_KHR or VK_SUBOPTIMAL_KHR than just recreate swap chain
-        // as current swap chain cannot be used with current surface.
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        // Recreate the swap chain if result is suboptimal or out of data because we want the best possible result.
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
+            logf("Swapchain out of date before presenting");
             recreateSwapChain(models);
             return;
         }
+        else if (result == VK_SUBOPTIMAL_KHR)
+        {
+            logf("Swapchain suboptimal before presenting");
+            recreateSwapChain(models);
+            return;
+        }
+        else
+        {
+            CHECK_ERROR(result);
+        }
 
+        result = vkResetFences(this->vkState->device, 1, &(this->vkState->inFlightFences[this->vkState->currentFrame]));
         CHECK_ERROR(result);
 
         // Update the uniform buffer for current image.
@@ -2076,18 +2076,25 @@ namespace xr
 
         result = vkQueuePresentKHR(this->vkState->presentQueue, &presentInfo);
 
-        // Recreate the swap chain if result is suboptimal,
-        // because we want the best possible result.
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        // Recreate the swap chain if result is suboptimal or out of data because we want the best possible result.
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
+            logf("Swapchain out of date after presenting");
             recreateSwapChain(models);
+            return;
+        }
+        else if (result == VK_SUBOPTIMAL_KHR)
+        {
+            logf("Swapchain suboptimal after presenting");
+            recreateSwapChain(models);
+            return;
         }
         else
         {
             CHECK_ERROR(result);
         }
 
-        this->vkState->currentFrame = (this->vkState->currentFrame + 1) % this->vkState->swapchainImageCount;
+        waitForIdle();
     }
 
     void Renderer::updateUniformBuffer(std::vector<Model *> models, uint32_t imageIndex)
