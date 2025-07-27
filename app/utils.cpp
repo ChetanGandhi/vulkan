@@ -47,15 +47,17 @@ bool loadModal(const char *modelFilePath, xr::Model *model)
 
             // the attrib.vertices array is an array of float values instead of something like glm::vec3,
             // so you need to multiply the index by 3 to create group of 3 values.
-            nextVertex.position = { attrib.vertices[3 * nextIndex.vertex_index + 0],
-                                    attrib.vertices[3 * nextIndex.vertex_index + 1],
-                                    attrib.vertices[3 * nextIndex.vertex_index + 2] };
+            nextVertex.position = {
+                attrib.vertices[3 * nextIndex.vertex_index + 0],
+                attrib.vertices[3 * nextIndex.vertex_index + 1],
+                attrib.vertices[3 * nextIndex.vertex_index + 2]
+            };
 
             // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
             // so you need to multiply the index by 2 to create group of 2 values.
-            nextVertex.textureCoordinates = { attrib.texcoords[2 * nextIndex.texcoord_index + 0], 1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1] };
+            nextVertex.textureCoordinates = {attrib.texcoords[2 * nextIndex.texcoord_index + 0], 1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]};
 
-            nextVertex.color = { 1.0f, 1.0f, 1.0f };
+            nextVertex.color = {1.0f, 1.0f, 1.0f};
 
             if (uniqueVertices.count(nextVertex) == 0)
             {

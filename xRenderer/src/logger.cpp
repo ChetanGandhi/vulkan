@@ -1,34 +1,38 @@
 #include "logger.h"
 #include "utils.h"
 
-namespace xr {
-    Logger *Logger::logger = nullptr;
+namespace xr
+{
+    Logger* Logger::logger = nullptr;
 
-    Logger::Logger() {}
+    Logger::Logger()
+    {
+    }
+
     Logger::Logger(const Logger&) {};
 
-    XR_API bool Logger::initialize(const char *fileName)
+    XR_API bool Logger::initialize(const char* fileName)
     {
         bool logFileCreated = true;
 
-        if(logger == nullptr)
+        if (logger == nullptr)
         {
             char dateTime[100] = {0};
             size_t size = currentDateTime(dateTime, sizeof(dateTime));
 
             logger = new Logger();
 
-            #if defined (_WIN32) // check for Windows
+#if defined(_WIN32) // check for Windows
 
             fopen_s(&logger->logfile, fileName, "w");
 
-            #elif defined (__linux) // check for Linux
+#elif defined(__linux) // check for Linux
 
             logger->logfile = fopen(fileName, "w");
 
-            #endif
+#endif
 
-            if(logger->logfile == NULL)
+            if (logger->logfile == NULL)
             {
                 assert(1 && "Cannot open log file");
                 logFileCreated = false;
@@ -47,7 +51,7 @@ namespace xr {
 
     Logger::~Logger()
     {
-        if(logger->logfile == NULL)
+        if (logger->logfile == NULL)
         {
             return;
         }
@@ -71,7 +75,7 @@ namespace xr {
 
     XR_API void Logger::log(const char* file, const char* function, const uint32_t line, const char* message, ...)
     {
-        if(logger->logfile == NULL)
+        if (logger->logfile == NULL)
         {
             return;
         }
@@ -89,9 +93,9 @@ namespace xr {
         fflush(logger->logfile);
     }
 
-    XR_API void Logger::logUUID(const char* file, const char* function, const uint32_t line, const char* message, const uint8_t *uuid)
+    XR_API void Logger::logUUID(const char* file, const char* function, const uint32_t line, const char* message, const uint8_t* uuid)
     {
-        if(logger->logfile == NULL)
+        if (logger->logfile == NULL)
         {
             return;
         }
@@ -114,4 +118,4 @@ namespace xr {
         fprintf(logger->logfile, "\n");
         fflush(logger->logfile);
     }
-}
+} // namespace xr

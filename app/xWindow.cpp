@@ -11,7 +11,8 @@ void handleEvent(const xcb_generic_event_t *event)
 {
     switch (event->response_type & 0x7f)
     {
-        case XCB_CLIENT_MESSAGE: {
+        case XCB_CLIENT_MESSAGE:
+        {
             const xcb_client_message_event_t *clientMessageEvent = (xcb_client_message_event_t *)event;
             if (clientMessageEvent->data.data32[0] == atom_wm_delete_window_reply->atom)
             {
@@ -20,7 +21,8 @@ void handleEvent(const xcb_generic_event_t *event)
         }
         break;
 
-        case XCB_KEY_PRESS: {
+        case XCB_KEY_PRESS:
+        {
             const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
             switch (keyEvent->detail)
             {
@@ -43,7 +45,8 @@ void handleEvent(const xcb_generic_event_t *event)
             isCloseButtonClicked = true;
             break;
 
-        case XCB_CONFIGURE_NOTIFY: {
+        case XCB_CONFIGURE_NOTIFY:
+        {
             const xcb_configure_notify_event_t *configureEvent = (const xcb_configure_notify_event_t *)event;
             resize((uint32_t)(configureEvent->width), (uint32_t)(configureEvent->height));
         }
@@ -82,7 +85,7 @@ int main(void)
 void initializePlatformSpecificWindow()
 {
     uint32_t valueMask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-    uint32_t valueList[32] = { 0 };
+    uint32_t valueList[32] = {0};
 
     const xcb_setup_t *setup = NULL;
     xcb_screen_iterator_t screenIterator;
@@ -218,8 +221,8 @@ void initializeVulkan()
     renderer->initUniformBuffers(vikingRoomModel);
 
     renderer->initDescriptorPool(2);
-    renderer->initDescriptorSets({ homeModel, vikingRoomModel });
-    renderer->initCommandBuffers({ homeModel, vikingRoomModel });
+    renderer->initDescriptorSets({homeModel, vikingRoomModel});
+    renderer->initCommandBuffers({homeModel, vikingRoomModel});
     renderer->initSynchronizations();
 }
 
@@ -238,7 +241,7 @@ void cleanUp()
         renderer->waitForIdle();
         renderer->destroySynchronizations();
         renderer->destroyCommandBuffers();
-        renderer->destroyDescriptorSets({ homeModel, vikingRoomModel });
+        renderer->destroyDescriptorSets({homeModel, vikingRoomModel});
         renderer->destroyDescriptorPool();
 
         renderer->destroyUniformBuffers(homeModel);
@@ -391,7 +394,7 @@ int mainLoop()
 
         updateHomeModel();
         updateVikingRoomModel();
-        renderer->render({ homeModel, vikingRoomModel });
+        renderer->render({homeModel, vikingRoomModel});
     }
 
     return EXIT_SUCCESS;
@@ -433,7 +436,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (renderer != nullptr)
     {
-        renderer->recreateSwapChain({ homeModel, vikingRoomModel });
+        renderer->recreateSwapChain({homeModel, vikingRoomModel});
     }
 }
 

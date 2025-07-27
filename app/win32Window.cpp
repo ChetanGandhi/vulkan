@@ -121,7 +121,7 @@ void initializePlatformSpecificWindow()
     DWORD dwStyleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
     dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 
-    RECT windowRect = { 0, 0, LONG(vkState->surfaceSize.width), LONG(vkState->surfaceSize.height) };
+    RECT windowRect = {0, 0, LONG(vkState->surfaceSize.width), LONG(vkState->surfaceSize.height)};
     AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwStyleExtra);
 
     hWindow = CreateWindowEx(
@@ -236,8 +236,8 @@ void initializeVulkan()
     renderer->initUniformBuffers(vikingRoomModel);
 
     renderer->initDescriptorPool(2);
-    renderer->initDescriptorSets({ homeModel, vikingRoomModel });
-    renderer->initCommandBuffers({ homeModel, vikingRoomModel });
+    renderer->initDescriptorSets({homeModel, vikingRoomModel});
+    renderer->initCommandBuffers({homeModel, vikingRoomModel});
     renderer->initSynchronizations();
 }
 
@@ -256,7 +256,7 @@ void cleanUp()
         renderer->waitForIdle();
         renderer->destroySynchronizations();
         renderer->destroyCommandBuffers();
-        renderer->destroyDescriptorSets({ homeModel, vikingRoomModel });
+        renderer->destroyDescriptorSets({homeModel, vikingRoomModel});
         renderer->destroyDescriptorPool();
 
         renderer->destroyUniformBuffers(homeModel);
@@ -422,7 +422,7 @@ int mainLoop()
 
                     updateHomeModel();
                     updateVikingRoomModel();
-                    renderer->render({ homeModel, vikingRoomModel });
+                    renderer->render({homeModel, vikingRoomModel});
                 }
             }
         }
@@ -467,7 +467,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (renderer != nullptr)
     {
-        renderer->recreateSwapChain({ homeModel, vikingRoomModel });
+        renderer->recreateSwapChain({homeModel, vikingRoomModel});
     }
 }
 
@@ -480,7 +480,7 @@ void toggleFullscreen(bool isFullscreen)
     {
         if (dwStyle & WS_OVERLAPPEDWINDOW)
         {
-            monitorInfo = { sizeof(MONITORINFO) };
+            monitorInfo = {sizeof(MONITORINFO)};
 
             if (GetWindowPlacement(hWindow, &wpPrev) && GetMonitorInfo(MonitorFromWindow(hWindow, MONITORINFOF_PRIMARY), &monitorInfo))
             {

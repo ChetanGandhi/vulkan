@@ -41,7 +41,7 @@ std::string className;
 HINSTANCE hGlobalInstance = NULL;
 HWND hWindow = NULL;
 DWORD dwStyle;
-WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
+WINDOWPLACEMENT wpPrev = {sizeof(WINDOWPLACEMENT)};
 
 bool isActive = false;
 

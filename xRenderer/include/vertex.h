@@ -2,8 +2,10 @@
 
 #include "platform.h"
 
-namespace xr {
-    struct Vertex {
+namespace xr
+{
+    struct Vertex
+    {
         glm::vec3 position;
         glm::vec3 color;
         glm::vec2 textureCoordinates;
@@ -39,9 +41,7 @@ namespace xr {
             textureCoordinatesAttributeDescription.offset = offsetof(Vertex, textureCoordinates);
 
             std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {
-                positionAttributeDescription,
-                colorAttributeDescription,
-                textureCoordinatesAttributeDescription
+                positionAttributeDescription, colorAttributeDescription, textureCoordinatesAttributeDescription
             };
 
             return attributeDescriptions;
@@ -52,12 +52,15 @@ namespace xr {
             return position == otherVertex.position && color == otherVertex.color && textureCoordinates == otherVertex.textureCoordinates;
         }
     };
-}
+} // namespace xr
 
-namespace std {
-    template<> struct hash<xr::Vertex> {
-        size_t operator()(xr::Vertex const& vertex) const {
+namespace std
+{
+    template <> struct hash<xr::Vertex>
+    {
+        size_t operator()(xr::Vertex const &vertex) const
+        {
             return ((hash<glm::vec3>()(vertex.position) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.textureCoordinates) << 1);
         }
     };
-}
+} // namespace std

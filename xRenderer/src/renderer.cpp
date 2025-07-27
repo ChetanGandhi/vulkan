@@ -317,7 +317,7 @@ namespace xr
 
     XR_API void Renderer::initLogicalDevice()
     {
-        std::vector<float> queuePriorities = { 0.0f };
+        std::vector<float> queuePriorities = {0.0f};
         std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos(0);
 
         VkDeviceQueueCreateInfo deviceGraphicQueueCreateInfo = {};
@@ -560,7 +560,7 @@ namespace xr
 
         if (this->vkState->queueFamilyIndices.hasSeparatePresentQueue)
         {
-            std::vector<uint32_t> indices = { this->vkState->queueFamilyIndices.graphicsFamilyIndex, this->vkState->queueFamilyIndices.presentFamilyIndex };
+            std::vector<uint32_t> indices = {this->vkState->queueFamilyIndices.graphicsFamilyIndex, this->vkState->queueFamilyIndices.presentFamilyIndex};
 
             swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             swapchainCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(indices.size()); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
@@ -692,7 +692,7 @@ namespace xr
         fragmentShaderStageCreateInfo.pName = "main";
         fragmentShaderStageCreateInfo.pSpecializationInfo = nullptr;
 
-        VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = { vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
+        VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
         VkVertexInputBindingDescription vertexBindingDescription = Vertex::getBindingDescription();
         std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescription = Vertex::getAttributeDescription();
@@ -722,7 +722,7 @@ namespace xr
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor = {};
-        scissor.offset = { 0, 0 };
+        scissor.offset = {0, 0};
         scissor.extent.width = this->vkState->surfaceSize.width;
         scissor.extent.height = this->vkState->surfaceSize.height;
 
@@ -885,7 +885,7 @@ namespace xr
 
     VkFormat Renderer::findDepthFormat()
     {
-        std::vector<VkFormat> formatsToCheck = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
+        std::vector<VkFormat> formatsToCheck = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
 
         return findSupportedFormat(this->vkState->gpuDetails.gpu, formatsToCheck, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
@@ -1016,9 +1016,7 @@ namespace xr
         subpassDescription.preserveAttachmentCount = 0;
         subpassDescription.pPreserveAttachments = nullptr;
 
-        std::array<VkAttachmentDescription, 3> attachments = { colorAttachmentDescription,
-                                                               depthStencilAttachmentDescription,
-                                                               colorAttachmentResolveDescription };
+        std::array<VkAttachmentDescription, 3> attachments = {colorAttachmentDescription, depthStencilAttachmentDescription, colorAttachmentResolveDescription};
 
         VkSubpassDependency subpassDependency = {};
         subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -1065,7 +1063,7 @@ namespace xr
         samplerDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         samplerDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 
-        std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = { uboDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding };
+        std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = {uboDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding};
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
         descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1090,9 +1088,9 @@ namespace xr
 
         for (uint32_t swapchainImageCounter = 0; swapchainImageCounter < this->vkState->swapchainImageCount; ++swapchainImageCounter)
         {
-            std::array<VkImageView, 3> attachments = { this->vkState->msaaColorImageView,
-                                                       this->vkState->depthImageView,
-                                                       this->vkState->swapchainImageViews[swapchainImageCounter] };
+            std::array<VkImageView, 3> attachments = {
+                this->vkState->msaaColorImageView, this->vkState->depthImageView, this->vkState->swapchainImageViews[swapchainImageCounter]
+            };
 
             VkFramebufferCreateInfo framebufferCreateInfo = {};
             framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1305,10 +1303,10 @@ namespace xr
             VkImageBlit imageBlit = {};
 
             // srcOffsets array determine the 3D region that data will be blitted from.
-            imageBlit.srcOffsets[0] = { 0, 0, 0 };
+            imageBlit.srcOffsets[0] = {0, 0, 0};
 
             // The z dimension of srcOffsets[1] must be 1, since a 2D image has a depth of 1
-            imageBlit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+            imageBlit.srcOffsets[1] = {mipWidth, mipHeight, 1};
             imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             // The source mip level is counter - 1
@@ -1317,7 +1315,7 @@ namespace xr
             imageBlit.srcSubresource.layerCount = 1;
 
             // dstOffsets determines the region that data will be blitted to.
-            imageBlit.dstOffsets[0] = { 0, 0, 0 };
+            imageBlit.dstOffsets[0] = {0, 0, 0};
 
             // The x and y dimensions of the dstOffsets[1] are divided by two since
             // each mip level is half the size of the previous level.
@@ -1325,7 +1323,7 @@ namespace xr
             // In case where we have odd texture dimensions, the mip dimension may reach 1.
             // this will cause 0 to be passed to VkImageBlit.dstOffsets which results in validation layer warning.
             // To avoid this, check is next mip level is non-zero, if it is, then use 1 instead of 0.
-            imageBlit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+            imageBlit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
             imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             // The destination mip level is counter
@@ -1703,7 +1701,7 @@ namespace xr
         samplerPoolSize.descriptorCount = static_cast<uint32_t>(this->vkState->swapchainImages.size() * models);
         ;
 
-        std::array<VkDescriptorPoolSize, 2> poolSizes = { uboPoolSize, samplerPoolSize };
+        std::array<VkDescriptorPoolSize, 2> poolSizes = {uboPoolSize, samplerPoolSize};
 
         VkDescriptorPoolCreateInfo poolCreateInfo = {};
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1782,7 +1780,7 @@ namespace xr
                 textureImageDescriptorWrite.pBufferInfo = nullptr;
                 textureImageDescriptorWrite.pTexelBufferView = nullptr;
 
-                std::array<VkWriteDescriptorSet, 2> descriptorWrites = { uniformBudderDescriptorWrite, textureImageDescriptorWrite };
+                std::array<VkWriteDescriptorSet, 2> descriptorWrites = {uniformBudderDescriptorWrite, textureImageDescriptorWrite};
                 vkUpdateDescriptorSets(this->vkState->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
             }
         }
@@ -1841,8 +1839,8 @@ namespace xr
             renderArea.extent.height = this->vkState->surfaceSize.height;
 
             std::array<VkClearValue, 2> clearValue = {};
-            clearValue[0].color = { 0.0f, 0.0f, 0.0f, 1.0f }; // {r, g, b, a}
-            clearValue[1].depthStencil = { 1.0f, 0 };         // {depth, stencil}
+            clearValue[0].color = {0.0f, 0.0f, 0.0f, 1.0f}; // {r, g, b, a}
+            clearValue[1].depthStencil = {1.0f, 0};         // {depth, stencil}
 
             VkRenderPassBeginInfo renderPassBeginInfo = {};
             renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1856,7 +1854,7 @@ namespace xr
             vkCmdBeginRenderPass(this->vkState->commandBuffers[counter], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(this->vkState->commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, this->vkState->pipeline);
 
-            VkDeviceSize offset = { 0 };
+            VkDeviceSize offset = {0};
 
             for (size_t index = 0; index < models.size(); ++index)
             {
@@ -2028,9 +2026,9 @@ namespace xr
         // Update the uniform buffer for current image.
         updateUniformBuffer(models, activeSwapchainImageId);
 
-        VkSemaphore waitSemaphores[] = { this->vkState->imageAvailableSemaphores[this->vkState->currentFrame] };
-        VkSemaphore signalSemaphores[] = { this->vkState->renderFinishedSemaphores[this->vkState->currentFrame] };
-        VkPipelineStageFlags waitPipelineStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkSemaphore waitSemaphores[] = {this->vkState->imageAvailableSemaphores[this->vkState->currentFrame]};
+        VkSemaphore signalSemaphores[] = {this->vkState->renderFinishedSemaphores[this->vkState->currentFrame]};
+        VkPipelineStageFlags waitPipelineStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -2046,7 +2044,7 @@ namespace xr
         result = vkQueueSubmit(this->vkState->graphicsQueue, 1, &submitInfo, this->vkState->inFlightFences[this->vkState->currentFrame]);
         CHECK_ERROR(result);
 
-        VkSwapchainKHR swapchains[] = { this->vkState->swapchain };
+        VkSwapchainKHR swapchains[] = {this->vkState->swapchain};
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
