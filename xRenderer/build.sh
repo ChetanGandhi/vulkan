@@ -10,6 +10,5 @@ fi
 
 cd ./build/linux
 cmake ../..
-cmake --build . --target xRenderer
-cmake --build . --target install
+cmake --build . --clean-first --target xRenderer install
 cd ..

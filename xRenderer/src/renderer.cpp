@@ -1,5 +1,3 @@
-#include "lib/stb/stb_image.h"
-#include "lib/tinyobj/tiny_obj_loader.h"
 #include "renderer.h"
 #include "utils.h"
 #include "logger.h"
@@ -1216,29 +1214,14 @@ namespace xr
         CHECK_ERROR(result);
     }
 
-    XR_API void Renderer::initTextureImage(Model *model, const char *textureFilePath)
+    XR_API void Renderer::initTextureImage(Model *model, Texture *texture, void *pixels)
     {
-        int textureWidth = 0;
-        int textureHeight = 0;
-        int textureChannels = 0;
-
-        stbi_uc *pixels = stbi_load(textureFilePath, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
-
-        if (!pixels)
-        {
-            assert(0 && "Not able to load texture");
-        }
-
-        VkDeviceSize size = textureWidth * textureHeight * 4;
-        model->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
-
-        logf("---------- mipLevels: %d----------", model->mipLevels);
-
+        VkDeviceSize deviceSize = texture->width * texture->height * 4;
         VkBuffer stagingImageBuffer = VK_NULL_HANDLE;
         VkDeviceMemory stagingImageBufferMemory = VK_NULL_HANDLE;
 
         createBuffer(
-            size,
+            deviceSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             &stagingImageBuffer,
@@ -1246,15 +1229,14 @@ namespace xr
         );
 
         void *data = nullptr;
-        vkMapMemory(this->vkState->device, stagingImageBufferMemory, 0, size, 0, &data);
-        memcpy(data, pixels, size);
+        vkMapMemory(this->vkState->device, stagingImageBufferMemory, 0, deviceSize, 0, &data);
+        memcpy(data, pixels, deviceSize);
         vkUnmapMemory(this->vkState->device, stagingImageBufferMemory);
-        stbi_image_free(pixels);
 
         createImage(
-            static_cast<uint32_t>(textureWidth),
-            static_cast<uint32_t>(textureHeight),
-            model->mipLevels,
+            static_cast<uint32_t>(texture->width),
+            static_cast<uint32_t>(texture->height),
+            texture->mipLevels,
             VK_SAMPLE_COUNT_1_BIT,
             VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_TILING_OPTIMAL,
@@ -1264,12 +1246,14 @@ namespace xr
             model->textureImageMemory
         );
 
-        transitionImageLayout(model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, model->mipLevels);
+        transitionImageLayout(
+            model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels
+        );
 
-        copyBufferToImage(stagingImageBuffer, model->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
+        copyBufferToImage(stagingImageBuffer, model->textureImage, static_cast<uint32_t>(texture->width), static_cast<uint32_t>(texture->height));
 
         // Generate the mipmaps images and then transition image layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
-        generateMipmaps(model->textureImage, textureWidth, textureHeight, model->mipLevels);
+        generateMipmaps(model->textureImage, texture->width, texture->height, texture->mipLevels);
 
         vkDestroyBuffer(this->vkState->device, stagingImageBuffer, nullptr);
         vkFreeMemory(this->vkState->device, stagingImageBufferMemory, nullptr);
@@ -1397,9 +1381,9 @@ namespace xr
         endOneTimeCommand(commandBuffer);
     }
 
-    XR_API void Renderer::initTextureImageView(Model *model)
+    XR_API void Renderer::initTextureImageView(Model *model, Texture *texture)
     {
-        createImageView(model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, model->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, model->mipLevels);
+        createImageView(model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, model->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, texture->mipLevels);
     }
 
     XR_API void Renderer::destroyTextureImageView(Model *model)
@@ -1408,7 +1392,7 @@ namespace xr
         model->textureImageView = VK_NULL_HANDLE;
     }
 
-    XR_API void Renderer::initTextureSampler(Model *model)
+    XR_API void Renderer::initTextureSampler(Model *model, Texture *texture)
     {
         VkSamplerCreateInfo samplerCreateInfo = {};
         samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1425,7 +1409,7 @@ namespace xr
         samplerCreateInfo.compareEnable = VK_FALSE;
         samplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
         samplerCreateInfo.minLod = 0;
-        samplerCreateInfo.maxLod = static_cast<float>(model->mipLevels);
+        samplerCreateInfo.maxLod = static_cast<float>(texture->mipLevels);
         samplerCreateInfo.mipLodBias = 0.0f;
         samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
         samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;

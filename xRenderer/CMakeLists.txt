@@ -26,7 +26,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Set debug build
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -47,42 +47,25 @@ target_compile_definitions(
     ${PROJECT_NAME} PRIVATE XR_EXPORTS
 )
 
-target_sources(
-        ${PROJECT_NAME}
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/lib/stb/stb_image.h
-        ${PROJECT_SOURCE_DIR}/lib/tinyobj/tiny_obj_loader.h
-        ${PROJECT_SOURCE_DIR}/src/logger.cpp
-        ${PROJECT_SOURCE_DIR}/src/utils.cpp
-        ${PROJECT_SOURCE_DIR}/src/renderer.cpp
-        ${PROJECT_SOURCE_DIR}/src/core.cpp
-        ${PROJECT_SOURCE_DIR}/src/debugger.cpp
-        ${PROJECT_SOURCE_DIR}/src/instance.cpp
-        ${PROJECT_SOURCE_DIR}/src/model.cpp
-        ${PROJECT_SOURCE_DIR}/include/buildParam.h
-        ${PROJECT_SOURCE_DIR}/include/common.h
-        ${PROJECT_SOURCE_DIR}/include/logger.h
-        ${PROJECT_SOURCE_DIR}/include/platform.h
-        ${PROJECT_SOURCE_DIR}/include/core.h
-        ${PROJECT_SOURCE_DIR}/include/debugger.h
-        ${PROJECT_SOURCE_DIR}/include/instance.h
-        ${PROJECT_SOURCE_DIR}/include/model.h
-        ${PROJECT_SOURCE_DIR}/include/utils.h
-        ${PROJECT_SOURCE_DIR}/include/vertex.h
-        ${PROJECT_SOURCE_DIR}/include/vulkanWindow.h
+file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES
+    "${PROJECT_SOURCE_DIR}/lib/**/*.hxx"
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    "${PROJECT_SOURCE_DIR}/include/*.hxx"
 )
+
+target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_SOURCES})
 
 target_include_directories(
-        ${PROJECT_NAME}
+    ${PROJECT_NAME}
     PUBLIC
-        ${Vulkan_INCLUDE_DIRS}
-        ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/lib
+    ${Vulkan_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/lib
     PRIVATE
-        ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} ${glm_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
 
 install(
     TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}

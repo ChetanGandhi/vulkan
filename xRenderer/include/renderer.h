@@ -52,13 +52,13 @@ namespace xr
         XR_API void initMSAAColorImage();
         XR_API void destroyMSAAColorImage();
 
-        XR_API void initTextureImage(Model *model, const char *textureFilePath);
+        XR_API void initTextureImage(Model *model, Texture *texture, void *pixels);
         XR_API void destroyTextureImage(Model *model);
 
-        XR_API void initTextureImageView(Model *model);
+        XR_API void initTextureImageView(Model *model, Texture *texture);
         XR_API void destroyTextureImageView(Model *model);
 
-        XR_API void initTextureSampler(Model *model);
+        XR_API void initTextureSampler(Model *model, Texture *texture);
         XR_API void destroyTextureSampler(Model *model);
 
         XR_API void initVertexBuffer(Model *model);
