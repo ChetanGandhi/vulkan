@@ -15,6 +15,5 @@ popd
 
 cd build/linux
 cmake ../..
-cmake --build . --target app
-cmake --build . --target install
+cmake --build . --clean-first --target app install
 cd ..

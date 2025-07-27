@@ -24,7 +24,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Set debug build
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -38,15 +38,15 @@ endif()
 # Be aware that system libraries have priority on SDK in the finding.
 find_package(Vulkan REQUIRED)
 if(NOT Vulkan_FOUND)
-	message(FATAL_ERROR "Could not find Vulkan library!")
+    message(FATAL_ERROR "Could not find Vulkan library!")
 else()
-	message(STATUS ${Vulkan_LIBRARY})
+    message(STATUS ${Vulkan_LIBRARY})
 endif()
 
 if(NOT WIN32)
     find_package(xcb REQUIRED)
     if(NOT XCB_FOUND)
-    	message(FATAL_ERROR "Could not find XCB library!")
+        message(FATAL_ERROR "Could not find XCB library!")
     else()
         message(STATUS ${XCB_LIBRARY})
     endif()
@@ -67,24 +67,22 @@ endif()
 link_directories("$ENV{XRENDERER_PATH}/lib")
 add_executable(${PROJECT_NAME} WIN32 "")
 
-target_sources(
-        ${PROJECT_NAME}
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/win32Window.cpp
-        ${PROJECT_SOURCE_DIR}/xWindow.cpp
-        ${PROJECT_SOURCE_DIR}/resource.h
-        ${PROJECT_SOURCE_DIR}/resource.rc
-        ${PROJECT_SOURCE_DIR}/lib/stb/stb_image.h
-        ${PROJECT_SOURCE_DIR}/lib/tinyobj/tiny_obj_loader.h
+file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES
+    "${PROJECT_SOURCE_DIR}/lib/**/*.hxx"
+    "${PROJECT_SOURCE_DIR}/*.cpp"
+    "${PROJECT_SOURCE_DIR}/*.hxx"
+    "${PROJECT_SOURCE_DIR}/*.rc"
 )
 
+target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_SOURCES})
+
 target_include_directories(
-       ${PROJECT_NAME}
+    ${PROJECT_NAME}
     PRIVATE
-        ${Vulkan_INCLUDE_DIRS}
-        $ENV{XRENDERER_PATH}/include
-        ${PROJECT_SOURCE_DIR}/lib
-        ${PROJECT_SOURCE_DIR}
+    ${Vulkan_INCLUDE_DIRS}
+    $ENV{XRENDERER_PATH}/include
+    ${PROJECT_SOURCE_DIR}/lib
+    ${PROJECT_SOURCE_DIR}
 )
 
 if(WIN32)

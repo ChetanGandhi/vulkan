@@ -5,10 +5,19 @@
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 
 #include <xRenderer/vulkanWindow.h>
-#include "resource.h"
+#include <xRenderer/model.h>
+#include <xRenderer/texture.h>
 
-xr::Model *homeModel;
-xr::Model *vikingRoomModel;
+#include "lib/stb/stb_image.h"
+
+#include "resource.h"
+#include "utils.h"
+
+xr::Model *homeModel = nullptr;
+xr::Texture *homeTexture = nullptr;
+
+xr::Model *vikingRoomModel = nullptr;
+xr::Texture *vikingRoomTexture = nullptr;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -168,18 +177,60 @@ void initializeVulkan()
     renderer->initMSAAColorImage();
     renderer->initFrameBuffers();
 
-    homeModel = new xr::Model("../resources/models/chalet/chalet.obj");
-    renderer->initTextureImage(homeModel, "../resources/textures/chalet/chalet.jpg");
-    renderer->initTextureImageView(homeModel);
-    renderer->initTextureSampler(homeModel);
+    homeModel = new xr::Model();
+    bool homeModelLoaded = loadModal("../resources/models/chalet/chalet.obj", homeModel);
+
+    if (!homeModelLoaded)
+    {
+        assert(0 && "Not able to load home model.");
+    }
+
+    homeTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
+    stbi_uc *homeTextureData = loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture);
+
+    if (!homeTextureData)
+    {
+        assert(0 && "Not able to load home texture.");
+    }
+
+    logf("Home texture %dx%d", homeTexture->width, homeTexture->height);
+
+    renderer->initTextureImage(homeModel, homeTexture, homeTextureData);
+
+    // Free the texture data as no longer required
+    free(homeTextureData);
+
+    renderer->initTextureImageView(homeModel, homeTexture);
+    renderer->initTextureSampler(homeModel, homeTexture);
     renderer->initVertexBuffer(homeModel);
     renderer->initIndexBuffer(homeModel);
     renderer->initUniformBuffers(homeModel);
 
-    vikingRoomModel = new xr::Model("../resources/models/vikingRoom/vikingRoom.obj");
-    renderer->initTextureImage(vikingRoomModel, "../resources/textures/vikingRoom/vikingRoom.png");
-    renderer->initTextureImageView(vikingRoomModel);
-    renderer->initTextureSampler(vikingRoomModel);
+    vikingRoomModel = new xr::Model();
+    bool vikingRoomModelLoaded = loadModal("../resources/models/vikingRoom/vikingRoom.obj", vikingRoomModel);
+
+    if (!vikingRoomModelLoaded)
+    {
+        assert(0 && "Not able to load viking room model.");
+    }
+
+    vikingRoomTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
+    stbi_uc *vikingRoomTextureData = loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture);
+
+    if (!vikingRoomTextureData)
+    {
+        assert(0 && "Not able to load viking room texture.");
+    }
+
+    logf("Viking room texture %dx%d", vikingRoomTexture->width, vikingRoomTexture->height);
+
+    renderer->initTextureImage(vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
+
+    // Free the texture data as no longer required
+    free(vikingRoomTextureData);
+
+    renderer->initTextureImageView(vikingRoomModel, vikingRoomTexture);
+    renderer->initTextureSampler(vikingRoomModel, vikingRoomTexture);
     renderer->initVertexBuffer(vikingRoomModel);
     renderer->initIndexBuffer(vikingRoomModel);
     renderer->initUniformBuffers(vikingRoomModel);
@@ -237,6 +288,18 @@ void cleanUp()
 
     // The surface need to be destroyed before instance is deleted.
     destroyPlatformSpecificSurface();
+
+    if (homeTexture)
+    {
+        free(homeTexture);
+        homeTexture = nullptr;
+    }
+
+    if (vikingRoomTexture)
+    {
+        free(vikingRoomTexture);
+        vikingRoomTexture = nullptr;
+    }
 
     if (homeModel)
     {
