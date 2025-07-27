@@ -69,12 +69,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | Win32";
 
-    vkState = new xr::VulkanState();
-    vkState->surfaceSize = {};
-    vkState->surfaceSize.width = 800;
-    vkState->surfaceSize.height = 600;
-    vkState->vertexShaderFilePath = "../shaders/vert.spv";
-    vkState->fragmentShaderFile = "../shaders/frag.spv";
+    context = new xr::Context();
+    context->surfaceSize = {};
+    context->surfaceSize.width = 800;
+    context->surfaceSize.height = 600;
+    context->vertexShaderFilePath = "../shaders/vert.spv";
+    context->fragmentShaderFile = "../shaders/frag.spv";
 
     hGlobalInstance = hInstance;
 
@@ -121,7 +121,7 @@ void initializePlatformSpecificWindow()
     DWORD dwStyleExtra = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
     dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
 
-    RECT windowRect = {0, 0, LONG(vkState->surfaceSize.width), LONG(vkState->surfaceSize.height)};
+    RECT windowRect = {0, 0, LONG(context->surfaceSize.width), LONG(context->surfaceSize.height)};
     AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwStyleExtra);
 
     hWindow = CreateWindowEx(
@@ -160,9 +160,9 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
-    renderer = new xr::Renderer(vkState);
+    renderer = new xr::Renderer(context);
 
-    initPlatformSpecificSurface(&(vkState->instance->vkInstance), &(vkState->surface));
+    initPlatformSpecificSurface(&(context->instance->vkInstance), &(context->surface));
 
     renderer->initDevice();
     renderer->initLogicalDevice();
@@ -320,10 +320,10 @@ void cleanUp()
         renderer = nullptr;
     }
 
-    if (vkState)
+    if (context)
     {
-        delete vkState;
-        vkState = nullptr;
+        delete context;
+        context = nullptr;
     }
 
     destroyPlatformSpecificWindow();
@@ -344,7 +344,7 @@ void updateHomeModel()
     memset((void *)&(homeModel->ubo), 0, sizeof(xr::UniformBufferObject));
     homeModel->ubo.model = translationMatrix * rotationMatrix;
     homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+    homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceSize.width / (float)context->surfaceSize.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
@@ -367,7 +367,7 @@ void updateVikingRoomModel()
     vikingRoomModel->ubo.model = translationMatrix * rotationMatrix;
     vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     vikingRoomModel->ubo.projection =
-        glm::perspective(glm::radians(45.0f), (float)vkState->surfaceSize.width / (float)vkState->surfaceSize.height, 0.1f, 100.0f);
+        glm::perspective(glm::radians(45.0f), (float)context->surfaceSize.width / (float)context->surfaceSize.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
@@ -446,8 +446,8 @@ void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 
 void destroyPlatformSpecificSurface()
 {
-    vkDestroySurfaceKHR(vkState->instance->vkInstance, vkState->surface, nullptr);
-    vkState->surface = VK_NULL_HANDLE;
+    vkDestroySurfaceKHR(context->instance->vkInstance, context->surface, nullptr);
+    context->surface = VK_NULL_HANDLE;
 }
 
 void resize(uint32_t width, uint32_t height)
@@ -457,13 +457,13 @@ void resize(uint32_t width, uint32_t height)
         return;
     }
 
-    if (width == vkState->surfaceSize.width && height == vkState->surfaceSize.height)
+    if (width == context->surfaceSize.width && height == context->surfaceSize.height)
     {
         return;
     }
 
-    vkState->surfaceSize.width = width;
-    vkState->surfaceSize.height = height;
+    context->surfaceSize.width = width;
+    context->surfaceSize.height = height;
 
     if (renderer != nullptr)
     {

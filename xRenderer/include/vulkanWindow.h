@@ -4,7 +4,7 @@
 #include "renderer.h"
 #include "common.h"
 #include "logger.h"
-#include "vulkanState.h"
+#include "context.h"
 
 int start();
 
@@ -30,7 +30,7 @@ bool isEscapeKeyPressed = false;
 std::string windowName;
 std::string windowTitle;
 
-xr::VulkanState *vkState = nullptr;
+xr::Context *context = nullptr;
 xr::Renderer *renderer = nullptr;
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)

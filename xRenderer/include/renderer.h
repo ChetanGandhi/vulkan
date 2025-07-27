@@ -3,14 +3,15 @@
 #include "platform.h"
 #include "common.h"
 #include "vertex.h"
-#include "vulkanState.h"
+#include "model.h"
+#include "context.h"
 
 namespace xr
 {
     class Renderer
     {
       public:
-        XR_API Renderer(VulkanState *vkState);
+        XR_API Renderer(Context *context);
         XR_API ~Renderer();
 
         XR_API void waitForIdle();
@@ -112,7 +113,7 @@ namespace xr
         XR_API void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
       private:
-        VulkanState *vkState = nullptr;
+        Context *context = nullptr;
 
         void setupLayersAndExtensions();
         void beginOneTimeCommand(VkCommandBuffer &commandBuffer);

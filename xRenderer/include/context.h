@@ -2,14 +2,12 @@
 
 #include "platform.h"
 #include "common.h"
-#include "logger.h"
-#include "model.h"
 #include "instance.h"
 #include "debugger.h"
 
 namespace xr
 {
-    class VulkanState
+    class Context
     {
       public:
         const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
