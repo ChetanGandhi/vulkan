@@ -49,8 +49,8 @@ target_compile_definitions(
 
 file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES
     "${PROJECT_SOURCE_DIR}/lib/**/*.hxx"
-    "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/include/*.hxx"
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_SOURCES})
