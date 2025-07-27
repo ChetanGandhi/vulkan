@@ -16,12 +16,23 @@ namespace xr
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string error;
+        std::string warning;
 
-        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &error, modelFilePath);
+        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warning, &error, modelFilePath);
+
+        if (!warning.empty())
+        {
+            logf("Model load warning: %s", warning.c_str());
+        }
+
+        if (!error.empty())
+        {
+            logf("Model load error: %s", error.c_str());
+        }
 
         if (!loaded)
         {
-            logf("Model load error: %s", error.c_str());
+            logf("Failed to load modal: %s", error.c_str());
             assert(0 && "Not able to load model.");
         }
 
@@ -32,21 +43,20 @@ namespace xr
             for (const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
             {
                 Vertex nextVertex = {};
-                nextVertex.position = { // the attrib.vertices array is an array of float values instead of something like glm::vec3,
-                                        // so you need to multiply the index by 3 to create group of 3 values.
-                                        attrib.vertices[3 * nextIndex.vertex_index + 0],
-                                        attrib.vertices[3 * nextIndex.vertex_index + 1],
-                                        attrib.vertices[3 * nextIndex.vertex_index + 2]
 
+                // the attrib.vertices array is an array of float values instead of something like glm::vec3,
+                // so you need to multiply the index by 3 to create group of 3 values.
+                nextVertex.position = {
+                    attrib.vertices[3 * nextIndex.vertex_index + 0],
+                    attrib.vertices[3 * nextIndex.vertex_index + 1],
+                    attrib.vertices[3 * nextIndex.vertex_index + 2]
                 };
 
-                nextVertex.textureCoordinates = { // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
-                                                  // so you need to multiply the index by 2 to create group of 2 values.
-                                                  attrib.texcoords[2 * nextIndex.texcoord_index + 0],
-                                                  1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]
-                };
+                // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
+                // so you need to multiply the index by 2 to create group of 2 values.
+                nextVertex.textureCoordinates = {attrib.texcoords[2 * nextIndex.texcoord_index + 0], 1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]};
 
-                nextVertex.color = { 1.0f, 1.0f, 1.0f };
+                nextVertex.color = {1.0f, 1.0f, 1.0f};
 
                 if (uniqueVertices.count(nextVertex) == 0)
                 {
