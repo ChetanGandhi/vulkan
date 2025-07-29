@@ -88,7 +88,7 @@ namespace xr
             }
 
             stream << "\nFile :" << file << "\nLine: " << lineNumber;
-            LOG_FILE(stream.str().c_str());
+            LOG_INFO(stream.str().c_str());
 
             assert(0 && "----- Vulkan Runtime Error -----");
         }

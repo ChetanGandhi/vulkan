@@ -24,17 +24,17 @@ bool loadModal(const char *modelFilePath, xr::Model *model)
 
     if (!warning.empty())
     {
-        LOG_FILE("Model load warning: %s", warning.c_str());
+        LOG_WARNING(warning.c_str());
     }
 
     if (!error.empty())
     {
-        LOG_FILE("Model load error: %s", error.c_str());
+        LOG_ERROR(error.c_str());
     }
 
     if (!loaded)
     {
-        LOG_FILE("Failed to load modal: %s", error.c_str());
+        LOG_ERROR("Failed to load modal: %s | %s", modelFilePath, error.c_str());
         return false;
     }
 

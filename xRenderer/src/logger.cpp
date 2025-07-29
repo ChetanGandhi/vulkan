@@ -73,7 +73,7 @@ namespace xr
         logger = nullptr;
     }
 
-    XR_API void Logger::log(const char* file, const char* function, const uint32_t line, const char* message, ...)
+    XR_API void Logger::log(const char* file, const char* function, const uint32_t line, const char* tag, const char* message, ...)
     {
         if (logger->logfile == NULL)
         {
@@ -82,7 +82,7 @@ namespace xr
 
         char dateTime[100] = {0};
         size_t size = currentDateTime(dateTime, sizeof(dateTime));
-        fprintf(logger->logfile, "%s | %s:%04d | %s | ", dateTime, file, line, function);
+        fprintf(logger->logfile, "%s | %s:%04d | %s | [%s] | ", dateTime, file, line, function, tag);
 
         va_list args;
         va_start(args, message);

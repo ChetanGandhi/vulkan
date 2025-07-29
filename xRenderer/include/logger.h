@@ -7,12 +7,17 @@
 
 #ifndef NDEBUG
 
-#define LOG_FILE(x_message, ...) xr::Logger::log(__FILE__, __FUNCTION__, __LINE__, x_message, ##__VA_ARGS__)
+#define LOG(x_tag, x_message, ...) xr::Logger::log(__FILE__, __FUNCTION__, __LINE__, x_tag, x_message, ##__VA_ARGS__)
+#define LOG_INFO(x_message, ...) xr::Logger::log(__FILE__, __FUNCTION__, __LINE__, "INFO", x_message, ##__VA_ARGS__)
+#define LOG_WARNING(x_message, ...) xr::Logger::log(__FILE__, __FUNCTION__, __LINE__, "WARNING", x_message, ##__VA_ARGS__)
+#define LOG_ERROR(x_message, ...) xr::Logger::log(__FILE__, __FUNCTION__, __LINE__, "ERROR", x_message, ##__VA_ARGS__)
 #define LOG_UUID(x_message, u_uuid) xr::Logger::logUUID(__FILE__, __FUNCTION__, __LINE__, x_message, u_uuid)
 
 #else
 
-#define LOG_FILE(x_message, ...) ((void)0)
+#define LOG_INFO(x_message, ...) ((void)0)
+#define LOG_WARNING(x_message, ...) ((void)0)
+#define LOG_ERROR(x_message, ...) ((void)0)
 #define LOG_UUID(x_message, u_uuid) ((void)0)
 
 #endif
@@ -24,7 +29,7 @@ namespace xr
       public:
         XR_API static bool initialize(const char* fileName);
         XR_API static void close();
-        XR_API static void log(const char* file, const char* function, const uint32_t line, const char* message, ...);
+        XR_API static void log(const char* file, const char* function, const uint32_t line, const char* tag, const char* message, ...);
         XR_API static void logUUID(const char* file, const char* function, const uint32_t line, const char* message, const uint8_t* uuid);
 
       private:

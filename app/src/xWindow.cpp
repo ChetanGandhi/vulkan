@@ -109,7 +109,7 @@ void initializePlatformSpecificWindow()
     if (xcbConnection == NULL)
     {
         printf("Error: Cannot create connection to XCB\n");
-        LOG_FILE("Error: Cannot create connection to XCB\n");
+        LOG_INFO("Error: Cannot create connection to XCB\n");
         std::exit(EXIT_FAILURE);
     }
 
@@ -149,7 +149,7 @@ void initializePlatformSpecificWindow()
 
     if (error)
     {
-        LOG_FILE("Error: Cannot create window [%d]", error->error_code);
+        LOG_INFO("Error: Cannot create window [%d]", error->error_code);
         printf("Error: Cannot create window [%d]\n", error->error_code);
         free(error);
         cleanUp();
@@ -231,7 +231,7 @@ void initializeVulkan()
         assert(0 && "Not able to load home texture.");
     }
 
-    LOG_FILE("Home texture %dx%d", homeTexture->width, homeTexture->height);
+    LOG_INFO("Home texture %dx%d", homeTexture->width, homeTexture->height);
 
     renderer->initTextureImage(homeModel, homeTexture, homeTextureData);
 
@@ -260,7 +260,7 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room texture.");
     }
 
-    LOG_FILE("Viking room texture %dx%d", vikingRoomTexture->width, vikingRoomTexture->height);
+    LOG_INFO("Viking room texture %dx%d", vikingRoomTexture->width, vikingRoomTexture->height);
 
     renderer->initTextureImage(vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
 
@@ -281,7 +281,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    LOG_FILE("---------- Cleanup started ----------");
+    LOG_INFO("---------- Cleanup started ----------");
 
     if (isFullscreen)
     {
@@ -366,7 +366,7 @@ void cleanUp()
 
     destroyPlatformSpecificWindow();
 
-    LOG_FILE("---------- Cleanup done ----------");
+    LOG_INFO("---------- Cleanup done ----------");
 }
 
 void updateHomeModel()

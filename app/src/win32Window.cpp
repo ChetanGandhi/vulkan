@@ -109,7 +109,7 @@ void initializePlatformSpecificWindow()
     if (!RegisterClassEx(&wndclassex))
     {
         assert(1 && "Cannot register window class.\n");
-        LOG_FILE("Error: Unable to open XgDisplay.\n");
+        LOG_INFO("Error: Unable to open XgDisplay.\n");
         // TODO: Call cleanup.
         fflush(stdout);
         std::exit(EXIT_FAILURE);
@@ -139,7 +139,7 @@ void initializePlatformSpecificWindow()
     if (!hWindow)
     {
         assert(0 && "Cannot create window.\n");
-        LOG_FILE("Cannot create window.\n");
+        LOG_INFO("Cannot create window.\n");
         fflush(stdout);
         std::exit(EXIT_FAILURE);
     }
@@ -182,6 +182,8 @@ void initializeVulkan()
         assert(0 && "Not able to load home model.");
     }
 
+    LOG_INFO("Home model loaded");
+
     homeTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
     stbi_uc *homeTextureData = loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture);
 
@@ -190,12 +192,13 @@ void initializeVulkan()
         assert(0 && "Not able to load home texture.");
     }
 
-    LOG_FILE("Home texture %dx%d", homeTexture->width, homeTexture->height);
+    LOG_INFO("Home texture loaded");
 
     renderer->initTextureImage(homeModel, homeTexture, homeTextureData);
 
     // Free the texture data as no longer required
     free(homeTextureData);
+    homeTextureData = nullptr;
 
     renderer->initTextureImageView(homeModel, homeTexture);
     renderer->initTextureSampler(homeModel, homeTexture);
@@ -211,6 +214,8 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room model.");
     }
 
+    LOG_INFO("Viking room model loaded");
+
     vikingRoomTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
     stbi_uc *vikingRoomTextureData = loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture);
 
@@ -219,12 +224,13 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room texture.");
     }
 
-    LOG_FILE("Viking room texture %dx%d", vikingRoomTexture->width, vikingRoomTexture->height);
+    LOG_INFO("Viking room texture loaded");
 
     renderer->initTextureImage(vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
 
     // Free the texture data as no longer required
     free(vikingRoomTextureData);
+    vikingRoomTextureData = nullptr;
 
     renderer->initTextureImageView(vikingRoomModel, vikingRoomTexture);
     renderer->initTextureSampler(vikingRoomModel, vikingRoomTexture);
@@ -240,7 +246,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    LOG_FILE("---------- Cleanup started ----------");
+    LOG_INFO("---------- Cleanup started ----------");
 
     if (isFullscreen)
     {
@@ -325,7 +331,7 @@ void cleanUp()
 
     destroyPlatformSpecificWindow();
 
-    LOG_FILE("---------- Cleanup done ----------");
+    LOG_INFO("---------- Cleanup done ----------");
 }
 
 void updateHomeModel()

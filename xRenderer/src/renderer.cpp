@@ -289,7 +289,7 @@ namespace xr
         uint32_t lastRank = 0;
         int32_t selectedGpuIndex = -1;
 
-        LOG_FILE("---------- Total GPU Found [%d]----------", gpuCount);
+        LOG_INFO("---------- Total GPU Found [%d]----------", gpuCount);
 
         for (uint32_t counter = 0; counter < gpuCount; ++counter)
         {
@@ -312,16 +312,16 @@ namespace xr
         }
         else
         {
-            LOG_FILE("Vulkan Error: Unable to find suitable graphics device.");
+            LOG_INFO("Vulkan Error: Unable to find suitable graphics device.");
             assert(0 && "Vulkan Error: Unable to find suitable graphics device.");
             std::exit(EXIT_FAILURE);
         }
 
-        LOG_FILE("---------- Selected GPU Properties ----------");
+        LOG_INFO("---------- Selected GPU Properties ----------");
 
         printGpuProperties(&(this->context->gpuDetails), selectedGpuIndex + 1, gpuCount);
 
-        LOG_FILE("---------- Selected GPU Properties End ----------");
+        LOG_INFO("---------- Selected GPU Properties End ----------");
 
         {
             uint32_t layerCount = 0;
@@ -551,18 +551,18 @@ namespace xr
         );
 
         {
-            LOG_FILE("---------- Presentation Mode ----------");
+            LOG_INFO("---------- Presentation Mode ----------");
 
             if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
-                LOG_FILE("Mode: MAILBOX [%d]", presentMode);
+                LOG_INFO("Mode: MAILBOX [%d]", presentMode);
             }
             else
             {
-                LOG_FILE("Mode: %d", presentMode);
+                LOG_INFO("Mode: %d", presentMode);
             }
 
-            LOG_FILE("---------- Presentation Mode End----------");
+            LOG_INFO("---------- Presentation Mode End----------");
         }
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
@@ -686,13 +686,13 @@ namespace xr
 
         if (!readFile(this->context->vertexShaderFilePath, &vertexShaderCode))
         {
-            LOG_FILE("Cannot open vertex shader file: %s", this->context->vertexShaderFilePath);
+            LOG_INFO("Cannot open vertex shader file: %s", this->context->vertexShaderFilePath);
             assert(0 && "Cannot open vertex shader.");
         }
 
         if (!readFile(this->context->fragmentShaderFile, &fragmentShaderCode))
         {
-            LOG_FILE("Cannot open fragment shader file: %s", this->context->fragmentShaderFile);
+            LOG_INFO("Cannot open fragment shader file: %s", this->context->fragmentShaderFile);
             assert(0 && "Cannot open fragment shader.");
         }
 
@@ -1961,7 +1961,7 @@ namespace xr
 
     XR_API void Renderer::recreateSwapChain(std::vector<Model *> models)
     {
-        LOG_FILE("---------- Recreate SwapChain --------");
+        LOG_INFO("---------- Recreate SwapChain --------");
         cleanupSwapChain(models);
         initSwapchain();
         initSwapchainImageViews();
@@ -2030,13 +2030,13 @@ namespace xr
         // Recreate the swap chain if result is suboptimal or out of data because we want the best possible result.
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            LOG_FILE("Swapchain out of date before presenting");
+            LOG_INFO("Swapchain out of date before presenting");
             recreateSwapChain(models);
             return;
         }
         else if (result == VK_SUBOPTIMAL_KHR)
         {
-            LOG_FILE("Swapchain suboptimal before presenting");
+            LOG_INFO("Swapchain suboptimal before presenting");
             recreateSwapChain(models);
             return;
         }
@@ -2086,13 +2086,13 @@ namespace xr
         // Recreate the swap chain if result is suboptimal or out of data because we want the best possible result.
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            LOG_FILE("Swapchain out of date after presenting");
+            LOG_INFO("Swapchain out of date after presenting");
             recreateSwapChain(models);
             return;
         }
         else if (result == VK_SUBOPTIMAL_KHR)
         {
-            LOG_FILE("Swapchain suboptimal after presenting");
+            LOG_INFO("Swapchain suboptimal after presenting");
             recreateSwapChain(models);
             return;
         }
@@ -2122,41 +2122,41 @@ namespace xr
     {
         if (!gpuDetails)
         {
-            LOG_FILE("No GPU properties to show!!!");
+            LOG_INFO("No GPU properties to show!!!");
             return;
         }
 
-        LOG_FILE("---------- GPU Properties [%d/%d] [Rank: %d] ----------", currentGpuIndex, totalGpuCount, gpuDetails->rank);
-        LOG_FILE("Device Name\t\t: %s", gpuDetails->properties.deviceName);
-        LOG_FILE("Vendor Id\t\t: %d", gpuDetails->properties.vendorID);
-        LOG_FILE("Device Id\t\t: %d", gpuDetails->properties.deviceID);
-        LOG_FILE("Device Type\t\t: %d", gpuDetails->properties.deviceType);
-        LOG_FILE("API Version\t\t: %d", gpuDetails->properties.apiVersion);
-        LOG_FILE("Driver Version\t\t: %d", gpuDetails->properties.driverVersion);
+        LOG_INFO("---------- GPU Properties [%d/%d] [Rank: %d] ----------", currentGpuIndex, totalGpuCount, gpuDetails->rank);
+        LOG_INFO("Device Name\t\t: %s", gpuDetails->properties.deviceName);
+        LOG_INFO("Vendor Id\t\t: %d", gpuDetails->properties.vendorID);
+        LOG_INFO("Device Id\t\t: %d", gpuDetails->properties.deviceID);
+        LOG_INFO("Device Type\t\t: %d", gpuDetails->properties.deviceType);
+        LOG_INFO("API Version\t\t: %d", gpuDetails->properties.apiVersion);
+        LOG_INFO("Driver Version\t\t: %d", gpuDetails->properties.driverVersion);
         LOG_UUID("Pipeline Cache UUID\t: ", gpuDetails->properties.pipelineCacheUUID);
-        LOG_FILE("Graphics Family Index\t\t: %d", gpuDetails->graphicsFamilyIndex);
-        LOG_FILE("Present Family Index\t\t: %d", gpuDetails->presentFamilyIndex);
-        LOG_FILE("Has Separate Present Queue\t: %d", gpuDetails->hasSeparatePresentQueue);
-        LOG_FILE("MSAA samples count: %d", gpuDetails->msaaSamples);
-        LOG_FILE("---------- GPU Properties End ----------");
+        LOG_INFO("Graphics Family Index\t\t: %d", gpuDetails->graphicsFamilyIndex);
+        LOG_INFO("Present Family Index\t\t: %d", gpuDetails->presentFamilyIndex);
+        LOG_INFO("Has Separate Present Queue\t: %d", gpuDetails->hasSeparatePresentQueue);
+        LOG_INFO("MSAA samples count: %d", gpuDetails->msaaSamples);
+        LOG_INFO("---------- GPU Properties End ----------");
     }
 
     void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)
     {
 #ifndef NDEBUG
 
-        LOG_FILE("---------- Instance Layer Properties ----------");
+        LOG_INFO("---------- Instance Layer Properties ----------");
 
         for (VkLayerProperties &nextProperty : properties)
         {
-            LOG_FILE("Layer Name\t\t: %s", nextProperty.layerName);
-            LOG_FILE("Description\t\t: %s", nextProperty.description);
-            LOG_FILE("Spec Version\t\t: %d", nextProperty.specVersion);
-            LOG_FILE("Implementation Version\t: %d", nextProperty.implementationVersion);
-            LOG_FILE("------------------------------------------------------------");
+            LOG_INFO("Layer Name\t\t: %s", nextProperty.layerName);
+            LOG_INFO("Description\t\t: %s", nextProperty.description);
+            LOG_INFO("Spec Version\t\t: %d", nextProperty.specVersion);
+            LOG_INFO("Implementation Version\t: %d", nextProperty.implementationVersion);
+            LOG_INFO("------------------------------------------------------------");
         }
 
-        LOG_FILE("---------- Instance Layer Properties End [%d] ----------", properties.size());
+        LOG_INFO("---------- Instance Layer Properties End [%d] ----------", properties.size());
 
 #endif
     }
@@ -2165,18 +2165,18 @@ namespace xr
     {
 #ifndef NDEBUG
 
-        LOG_FILE("---------- Device Layer Properties ----------");
+        LOG_INFO("---------- Device Layer Properties ----------");
 
         for (VkLayerProperties &nextProperty : properties)
         {
-            LOG_FILE("Layer Name\t\t: %s", nextProperty.layerName);
-            LOG_FILE("Description\t\t: %s", nextProperty.description);
-            LOG_FILE("Spec Version\t\t: %d", nextProperty.specVersion);
-            LOG_FILE("Implementation Version\t: %d", nextProperty.implementationVersion);
-            LOG_FILE("------------------------------------------------------------");
+            LOG_INFO("Layer Name\t\t: %s", nextProperty.layerName);
+            LOG_INFO("Description\t\t: %s", nextProperty.description);
+            LOG_INFO("Spec Version\t\t: %d", nextProperty.specVersion);
+            LOG_INFO("Implementation Version\t: %d", nextProperty.implementationVersion);
+            LOG_INFO("------------------------------------------------------------");
         }
 
-        LOG_FILE("---------- Device Layer Properties End [%d] ----------", properties.size());
+        LOG_INFO("---------- Device Layer Properties End [%d] ----------", properties.size());
 
 #endif
     }
@@ -2185,16 +2185,16 @@ namespace xr
     {
 #ifndef NDEBUG
 
-        LOG_FILE("---------- Surface Formats ----------");
+        LOG_INFO("---------- Surface Formats ----------");
 
         for (VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
         {
-            LOG_FILE("format\t\t: %d", nextSurfaceFormat.format);
-            LOG_FILE("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
-            LOG_FILE("------------------------------------------------------------");
+            LOG_INFO("format\t\t: %d", nextSurfaceFormat.format);
+            LOG_INFO("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
+            LOG_INFO("------------------------------------------------------------");
         }
 
-        LOG_FILE("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
+        LOG_INFO("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
 
 #endif
     }
@@ -2203,11 +2203,11 @@ namespace xr
     {
 #ifndef NDEBUG
 
-        LOG_FILE("---------- Swapchain Image Count ----------");
-        LOG_FILE("Min\t: %d", minImageCount);
-        LOG_FILE("Max\t: %d", maxImageCount);
-        LOG_FILE("Current\t: %d", currentImageCount);
-        LOG_FILE("---------- Swapchain Image Count End ----------");
+        LOG_INFO("---------- Swapchain Image Count ----------");
+        LOG_INFO("Min\t: %d", minImageCount);
+        LOG_INFO("Max\t: %d", maxImageCount);
+        LOG_INFO("Current\t: %d", currentImageCount);
+        LOG_INFO("---------- Swapchain Image Count End ----------");
 
 #endif
     }

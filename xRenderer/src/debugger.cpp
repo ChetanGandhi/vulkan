@@ -9,46 +9,49 @@ namespace xr
         void *pUserData
     )
     {
+        char *severity = "";
+        char *type = "";
+
         std::ostringstream stream;
 
         if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            stream << "[ERROR] | ";
+            severity = "ERROR";
         }
         else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
-            stream << "[WARNING] | ";
+            severity = "WARNING";
         }
         else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
-            stream << "[INFO] | ";
+            severity = "INFO";
         }
         else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
-            stream << "[VERBOSE] | ";
+            severity = "VERBOSE";
         }
 
         if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
         {
-            stream << "[GENERAL] | ";
+            type = "[GENERAL]";
         }
         else if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
         {
-            stream << "[VALIDATION] | ";
+            type = "[VALIDATION]";
         }
         else if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
         {
-            stream << "[PERFORMANCE] | ";
+            type = "[PERFORMANCE]";
         }
 
-        stream << pCallbackData->pMessage;
-        LOG_FILE(stream.str().c_str());
+        stream << type << " | " << pCallbackData->pMessage;
+        LOG(severity, stream.str().c_str());
 
 #if defined(_WIN32)
 
         if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            MessageBox(NULL, stream.str().c_str(), TEXT("Vulkan Error"), MB_OK | MB_ICONERROR);
+            MessageBox(NULL, TEXT(stream.str().c_str()), TEXT("Vulkan Error"), MB_OK | MB_ICONERROR);
         }
 
 #endif // _WIN32
