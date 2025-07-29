@@ -133,19 +133,19 @@ namespace xr
             VkFormatFeatureFlags formatFeatureFlags
         );
         VkFormat findDepthFormat();
-        VkSampleCountFlagBits findMaxMSAASampleCount(VkPhysicalDeviceProperties properties);
         VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &surfaceFormats);
         VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR> &presentModes);
         void chooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *initialSurfaceExtent);
 
-        bool isDeviceSuitable(VkPhysicalDevice gpu);
-        bool findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices);
+        void rankDevice(GpuDetails *gpuDetails);
+        void findSuitableDeviceQueues(GpuDetails *gpuDetails);
+        void findMaxMSAASampleCount(GpuDetails *gpuDetails);
         bool checkDeviceExtensionSupport(VkPhysicalDevice gpu);
         bool hasStencilComponent(VkFormat format);
 
         // Debug methods
 
-        void printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount);
+        void printGpuProperties(GpuDetails *details, uint32_t currentGpuIndex, uint32_t totalGpuCount);
         void printInstanceLayerProperties(std::vector<VkLayerProperties> properties);
         void printDeviceLayerProperties(std::vector<VkLayerProperties> properties);
         void printSurfaceFormatsDetails(std::vector<VkSurfaceFormatKHR> surfaceFormats);

@@ -5,6 +5,7 @@
 #include "lib/stb/stb_image.h"
 #include "lib/tinyobj/tiny_obj_loader.h"
 
+#include <xRenderer/logger.h>
 #include <xRenderer/model.h>
 #include <xRenderer/texture.h>
 #include <xRenderer/vertex.h>
@@ -23,17 +24,17 @@ bool loadModal(const char *modelFilePath, xr::Model *model)
 
     if (!warning.empty())
     {
-        logf("Model load warning: %s", warning.c_str());
+        LOG_FILE("Model load warning: %s", warning.c_str());
     }
 
     if (!error.empty())
     {
-        logf("Model load error: %s", error.c_str());
+        LOG_FILE("Model load error: %s", error.c_str());
     }
 
     if (!loaded)
     {
-        logf("Failed to load modal: %s", error.c_str());
+        LOG_FILE("Failed to load modal: %s", error.c_str());
         return false;
     }
 

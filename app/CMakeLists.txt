@@ -68,10 +68,9 @@ link_directories("$ENV{XRENDERER_PATH}/lib")
 add_executable(${PROJECT_NAME} WIN32 "")
 
 file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES
-    "${PROJECT_SOURCE_DIR}/lib/**/*.hxx"
-    "${PROJECT_SOURCE_DIR}/*.cpp"
-    "${PROJECT_SOURCE_DIR}/*.hxx"
-    "${PROJECT_SOURCE_DIR}/*.rc"
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/*.hxx"
+    "${PROJECT_SOURCE_DIR}/src/*.rc"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_SOURCES})
@@ -81,6 +80,7 @@ target_include_directories(
     PRIVATE
     ${Vulkan_INCLUDE_DIRS}
     $ENV{XRENDERER_PATH}/include
+    $ENV{XRENDERER_PATH}/lib
     ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_SOURCE_DIR}
 )

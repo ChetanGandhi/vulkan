@@ -1,16 +1,10 @@
 #pragma once
 
 #include "platform.h"
+#include <glm/glm.hpp>
 
 namespace xr
 {
-    struct QueueFamilyIndices
-    {
-        uint32_t graphicsFamilyIndex = UINT32_MAX;
-        uint32_t presentFamilyIndex = UINT32_MAX;
-        bool hasSeparatePresentQueue = false;
-    };
-
     struct SurfaceSize
     {
         uint32_t width = 512;
@@ -26,6 +20,11 @@ namespace xr
 
     struct GpuDetails
     {
+        uint32_t rank = 0;
+        uint32_t graphicsFamilyIndex = UINT32_MAX;
+        uint32_t presentFamilyIndex = UINT32_MAX;
+        bool hasSeparatePresentQueue = false;
+        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
         VkPhysicalDevice gpu = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties properties = {};
         VkPhysicalDeviceMemoryProperties memoryProperties = {};

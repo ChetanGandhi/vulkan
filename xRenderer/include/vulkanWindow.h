@@ -3,7 +3,6 @@
 #include "platform.h"
 #include "renderer.h"
 #include "common.h"
-#include "logger.h"
 #include "context.h"
 
 int start();

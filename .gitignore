@@ -140,6 +140,7 @@ _Pvt_Extensions/
 ModelManifest.xml
 
 ### VisualStudioCode ###
+*.code-workspace
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

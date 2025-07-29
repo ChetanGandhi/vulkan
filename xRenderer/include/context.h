@@ -50,11 +50,9 @@ namespace xr
         size_t currentFrame = 0;
 
         VkSurfaceFormatKHR surfaceFormat = {};
-        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
         SwapchainSupportDetails swapchainSupportDetails = {};
         GpuDetails gpuDetails = {};
         SurfaceSize surfaceSize = {};
-        QueueFamilyIndices queueFamilyIndices = {};
     };
 } // namespace xr

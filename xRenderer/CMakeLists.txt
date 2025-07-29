@@ -80,5 +80,10 @@ install(
     DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/include/${PROJECT_NAME}
 )
 
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/lib/glm
+    DESTINATION ${CMAKE_BINARY_DIR}/install/${PROJECT_NAME}/lib/glm
+)
+
 # Visual Studio startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})

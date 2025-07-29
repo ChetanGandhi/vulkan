@@ -1,5 +1,3 @@
-#define GLM_FORCE_CXX17
-
 #include <xRenderer/platform.h>
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -40,7 +38,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
             {
                 case VK_ESCAPE:
                     isEscapeKeyPressed = true;
-                    ;
                     break;
 
                 // 0x46 is hex value for key 'F' or 'f'
@@ -112,7 +109,7 @@ void initializePlatformSpecificWindow()
     if (!RegisterClassEx(&wndclassex))
     {
         assert(1 && "Cannot register window class.\n");
-        logf("Error: Unable to open XgDisplay.\n");
+        LOG_FILE("Error: Unable to open XgDisplay.\n");
         // TODO: Call cleanup.
         fflush(stdout);
         std::exit(EXIT_FAILURE);
@@ -142,7 +139,7 @@ void initializePlatformSpecificWindow()
     if (!hWindow)
     {
         assert(0 && "Cannot create window.\n");
-        logf("Cannot create window.\n");
+        LOG_FILE("Cannot create window.\n");
         fflush(stdout);
         std::exit(EXIT_FAILURE);
     }
@@ -193,7 +190,7 @@ void initializeVulkan()
         assert(0 && "Not able to load home texture.");
     }
 
-    logf("Home texture %dx%d", homeTexture->width, homeTexture->height);
+    LOG_FILE("Home texture %dx%d", homeTexture->width, homeTexture->height);
 
     renderer->initTextureImage(homeModel, homeTexture, homeTextureData);
 
@@ -222,7 +219,7 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room texture.");
     }
 
-    logf("Viking room texture %dx%d", vikingRoomTexture->width, vikingRoomTexture->height);
+    LOG_FILE("Viking room texture %dx%d", vikingRoomTexture->width, vikingRoomTexture->height);
 
     renderer->initTextureImage(vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
 
@@ -243,7 +240,7 @@ void initializeVulkan()
 
 void cleanUp()
 {
-    logf("---------- Cleanup started ----------");
+    LOG_FILE("---------- Cleanup started ----------");
 
     if (isFullscreen)
     {
@@ -328,7 +325,7 @@ void cleanUp()
 
     destroyPlatformSpecificWindow();
 
-    logf("---------- Cleanup done ----------");
+    LOG_FILE("---------- Cleanup done ----------");
 }
 
 void updateHomeModel()
@@ -452,7 +449,7 @@ void destroyPlatformSpecificSurface()
 
 void resize(uint32_t width, uint32_t height)
 {
-    if (width == 0 || height == 0)
+    if (width <= 0 || height <= 0)
     {
         return;
     }

@@ -42,7 +42,7 @@ namespace xr
         }
 
         stream << pCallbackData->pMessage;
-        logf(stream.str().c_str());
+        LOG_FILE(stream.str().c_str());
 
 #if defined(_WIN32)
 

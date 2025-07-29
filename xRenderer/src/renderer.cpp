@@ -1,3 +1,4 @@
+#include "platform.h"
 #include "renderer.h"
 #include "utils.h"
 #include "logger.h"
@@ -101,50 +102,80 @@ namespace xr
         }
     }
 
-    bool Renderer::isDeviceSuitable(VkPhysicalDevice gpu)
+    void Renderer::rankDevice(GpuDetails *gpuDetails)
     {
-        QueueFamilyIndices indices = {};
-
-        bool suitableDeviceQueuesFound = findSuitableDeviceQueues(gpu, &indices);
-
-        if (suitableDeviceQueuesFound)
-        {
-            this->context->queueFamilyIndices.graphicsFamilyIndex = indices.graphicsFamilyIndex;
-            this->context->queueFamilyIndices.presentFamilyIndex = indices.presentFamilyIndex;
-            this->context->queueFamilyIndices.hasSeparatePresentQueue = indices.hasSeparatePresentQueue;
-
-            logf("---------- Queue Family Indices ----------");
-            logf("Graphics Family Index\t\t: %d", this->context->queueFamilyIndices.graphicsFamilyIndex);
-            logf("Present Family Index\t\t: %d", this->context->queueFamilyIndices.presentFamilyIndex);
-            logf("Has Separate Present Queue\t: %d", this->context->queueFamilyIndices.hasSeparatePresentQueue);
-            logf("---------- Queue Family Indices End ----------");
-        }
-
-        bool extensionSupported = checkDeviceExtensionSupport(gpu);
-        bool swapchainSupported = true;
+        // Higher the rank, more suitable the device
+        uint32_t rank = 0;
+        bool extensionSupported = checkDeviceExtensionSupport(gpuDetails->gpu);
+        bool swapchainSupported = false;
 
         if (extensionSupported)
         {
             SwapchainSupportDetails details = {};
-            querySwapchainSupportDetails(gpu, &details);
+            querySwapchainSupportDetails(gpuDetails->gpu, &details);
             swapchainSupported = !details.surfaceFormats.empty() && !details.presentModes.empty();
         }
 
         VkPhysicalDeviceFeatures supportedFeatures = {};
-        vkGetPhysicalDeviceFeatures(gpu, &supportedFeatures);
+        vkGetPhysicalDeviceFeatures(gpuDetails->gpu, &supportedFeatures);
 
-        return suitableDeviceQueuesFound && extensionSupported && swapchainSupported && supportedFeatures.samplerAnisotropy;
+        // Increase the rank for each check
+        if (gpuDetails->graphicsFamilyIndex != UINT32_MAX)
+        {
+            rank++;
+        }
+
+        if (gpuDetails->hasSeparatePresentQueue && gpuDetails->presentFamilyIndex != UINT32_MAX)
+        {
+            rank++;
+        }
+
+        if (extensionSupported)
+        {
+            rank++;
+        }
+
+        if (swapchainSupported)
+        {
+            rank++;
+        }
+
+        if (supportedFeatures.samplerAnisotropy)
+        {
+            rank++;
+        }
+
+        if (supportedFeatures.geometryShader)
+        {
+            rank++;
+        }
+
+        if (supportedFeatures.tessellationShader)
+        {
+            rank++;
+        }
+
+        if (gpuDetails->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        {
+            rank += 2;
+        }
+        else if (gpuDetails->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+        {
+            rank++;
+        }
+
+        gpuDetails->rank = rank;
     }
 
-    bool Renderer::findSuitableDeviceQueues(VkPhysicalDevice gpu, QueueFamilyIndices *queueFamilyIndices)
+    void Renderer::findSuitableDeviceQueues(GpuDetails *gpuDetails)
     {
         uint32_t familyCount = 0;
         uint32_t graphicsFamilyIndex = UINT32_MAX;
         uint32_t presentFamilyIndex = UINT32_MAX;
 
-        vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, nullptr);
         std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, familyPropertiesList.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, familyPropertiesList.data());
 
         for (uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
         {
@@ -156,7 +187,7 @@ namespace xr
             }
 
             VkBool32 presentSupport = VK_FALSE;
-            vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->context->surface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(gpuDetails->gpu, queueCounter, this->context->surface, &presentSupport);
 
             if (presentSupport == VK_TRUE)
             {
@@ -171,7 +202,7 @@ namespace xr
             for (uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
             {
                 VkBool32 presentSupport = VK_FALSE;
-                vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queueCounter, this->context->surface, &presentSupport);
+                vkGetPhysicalDeviceSurfaceSupportKHR(gpuDetails->gpu, queueCounter, this->context->surface, &presentSupport);
 
                 if (presentSupport == VK_TRUE)
                 {
@@ -181,48 +212,44 @@ namespace xr
             }
         }
 
-        if (graphicsFamilyIndex == UINT32_MAX || presentFamilyIndex == UINT32_MAX)
-        {
-            return false;
-        }
-
-        queueFamilyIndices->graphicsFamilyIndex = graphicsFamilyIndex;
-        queueFamilyIndices->presentFamilyIndex = presentFamilyIndex;
-        queueFamilyIndices->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
-
-        return true;
+        gpuDetails->graphicsFamilyIndex = graphicsFamilyIndex;
+        gpuDetails->presentFamilyIndex = presentFamilyIndex;
+        gpuDetails->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
     }
 
-    VkSampleCountFlagBits Renderer::findMaxMSAASampleCount(VkPhysicalDeviceProperties properties)
+    void Renderer::findMaxMSAASampleCount(GpuDetails *gpuDetails)
     {
-        VkSampleCountFlags sampleCountFlags = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
+        VkSampleCountFlags sampleCountFlags =
+            gpuDetails->properties.limits.framebufferColorSampleCounts & gpuDetails->properties.limits.framebufferDepthSampleCounts;
 
         if (sampleCountFlags & VK_SAMPLE_COUNT_64_BIT)
         {
-            return VK_SAMPLE_COUNT_64_BIT;
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_64_BIT;
         }
-        if (sampleCountFlags & VK_SAMPLE_COUNT_32_BIT)
+        else if (sampleCountFlags & VK_SAMPLE_COUNT_32_BIT)
         {
-            return VK_SAMPLE_COUNT_32_BIT;
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_32_BIT;
         }
-        if (sampleCountFlags & VK_SAMPLE_COUNT_16_BIT)
+        else if (sampleCountFlags & VK_SAMPLE_COUNT_16_BIT)
         {
-            return VK_SAMPLE_COUNT_16_BIT;
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_16_BIT;
         }
-        if (sampleCountFlags & VK_SAMPLE_COUNT_8_BIT)
+        else if (sampleCountFlags & VK_SAMPLE_COUNT_8_BIT)
         {
-            return VK_SAMPLE_COUNT_8_BIT;
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_8_BIT;
         }
-        if (sampleCountFlags & VK_SAMPLE_COUNT_4_BIT)
+        else if (sampleCountFlags & VK_SAMPLE_COUNT_4_BIT)
         {
-            return VK_SAMPLE_COUNT_4_BIT;
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_4_BIT;
         }
-        if (sampleCountFlags & VK_SAMPLE_COUNT_2_BIT)
+        else if (sampleCountFlags & VK_SAMPLE_COUNT_2_BIT)
         {
-            return VK_SAMPLE_COUNT_2_BIT;
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_2_BIT;
         }
-
-        return VK_SAMPLE_COUNT_1_BIT;
+        else
+        {
+            gpuDetails->msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+        }
     }
 
     bool Renderer::checkDeviceExtensionSupport(VkPhysicalDevice gpu)
@@ -255,48 +282,46 @@ namespace xr
 
     XR_API void Renderer::initDevice()
     {
+        std::vector<GpuDetails> gpuDetailsList(0);
+        listAllPhysicalDevices(&gpuDetailsList);
+
+        uint32_t gpuCount = static_cast<uint32_t>(gpuDetailsList.size());
+        uint32_t lastRank = 0;
+        int32_t selectedGpuIndex = -1;
+
+        LOG_FILE("---------- Total GPU Found [%d]----------", gpuCount);
+
+        for (uint32_t counter = 0; counter < gpuCount; ++counter)
         {
-            std::vector<GpuDetails> gpuDetailsList(0);
-            listAllPhysicalDevices(&gpuDetailsList);
+            GpuDetails *nextGpuDetails = &gpuDetailsList[counter];
+            findSuitableDeviceQueues(nextGpuDetails);
+            findMaxMSAASampleCount(nextGpuDetails);
+            rankDevice(nextGpuDetails);
+            printGpuProperties(nextGpuDetails, counter + 1, gpuCount);
 
-            uint32_t gpuCount = static_cast<uint32_t>(gpuDetailsList.size());
-            uint32_t selectedGpuIndex = 0;
-
-            logf("---------- Total GPU Found [%d]----------", gpuCount);
-
-            for (uint32_t counter = 0; counter < gpuCount; ++counter)
+            if (lastRank < nextGpuDetails->rank)
             {
-                GpuDetails nextGpuDetails = gpuDetailsList[counter];
-                printGpuProperties(&nextGpuDetails.properties, counter + 1, gpuCount);
+                lastRank = nextGpuDetails->rank;
+                selectedGpuIndex = counter;
             }
-
-            for (uint32_t counter = 0; counter < gpuCount; ++counter)
-            {
-                GpuDetails nextGpuDetails = gpuDetailsList[counter];
-
-                if (isDeviceSuitable(nextGpuDetails.gpu))
-                {
-                    this->context->gpuDetails = nextGpuDetails;
-                    this->context->msaaSamples = findMaxMSAASampleCount(nextGpuDetails.properties);
-                    selectedGpuIndex = counter;
-                    break;
-                }
-            }
-
-            if (this->context->gpuDetails.gpu == VK_NULL_HANDLE)
-            {
-                assert(0 && "Vulkan Error: Queue family supporting graphics device not found.");
-                std::exit(EXIT_FAILURE);
-            }
-
-            logf("---------- Selected GPU Properties ----------");
-            printGpuProperties(&(this->context->gpuDetails.properties), (selectedGpuIndex + 1), gpuCount);
-            logf("---------- Selected GPU Properties End ----------");
-
-            logf("---------- MSAA Count ----------");
-            logf("MSAA samples count: %d", this->context->msaaSamples);
-            logf("---------- MSAA Count End ----------");
         }
+
+        if (selectedGpuIndex > -1)
+        {
+            memcpy((void *)&(this->context->gpuDetails), &gpuDetailsList[selectedGpuIndex], sizeof(GpuDetails));
+        }
+        else
+        {
+            LOG_FILE("Vulkan Error: Unable to find suitable graphics device.");
+            assert(0 && "Vulkan Error: Unable to find suitable graphics device.");
+            std::exit(EXIT_FAILURE);
+        }
+
+        LOG_FILE("---------- Selected GPU Properties ----------");
+
+        printGpuProperties(&(this->context->gpuDetails), selectedGpuIndex + 1, gpuCount);
+
+        LOG_FILE("---------- Selected GPU Properties End ----------");
 
         {
             uint32_t layerCount = 0;
@@ -324,19 +349,19 @@ namespace xr
         deviceGraphicQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         deviceGraphicQueueCreateInfo.pNext = nullptr;
         deviceGraphicQueueCreateInfo.flags = 0;
-        deviceGraphicQueueCreateInfo.queueFamilyIndex = this->context->queueFamilyIndices.graphicsFamilyIndex;
+        deviceGraphicQueueCreateInfo.queueFamilyIndex = this->context->gpuDetails.graphicsFamilyIndex;
         deviceGraphicQueueCreateInfo.queueCount = 1;
         deviceGraphicQueueCreateInfo.pQueuePriorities = queuePriorities.data();
 
         deviceQueueCreateInfos.push_back(deviceGraphicQueueCreateInfo);
 
-        if (this->context->queueFamilyIndices.hasSeparatePresentQueue)
+        if (this->context->gpuDetails.hasSeparatePresentQueue)
         {
             VkDeviceQueueCreateInfo devicePresentQueueCreateInfo = {};
             devicePresentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             devicePresentQueueCreateInfo.pNext = nullptr;
             devicePresentQueueCreateInfo.flags = 0;
-            devicePresentQueueCreateInfo.queueFamilyIndex = this->context->queueFamilyIndices.graphicsFamilyIndex;
+            devicePresentQueueCreateInfo.queueFamilyIndex = this->context->gpuDetails.presentFamilyIndex;
             devicePresentQueueCreateInfo.queueCount = 1;
             devicePresentQueueCreateInfo.pQueuePriorities = queuePriorities.data();
 
@@ -362,15 +387,15 @@ namespace xr
         CHECK_ERROR(result);
 
         // Create the graphic queue using graphicsFamilyIndex for given physical device.
-        vkGetDeviceQueue(this->context->device, this->context->queueFamilyIndices.graphicsFamilyIndex, 0, &(this->context->graphicsQueue));
+        vkGetDeviceQueue(this->context->device, this->context->gpuDetails.graphicsFamilyIndex, 0, &(this->context->graphicsQueue));
 
-        if (!this->context->queueFamilyIndices.hasSeparatePresentQueue)
+        if (!this->context->gpuDetails.hasSeparatePresentQueue)
         {
             this->context->presentQueue = this->context->graphicsQueue;
         }
         else
         {
-            vkGetDeviceQueue(this->context->device, this->context->queueFamilyIndices.presentFamilyIndex, 0, &(this->context->presentQueue));
+            vkGetDeviceQueue(this->context->device, this->context->gpuDetails.presentFamilyIndex, 0, &(this->context->presentQueue));
         }
     }
 
@@ -526,18 +551,18 @@ namespace xr
         );
 
         {
-            logf("---------- Presentation Mode ----------");
+            LOG_FILE("---------- Presentation Mode ----------");
 
             if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
-                logf("Mode: MAILBOX [%d]", presentMode);
+                LOG_FILE("Mode: MAILBOX [%d]", presentMode);
             }
             else
             {
-                logf("Mode: %d", presentMode);
+                LOG_FILE("Mode: %d", presentMode);
             }
 
-            logf("---------- Presentation Mode End----------");
+            LOG_FILE("---------- Presentation Mode End----------");
         }
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
@@ -558,9 +583,9 @@ namespace xr
         swapchainCreateInfo.clipped = VK_TRUE;
         swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        if (this->context->queueFamilyIndices.hasSeparatePresentQueue)
+        if (this->context->gpuDetails.hasSeparatePresentQueue)
         {
-            std::vector<uint32_t> indices = {this->context->queueFamilyIndices.graphicsFamilyIndex, this->context->queueFamilyIndices.presentFamilyIndex};
+            std::vector<uint32_t> indices = {this->context->gpuDetails.graphicsFamilyIndex, this->context->gpuDetails.presentFamilyIndex};
 
             swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             swapchainCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(indices.size()); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
@@ -661,13 +686,13 @@ namespace xr
 
         if (!readFile(this->context->vertexShaderFilePath, &vertexShaderCode))
         {
-            logf("Cannot open vertex shader file: %s", this->context->vertexShaderFilePath);
+            LOG_FILE("Cannot open vertex shader file: %s", this->context->vertexShaderFilePath);
             assert(0 && "Cannot open vertex shader.");
         }
 
         if (!readFile(this->context->fragmentShaderFile, &fragmentShaderCode))
         {
-            logf("Cannot open fragment shader file: %s", this->context->fragmentShaderFile);
+            LOG_FILE("Cannot open fragment shader file: %s", this->context->fragmentShaderFile);
             assert(0 && "Cannot open fragment shader.");
         }
 
@@ -754,7 +779,7 @@ namespace xr
         multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampleStateCreateInfo.pNext = nullptr;
         multisampleStateCreateInfo.flags = 0;
-        multisampleStateCreateInfo.rasterizationSamples = this->context->msaaSamples;
+        multisampleStateCreateInfo.rasterizationSamples = this->context->gpuDetails.msaaSamples;
         multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
         multisampleStateCreateInfo.minSampleShading = 1.0f;
         multisampleStateCreateInfo.pSampleMask = nullptr;
@@ -907,7 +932,7 @@ namespace xr
             this->context->surfaceSize.width,
             this->context->surfaceSize.height,
             1,
-            this->context->msaaSamples,
+            this->context->gpuDetails.msaaSamples,
             depthStencilFormat,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -935,7 +960,7 @@ namespace xr
             this->context->surfaceSize.width,
             this->context->surfaceSize.height,
             1,
-            this->context->msaaSamples,
+            this->context->gpuDetails.msaaSamples,
             this->context->surfaceFormat.format,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -962,7 +987,7 @@ namespace xr
         VkAttachmentDescription colorAttachmentDescription = {};
         colorAttachmentDescription.flags = 0;
         colorAttachmentDescription.format = this->context->surfaceFormat.format;
-        colorAttachmentDescription.samples = this->context->msaaSamples;
+        colorAttachmentDescription.samples = this->context->gpuDetails.msaaSamples;
         colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -973,7 +998,7 @@ namespace xr
         VkAttachmentDescription depthStencilAttachmentDescription = {};
         depthStencilAttachmentDescription.flags = 0;
         depthStencilAttachmentDescription.format = findDepthFormat();
-        depthStencilAttachmentDescription.samples = this->context->msaaSamples;
+        depthStencilAttachmentDescription.samples = this->context->gpuDetails.msaaSamples;
         depthStencilAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthStencilAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthStencilAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -1125,7 +1150,7 @@ namespace xr
         commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         commandPoolCreateInfo.pNext = nullptr;
         commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        commandPoolCreateInfo.queueFamilyIndex = this->context->queueFamilyIndices.graphicsFamilyIndex;
+        commandPoolCreateInfo.queueFamilyIndex = this->context->gpuDetails.graphicsFamilyIndex;
 
         VkResult result = vkCreateCommandPool(this->context->device, &commandPoolCreateInfo, nullptr, &(this->context->commandPool));
         CHECK_ERROR(result);
@@ -1936,7 +1961,7 @@ namespace xr
 
     XR_API void Renderer::recreateSwapChain(std::vector<Model *> models)
     {
-        logf("---------- Recreate SwapChain --------");
+        LOG_FILE("---------- Recreate SwapChain --------");
         cleanupSwapChain(models);
         initSwapchain();
         initSwapchainImageViews();
@@ -2005,13 +2030,13 @@ namespace xr
         // Recreate the swap chain if result is suboptimal or out of data because we want the best possible result.
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            logf("Swapchain out of date before presenting");
+            LOG_FILE("Swapchain out of date before presenting");
             recreateSwapChain(models);
             return;
         }
         else if (result == VK_SUBOPTIMAL_KHR)
         {
-            logf("Swapchain suboptimal before presenting");
+            LOG_FILE("Swapchain suboptimal before presenting");
             recreateSwapChain(models);
             return;
         }
@@ -2061,13 +2086,13 @@ namespace xr
         // Recreate the swap chain if result is suboptimal or out of data because we want the best possible result.
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            logf("Swapchain out of date after presenting");
+            LOG_FILE("Swapchain out of date after presenting");
             recreateSwapChain(models);
             return;
         }
         else if (result == VK_SUBOPTIMAL_KHR)
         {
-            logf("Swapchain suboptimal after presenting");
+            LOG_FILE("Swapchain suboptimal after presenting");
             recreateSwapChain(models);
             return;
         }
@@ -2093,41 +2118,45 @@ namespace xr
 
     // Debug methods
 
-    void Renderer::printGpuProperties(VkPhysicalDeviceProperties *properties, uint32_t currentGpuIndex, uint32_t totalGpuCount)
+    void Renderer::printGpuProperties(GpuDetails *gpuDetails, uint32_t currentGpuIndex, uint32_t totalGpuCount)
     {
-        if (!properties)
+        if (!gpuDetails)
         {
-            logf("No GPU properties to show!!!");
+            LOG_FILE("No GPU properties to show!!!");
             return;
         }
 
-        logf("---------- GPU Properties [%d/%d]----------", currentGpuIndex, totalGpuCount);
-        logf("Device Name\t\t: %s", properties->deviceName);
-        logf("Vendor Id\t\t: %d", properties->vendorID);
-        logf("Device Id\t\t: %d", properties->deviceID);
-        logf("Device Type\t\t: %d", properties->deviceType);
-        logf("API Version\t\t: %d", properties->apiVersion);
-        logf("Driver Version\t\t: %d", properties->driverVersion);
-        log_uuid("Pipeline Cache UUID\t: ", properties->pipelineCacheUUID);
-        logf("---------- GPU Properties End ----------");
+        LOG_FILE("---------- GPU Properties [%d/%d] [Rank: %d] ----------", currentGpuIndex, totalGpuCount, gpuDetails->rank);
+        LOG_FILE("Device Name\t\t: %s", gpuDetails->properties.deviceName);
+        LOG_FILE("Vendor Id\t\t: %d", gpuDetails->properties.vendorID);
+        LOG_FILE("Device Id\t\t: %d", gpuDetails->properties.deviceID);
+        LOG_FILE("Device Type\t\t: %d", gpuDetails->properties.deviceType);
+        LOG_FILE("API Version\t\t: %d", gpuDetails->properties.apiVersion);
+        LOG_FILE("Driver Version\t\t: %d", gpuDetails->properties.driverVersion);
+        LOG_UUID("Pipeline Cache UUID\t: ", gpuDetails->properties.pipelineCacheUUID);
+        LOG_FILE("Graphics Family Index\t\t: %d", gpuDetails->graphicsFamilyIndex);
+        LOG_FILE("Present Family Index\t\t: %d", gpuDetails->presentFamilyIndex);
+        LOG_FILE("Has Separate Present Queue\t: %d", gpuDetails->hasSeparatePresentQueue);
+        LOG_FILE("MSAA samples count: %d", gpuDetails->msaaSamples);
+        LOG_FILE("---------- GPU Properties End ----------");
     }
 
     void Renderer::printInstanceLayerProperties(std::vector<VkLayerProperties> properties)
     {
 #ifndef NDEBUG
 
-        logf("---------- Instance Layer Properties ----------");
+        LOG_FILE("---------- Instance Layer Properties ----------");
 
         for (VkLayerProperties &nextProperty : properties)
         {
-            logf("Layer Name\t\t: %s", nextProperty.layerName);
-            logf("Description\t\t: %s", nextProperty.description);
-            logf("Spec Version\t\t: %d", nextProperty.specVersion);
-            logf("Implementation Version\t: %d", nextProperty.implementationVersion);
-            logf("------------------------------------------------------------");
+            LOG_FILE("Layer Name\t\t: %s", nextProperty.layerName);
+            LOG_FILE("Description\t\t: %s", nextProperty.description);
+            LOG_FILE("Spec Version\t\t: %d", nextProperty.specVersion);
+            LOG_FILE("Implementation Version\t: %d", nextProperty.implementationVersion);
+            LOG_FILE("------------------------------------------------------------");
         }
 
-        logf("---------- Instance Layer Properties End [%d] ----------", properties.size());
+        LOG_FILE("---------- Instance Layer Properties End [%d] ----------", properties.size());
 
 #endif
     }
@@ -2136,18 +2165,18 @@ namespace xr
     {
 #ifndef NDEBUG
 
-        logf("---------- Device Layer Properties ----------");
+        LOG_FILE("---------- Device Layer Properties ----------");
 
         for (VkLayerProperties &nextProperty : properties)
         {
-            logf("Layer Name\t\t: %s", nextProperty.layerName);
-            logf("Description\t\t: %s", nextProperty.description);
-            logf("Spec Version\t\t: %d", nextProperty.specVersion);
-            logf("Implementation Version\t: %d", nextProperty.implementationVersion);
-            logf("------------------------------------------------------------");
+            LOG_FILE("Layer Name\t\t: %s", nextProperty.layerName);
+            LOG_FILE("Description\t\t: %s", nextProperty.description);
+            LOG_FILE("Spec Version\t\t: %d", nextProperty.specVersion);
+            LOG_FILE("Implementation Version\t: %d", nextProperty.implementationVersion);
+            LOG_FILE("------------------------------------------------------------");
         }
 
-        logf("---------- Device Layer Properties End [%d] ----------", properties.size());
+        LOG_FILE("---------- Device Layer Properties End [%d] ----------", properties.size());
 
 #endif
     }
@@ -2156,16 +2185,16 @@ namespace xr
     {
 #ifndef NDEBUG
 
-        logf("---------- Surface Formats ----------");
+        LOG_FILE("---------- Surface Formats ----------");
 
         for (VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
         {
-            logf("format\t\t: %d", nextSurfaceFormat.format);
-            logf("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
-            logf("------------------------------------------------------------");
+            LOG_FILE("format\t\t: %d", nextSurfaceFormat.format);
+            LOG_FILE("colorSpace\t: %d", nextSurfaceFormat.colorSpace);
+            LOG_FILE("------------------------------------------------------------");
         }
 
-        logf("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
+        LOG_FILE("---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
 
 #endif
     }
@@ -2174,11 +2203,11 @@ namespace xr
     {
 #ifndef NDEBUG
 
-        logf("---------- Swapchain Image Count ----------");
-        logf("Min\t: %d", minImageCount);
-        logf("Max\t: %d", maxImageCount);
-        logf("Current\t: %d", currentImageCount);
-        logf("---------- Swapchain Image Count End ----------");
+        LOG_FILE("---------- Swapchain Image Count ----------");
+        LOG_FILE("Min\t: %d", minImageCount);
+        LOG_FILE("Max\t: %d", maxImageCount);
+        LOG_FILE("Current\t: %d", currentImageCount);
+        LOG_FILE("---------- Swapchain Image Count End ----------");
 
 #endif
     }

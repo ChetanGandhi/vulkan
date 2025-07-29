@@ -22,8 +22,6 @@
 #else
 #define XR_API
 #endif
-#elif
-#define XR_API
 #endif
 
 #if defined(_WIN32) // check for Windows
@@ -62,9 +60,6 @@
 #include <assert.h>
 #include <time.h>
 #include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "buildParam.h"
 #include "utils.h"
