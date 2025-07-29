@@ -2,15 +2,25 @@
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
 
-#include <xRenderer/vulkanWindow.h>
 #include <xRenderer/logger.h>
 #include <xRenderer/model.h>
 #include <xRenderer/texture.h>
 
 #include "lib/stb/stb_image.h"
 
+#include "vulkanWindow.h"
 #include "resource.h"
 #include "utils.h"
+
+xcb_connection_t *xcbConnection = NULL;
+xcb_screen_t *xcbScreen = NULL;
+xcb_window_t xcbWindow;
+xcb_intern_atom_reply_t *atom_wm_delete_window_reply = NULL;
+
+bool isCloseButtonClicked = false;
+
+int main(void);
+void handleEvent(const xcb_generic_event_t *event);
 
 xr::Model *homeModel = nullptr;
 xr::Texture *homeTexture = nullptr;

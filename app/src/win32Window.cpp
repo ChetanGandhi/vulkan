@@ -2,14 +2,26 @@
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 
-#include <xRenderer/vulkanWindow.h>
 #include <xRenderer/model.h>
 #include <xRenderer/texture.h>
 
 #include "lib/stb/stb_image.h"
 
+#include "vulkanWindow.h"
 #include "resource.h"
 #include "utils.h"
+
+static uint64_t win32ClassIdCounter = 0;
+std::string className;
+bool isActive = false;
+
+HINSTANCE hGlobalInstance = NULL;
+HWND hWindow = NULL;
+DWORD dwStyle;
+WINDOWPLACEMENT wpPrev = {sizeof(WINDOWPLACEMENT)};
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow);
 
 xr::Model *homeModel = nullptr;
 xr::Texture *homeTexture = nullptr;
@@ -192,9 +204,8 @@ void initializeVulkan()
         assert(0 && "Not able to load home texture.");
     }
 
-    LOG_INFO("Home texture loaded");
-
     renderer->initTextureImage(homeModel, homeTexture, homeTextureData);
+    LOG_INFO("Home texture loaded");
 
     // Free the texture data as no longer required
     free(homeTextureData);
@@ -224,9 +235,8 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room texture.");
     }
 
-    LOG_INFO("Viking room texture loaded");
-
     renderer->initTextureImage(vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
+    LOG_INFO("Viking room texture loaded");
 
     // Free the texture data as no longer required
     free(vikingRoomTextureData);
