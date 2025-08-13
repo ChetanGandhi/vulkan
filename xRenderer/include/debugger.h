@@ -11,7 +11,7 @@ namespace xr
 
         VkResult initialize(VkInstance *instance, VkDebugUtilsMessengerCreateInfoEXT *createInfo);
         void fillCreateInfo(VkDebugUtilsMessengerCreateInfoEXT *createInfo);
-        void destory(VkInstance *instance);
+        void destroy(VkInstance *instance);
 
         bool checkValidationLayerSupport();
 

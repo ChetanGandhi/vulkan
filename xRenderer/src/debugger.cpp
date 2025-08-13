@@ -131,7 +131,7 @@ namespace xr
         return VK_SUCCESS;
     }
 
-    void Debugger::destory(VkInstance *instance)
+    void Debugger::destroy(VkInstance *instance)
     {
 #ifndef NDEBUG
 

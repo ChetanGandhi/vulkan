@@ -169,22 +169,25 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
+    context->debugger = new xr::Debugger();
+
     renderer = new xr::Renderer(context);
+    renderer->initInstance(context);
 
     initPlatformSpecificSurface(&(context->instance->vkInstance), &(context->surface));
 
-    renderer->initDevice();
-    renderer->initLogicalDevice();
-    renderer->initSwapchain();
-    renderer->initSwapchainImageViews();
-    renderer->initRenderPass();
-    renderer->initDescriptorSetLayout();
-    renderer->initGraphicsPiplineCache();
-    renderer->initGraphicsPipline();
-    renderer->initCommandPool();
-    renderer->initDepthStencilImage();
-    renderer->initMSAAColorImage();
-    renderer->initFrameBuffers();
+    renderer->initDevice(context);
+    renderer->initLogicalDevice(context);
+    renderer->initSwapchain(context);
+    renderer->initSwapchainImageViews(context);
+    renderer->initRenderPass(context);
+    renderer->initDescriptorSetLayout(context);
+    renderer->initGraphicsPiplineCache(context);
+    renderer->initGraphicsPipline(context);
+    renderer->initCommandPool(context);
+    renderer->initDepthStencilImage(context);
+    renderer->initMSAAColorImage(context);
+    renderer->initFrameBuffers(context);
 
     homeModel = new xr::Model();
     bool homeModelLoaded = loadModal("../resources/models/chalet/chalet.obj", homeModel);
@@ -204,18 +207,18 @@ void initializeVulkan()
         assert(0 && "Not able to load home texture.");
     }
 
-    renderer->initTextureImage(homeModel, homeTexture, homeTextureData);
+    renderer->initTextureImage(context, homeModel, homeTexture, homeTextureData);
     LOG_INFO("Home texture loaded");
 
     // Free the texture data as no longer required
     free(homeTextureData);
     homeTextureData = nullptr;
 
-    renderer->initTextureImageView(homeModel, homeTexture);
-    renderer->initTextureSampler(homeModel, homeTexture);
-    renderer->initVertexBuffer(homeModel);
-    renderer->initIndexBuffer(homeModel);
-    renderer->initUniformBuffers(homeModel);
+    renderer->initTextureImageView(context, homeModel, homeTexture);
+    renderer->initTextureSampler(context, homeModel, homeTexture);
+    renderer->initVertexBuffer(context, homeModel);
+    renderer->initIndexBuffer(context, homeModel);
+    renderer->initUniformBuffers(context, homeModel);
 
     vikingRoomModel = new xr::Model();
     bool vikingRoomModelLoaded = loadModal("../resources/models/vikingRoom/vikingRoom.obj", vikingRoomModel);
@@ -235,23 +238,23 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room texture.");
     }
 
-    renderer->initTextureImage(vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
+    renderer->initTextureImage(context, vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
     LOG_INFO("Viking room texture loaded");
 
     // Free the texture data as no longer required
     free(vikingRoomTextureData);
     vikingRoomTextureData = nullptr;
 
-    renderer->initTextureImageView(vikingRoomModel, vikingRoomTexture);
-    renderer->initTextureSampler(vikingRoomModel, vikingRoomTexture);
-    renderer->initVertexBuffer(vikingRoomModel);
-    renderer->initIndexBuffer(vikingRoomModel);
-    renderer->initUniformBuffers(vikingRoomModel);
+    renderer->initTextureImageView(context, vikingRoomModel, vikingRoomTexture);
+    renderer->initTextureSampler(context, vikingRoomModel, vikingRoomTexture);
+    renderer->initVertexBuffer(context, vikingRoomModel);
+    renderer->initIndexBuffer(context, vikingRoomModel);
+    renderer->initUniformBuffers(context, vikingRoomModel);
 
-    renderer->initDescriptorPool(2);
-    renderer->initDescriptorSets({homeModel, vikingRoomModel});
-    renderer->initCommandBuffers({homeModel, vikingRoomModel});
-    renderer->initSynchronizations();
+    renderer->initDescriptorPool(context, 2);
+    renderer->initDescriptorSets(context, {homeModel, vikingRoomModel});
+    renderer->initCommandBuffers(context, {homeModel, vikingRoomModel});
+    renderer->initSynchronizations(context);
 }
 
 void cleanUp()
@@ -266,37 +269,37 @@ void cleanUp()
 
     if (renderer != nullptr)
     {
-        renderer->waitForIdle();
-        renderer->destroySynchronizations();
-        renderer->destroyCommandBuffers();
-        renderer->destroyDescriptorSets({homeModel, vikingRoomModel});
-        renderer->destroyDescriptorPool();
+        renderer->waitForIdle(context);
+        renderer->destroySynchronizations(context);
+        renderer->destroyCommandBuffers(context);
+        renderer->destroyDescriptorSets(context, {homeModel, vikingRoomModel});
+        renderer->destroyDescriptorPool(context);
 
-        renderer->destroyUniformBuffers(homeModel);
-        renderer->destroyIndexBuffer(homeModel);
-        renderer->destroyVertexBuffer(homeModel);
-        renderer->destroyTextureSampler(homeModel);
-        renderer->destroyTextureImageView(homeModel);
-        renderer->destroyTextureImage(homeModel);
+        renderer->destroyUniformBuffers(context, homeModel);
+        renderer->destroyIndexBuffer(context, homeModel);
+        renderer->destroyVertexBuffer(context, homeModel);
+        renderer->destroyTextureSampler(context, homeModel);
+        renderer->destroyTextureImageView(context, homeModel);
+        renderer->destroyTextureImage(context, homeModel);
 
-        renderer->destroyUniformBuffers(vikingRoomModel);
-        renderer->destroyIndexBuffer(vikingRoomModel);
-        renderer->destroyVertexBuffer(vikingRoomModel);
-        renderer->destroyTextureSampler(vikingRoomModel);
-        renderer->destroyTextureImageView(vikingRoomModel);
-        renderer->destroyTextureImage(vikingRoomModel);
+        renderer->destroyUniformBuffers(context, vikingRoomModel);
+        renderer->destroyIndexBuffer(context, vikingRoomModel);
+        renderer->destroyVertexBuffer(context, vikingRoomModel);
+        renderer->destroyTextureSampler(context, vikingRoomModel);
+        renderer->destroyTextureImageView(context, vikingRoomModel);
+        renderer->destroyTextureImage(context, vikingRoomModel);
 
-        renderer->destroyFrameBuffers();
-        renderer->destroyMSAAColorImage();
-        renderer->destroyDepthStencilImage();
-        renderer->destroyCommandPool();
-        renderer->destroyGraphicsPipline();
-        renderer->destroyGraphicsPiplineCache();
-        renderer->destroyDescriptorSetLayout();
-        renderer->destroyRenderPass();
-        renderer->destroySwapchainImageViews();
-        renderer->destroySwapchain();
-        renderer->destroyDevice();
+        renderer->destroyFrameBuffers(context);
+        renderer->destroyMSAAColorImage(context);
+        renderer->destroyDepthStencilImage(context);
+        renderer->destroyCommandPool(context);
+        renderer->destroyGraphicsPipline(context);
+        renderer->destroyGraphicsPiplineCache(context);
+        renderer->destroyDescriptorSetLayout(context);
+        renderer->destroyRenderPass(context);
+        renderer->destroySwapchainImageViews(context);
+        renderer->destroySwapchain(context);
+        renderer->destroyDevice(context);
     }
 
     // The surface need to be destroyed before instance is deleted.
@@ -328,9 +331,16 @@ void cleanUp()
 
     if (renderer)
     {
-        // Instance is deleted in destructor of Renderer class.
+        renderer->destroyInstance(context);
+
         delete renderer;
         renderer = nullptr;
+    }
+
+    if (context->debugger)
+    {
+        delete context->debugger;
+        context->debugger = nullptr;
     }
 
     if (context)
@@ -435,7 +445,7 @@ int mainLoop()
 
                     updateHomeModel();
                     updateVikingRoomModel();
-                    renderer->render({homeModel, vikingRoomModel});
+                    renderer->render(context, {homeModel, vikingRoomModel});
                 }
             }
         }
@@ -480,7 +490,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (renderer != nullptr)
     {
-        renderer->recreateSwapChain({homeModel, vikingRoomModel});
+        renderer->recreateSwapChain(context, {homeModel, vikingRoomModel});
     }
 }
 
