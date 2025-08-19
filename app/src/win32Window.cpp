@@ -2,6 +2,7 @@
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 
+#include <xRenderer/logger.h>
 #include <xRenderer/model.h>
 #include <xRenderer/texture.h>
 
@@ -200,7 +201,10 @@ void initializeVulkan()
     LOG_INFO("Home model loaded");
 
     homeTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
-    stbi_uc *homeTextureData = loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture);
+    memset((void *)homeTexture, 0, sizeof(xr::Texture));
+
+    stbi_uc *homeTextureData = nullptr;
+    loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
 
     if (!homeTextureData)
     {
@@ -211,8 +215,12 @@ void initializeVulkan()
     LOG_INFO("Home texture loaded");
 
     // Free the texture data as no longer required
-    free(homeTextureData);
-    homeTextureData = nullptr;
+    if (homeTextureData)
+    {
+        free(homeTextureData);
+        homeTextureData = nullptr;
+        LOG_INFO("Free home texture data");
+    }
 
     renderer->initTextureImageView(context, homeModel, homeTexture);
     renderer->initTextureSampler(context, homeModel, homeTexture);
@@ -231,7 +239,10 @@ void initializeVulkan()
     LOG_INFO("Viking room model loaded");
 
     vikingRoomTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
-    stbi_uc *vikingRoomTextureData = loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture);
+    memset((void *)vikingRoomTexture, 0, sizeof(xr::Texture));
+
+    stbi_uc *vikingRoomTextureData = nullptr;
+    loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
 
     if (!vikingRoomTextureData)
     {
@@ -242,8 +253,12 @@ void initializeVulkan()
     LOG_INFO("Viking room texture loaded");
 
     // Free the texture data as no longer required
-    free(vikingRoomTextureData);
-    vikingRoomTextureData = nullptr;
+    if (vikingRoomTextureData)
+    {
+        free(vikingRoomTextureData);
+        vikingRoomTextureData = nullptr;
+        LOG_INFO("Free viking room texture loaded");
+    }
 
     renderer->initTextureImageView(context, vikingRoomModel, vikingRoomTexture);
     renderer->initTextureSampler(context, vikingRoomModel, vikingRoomTexture);

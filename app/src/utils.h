@@ -4,4 +4,4 @@
 #include <xRenderer/vertex.h>
 
 bool loadModal(const char *modelFilePath, xr::Model *model);
-stbi_uc *loadTexture(const char *textureFilePath, xr::Texture *texture);
+void loadTexture(const char *textureFilePath, xr::Texture *texture, stbi_uc **pixels);

@@ -430,14 +430,14 @@ namespace xr
         if (surfaceFormats.size() == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
         {
             VkSurfaceFormatKHR surfaceFormat = {};
-            surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
+            surfaceFormat.format = VK_FORMAT_B8G8R8A8_SRGB;
             surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
             return surfaceFormat;
         }
 
         for (const VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
         {
-            if (nextSurfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && nextSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            if (nextSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB && nextSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
                 return nextSurfaceFormat;
             }
@@ -1257,7 +1257,7 @@ namespace xr
             static_cast<uint32_t>(texture->height),
             texture->mipLevels,
             VK_SAMPLE_COUNT_1_BIT,
-            VK_FORMAT_R8G8B8A8_UNORM,
+            texture->format,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1266,7 +1266,7 @@ namespace xr
         );
 
         transitionImageLayout(
-            context, model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels
+            context, model->textureImage, texture->format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels
         );
 
         copyBufferToImage(context, stagingImageBuffer, model->textureImage, static_cast<uint32_t>(texture->width), static_cast<uint32_t>(texture->height));
@@ -1402,7 +1402,7 @@ namespace xr
 
     XR_API void Renderer::initTextureImageView(Context *context, Model *model, Texture *texture)
     {
-        createImageView(context, model->textureImage, VK_FORMAT_R8G8B8A8_UNORM, model->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, texture->mipLevels);
+        createImageView(context, model->textureImage, texture->format, model->textureImageView, VK_IMAGE_ASPECT_COLOR_BIT, texture->mipLevels);
     }
 
     XR_API void Renderer::destroyTextureImageView(Context *context, Model *model)

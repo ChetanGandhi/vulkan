@@ -73,17 +73,17 @@ bool loadModal(const char *modelFilePath, xr::Model *model)
     return true;
 };
 
-stbi_uc *loadTexture(const char *textureFilePath, xr::Texture *texture)
+void loadTexture(const char *textureFilePath, xr::Texture *texture, stbi_uc **pixels)
 {
     int textureWidth = 0;
     int textureHeight = 0;
     int textureChannels = 0;
 
-    stbi_uc *pixels = stbi_load(textureFilePath, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+    *pixels = stbi_load(textureFilePath, &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
 
     texture->width = textureWidth;
     texture->height = textureHeight;
     texture->channels = textureChannels;
     texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
-    return pixels;
+    texture->format = VK_FORMAT_R8G8B8A8_SRGB;
 };
