@@ -15,6 +15,7 @@
 
 #else
 
+#define LOG(x_tag, x_message, ...) ((void)0)
 #define LOG_INFO(x_message, ...) ((void)0)
 #define LOG_WARNING(x_message, ...) ((void)0)
 #define LOG_ERROR(x_message, ...) ((void)0)
