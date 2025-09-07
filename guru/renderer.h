@@ -3,7 +3,7 @@
 #include <vector>
 #include <array>
 #include <string>
-#include <glm/glm.hpp>
+#include "lib/glm/glm.hpp"
 
 #include "platform.h"
 #include "common.h"

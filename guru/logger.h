@@ -6,6 +6,7 @@
 #include <string>
 #include <iomanip>
 #include <stdlib.h>
+#include <cstdint>
 
 #if defined (ENABLE_DEBUG)
 

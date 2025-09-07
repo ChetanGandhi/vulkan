@@ -1,0 +1,17 @@
+{
+    "folders": [
+        {
+            "path": "xRenderer"
+        },
+        {
+            "path": "app"
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "*.tsv": "robot",
+            "vector": "cpp",
+            "xstring": "cpp"
+        }
+    }
+}

@@ -1,8 +1,10 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
+#include "lib/glm/glm.hpp"
+#include "lib/glm/gtx/hash.hpp"
 
 struct Vertex {
     glm::vec3 position;

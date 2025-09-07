@@ -1,7 +1,6 @@
 // #pragma once
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #define STB_IMAGE_IMPLEMENTATION
 #define GURU_RESOURCE_PATH "resources/textures/guru.png"
 #define WORKGROUP_SIZE 32
@@ -13,8 +12,8 @@
 #include <set>
 #include <chrono>
 #include <unordered_map>
-#include <glm/gtc/matrix_transform.hpp>
-#include <stb/stb_image.h>
+#include "lib/glm/gtc/matrix_transform.hpp"
+#include "lib/stb/stb_image.h"
 
 #include "buildParam.h"
 #include "platform.h"
@@ -410,7 +409,7 @@ void Renderer::initDevice()
         {
             GpuDetails nextGpuDetails = gpuDetailsList[counter];
 
-            if(isDeviceSuitable(nextGpuDetails.gpu))
+            if(nextGpuDetails.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && isDeviceSuitable(nextGpuDetails.gpu))
             {
                 gpuDetails = nextGpuDetails;
                 selectedGpuIndex = counter;
