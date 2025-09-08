@@ -3,5 +3,5 @@
 #include <xRenderer/model.h>
 #include <xRenderer/vertex.h>
 
-bool loadModal(const char *modelFilePath, xr::Model *model);
-void loadTexture(const char *textureFilePath, xr::Texture *texture, stbi_uc **pixels);
+bool xrLoadModal(const char *modelFilePath, XRModel *model);
+void xrLoadTexture(const char *textureFilePath, XRTexture *texture, stbi_uc **pixels);

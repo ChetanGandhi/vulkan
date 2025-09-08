@@ -1,21 +1,10 @@
 #pragma once
 
 #include "platform.h"
+#include "context.h"
 
-namespace xr
-{
-    class Debugger
-    {
-      public:
-        const char *validationLayerName = "VK_LAYER_KHRONOS_validation";
+XR_API VkResult xrIsValidationLayerSupport(XrContext *context, const char *validationLayerName);
+XR_API void xrFillDebuggerCreateInfo(XrContext *context, VkDebugUtilsMessengerCreateInfoEXT *createInfo);
 
-        VkResult initialize(VkInstance *instance, VkDebugUtilsMessengerCreateInfoEXT *createInfo);
-        void fillCreateInfo(VkDebugUtilsMessengerCreateInfoEXT *createInfo);
-        void destroy(VkInstance *instance);
-
-        bool checkValidationLayerSupport();
-
-      private:
-        VkDebugUtilsMessengerEXT pDebugMessenger;
-    };
-} // namespace xr
+XR_API VkResult xrCreateDebugger(XrContext *context, VkDebugUtilsMessengerCreateInfoEXT *createInfo);
+XR_API VkResult xrDestroyDebugger(XrContext *context);

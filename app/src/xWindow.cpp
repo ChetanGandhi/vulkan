@@ -22,11 +22,11 @@ bool isCloseButtonClicked = false;
 int main(void);
 void handleEvent(const xcb_generic_event_t *event);
 
-xr::Model *homeModel = nullptr;
-xr::Texture *homeTexture = nullptr;
+XRModel *homeModel = nullptr;
+XRTexture *homeTexture = nullptr;
 
-xr::Model *vikingRoomModel = nullptr;
-xr::Texture *vikingRoomTexture = nullptr;
+XRModel *vikingRoomModel = nullptr;
+XRTexture *vikingRoomTexture = nullptr;
 
 void handleEvent(const xcb_generic_event_t *event)
 {
@@ -80,12 +80,12 @@ void handleEvent(const xcb_generic_event_t *event)
 
 int main(void)
 {
-    xr::Logger::initialize("debug_linux.log");
+    XRLogger::initialize("debug_linux.log");
 
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | XWindows";
 
-    context = new xr::Context();
+    context = new XrContext();
     context->surfaceSize = {};
     context->surfaceSize.width = 800;
     context->surfaceSize.height = 600;
@@ -98,7 +98,7 @@ int main(void)
     int returnCode = mainLoop();
 
     cleanUp();
-    xr::Logger::close();
+    XRLogger::close();
 
     return returnCode;
 }
@@ -208,9 +208,9 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
-    context->debugger = new xr::Debugger();
+    context->debugger = new XRDebugger();
 
-    renderer = new xr::Renderer(context);
+    renderer = new XRRenderer(context);
     renderer->initInstance(context);
 
     initPlatformSpecificSurface(&(context->instance->vkInstance), &(context->surface));
@@ -228,7 +228,7 @@ void initializeVulkan()
     renderer->initMSAAColorImage(context);
     renderer->initFrameBuffers(context);
 
-    homeModel = new xr::Model();
+    homeModel = new XRModel();
     bool homeModelLoaded = loadModal("../resources/models/chalet/chalet.obj", homeModel);
 
     if (!homeModelLoaded)
@@ -238,8 +238,8 @@ void initializeVulkan()
 
     LOG_INFO("Home model loaded");
 
-    homeTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
-    memset((void *)homeTexture, 0, sizeof(xr::Texture));
+    homeTexture = (XRTexture *)malloc(sizeof(XRTexture));
+    memset((void *)homeTexture, 0, sizeof(XRTexture));
 
     stbi_uc *homeTextureData = nullptr;
     loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
@@ -266,7 +266,7 @@ void initializeVulkan()
     renderer->initIndexBuffer(context, homeModel);
     renderer->initUniformBuffers(context, homeModel);
 
-    vikingRoomModel = new xr::Model();
+    vikingRoomModel = new XRModel();
     bool vikingRoomModelLoaded = loadModal("../resources/models/vikingRoom/vikingRoom.obj", vikingRoomModel);
 
     if (!vikingRoomModelLoaded)
@@ -276,8 +276,8 @@ void initializeVulkan()
 
     LOG_INFO("Viking room model loaded");
 
-    vikingRoomTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
-    memset((void *)vikingRoomTexture, 0, sizeof(xr::Texture));
+    vikingRoomTexture = (XRTexture *)malloc(sizeof(XRTexture));
+    memset((void *)vikingRoomTexture, 0, sizeof(XRTexture));
 
     stbi_uc *vikingRoomTextureData = nullptr;
     loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
@@ -417,7 +417,7 @@ void updateHomeModel()
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(homeModel->ubo), 0, sizeof(xr::UniformBufferObject));
+    memset((void *)&(homeModel->ubo), 0, sizeof(XRUniformBufferObject));
     homeModel->ubo.model = translationMatrix * rotationMatrix;
     homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceSize.width / (float)context->surfaceSize.height, 0.1f, 100.0f);
@@ -439,7 +439,7 @@ void updateVikingRoomModel()
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(xr::UniformBufferObject));
+    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(XRUniformBufferObject));
     vikingRoomModel->ubo.model = translationMatrix * rotationMatrix;
     vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     vikingRoomModel->ubo.projection =

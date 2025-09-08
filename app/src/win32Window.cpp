@@ -24,11 +24,11 @@ WINDOWPLACEMENT wpPrev = {sizeof(WINDOWPLACEMENT)};
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow);
 
-xr::Model *homeModel = nullptr;
-xr::Texture *homeTexture = nullptr;
+XRModel *homeModel = nullptr;
+XRTexture *homeTexture = nullptr;
 
-xr::Model *vikingRoomModel = nullptr;
-xr::Texture *vikingRoomTexture = nullptr;
+XRModel *vikingRoomModel = nullptr;
+XRTexture *vikingRoomTexture = nullptr;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -74,12 +74,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-    xr::Logger::initialize("debug_win32.log");
+    XRLogger::initialize("debug_win32.log");
 
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | Win32";
 
-    context = new xr::Context();
+    context = new XrContext();
     context->surfaceSize = {};
     context->surfaceSize.width = 800;
     context->surfaceSize.height = 600;
@@ -94,7 +94,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     int returnCode = mainLoop();
 
     cleanUp();
-    xr::Logger::close();
+    XRLogger::close();
 
     return returnCode;
 }
@@ -170,27 +170,36 @@ void destroyPlatformSpecificWindow()
 
 void initializeVulkan()
 {
-    context->debugger = new xr::Debugger();
+    context->debugger = new XRDebugger();
 
-    renderer = new xr::Renderer(context);
-    renderer->initInstance(context);
+    VkApplicationInfo applicationInfo;
+    memset((void *), &applicationInfo, 0, sizeof(VkApplicationInfo));
+    applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    applicationInfo.pNext = nullptr;
+    applicationInfo.apiVersion = VK_API_VERSION_1_0;
+    applicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    applicationInfo.pApplicationName = "Vulkan";
+    applicationInfo.pEngineName = nullptr;
+    applicationInfo.engineVersion = 0;
+
+    xrInitInstance(context, &applicationInfo);
 
     initPlatformSpecificSurface(&(context->instance->vkInstance), &(context->surface));
 
-    renderer->initDevice(context);
-    renderer->initLogicalDevice(context);
-    renderer->initSwapchain(context);
-    renderer->initSwapchainImageViews(context);
-    renderer->initRenderPass(context);
-    renderer->initDescriptorSetLayout(context);
-    renderer->initGraphicsPiplineCache(context);
-    renderer->initGraphicsPipline(context);
-    renderer->initCommandPool(context);
-    renderer->initDepthStencilImage(context);
-    renderer->initMSAAColorImage(context);
-    renderer->initFrameBuffers(context);
+    xrInitDevice(context);
+    xrInitLogicalDevice(context);
+    xrInitSwapchain(context);
+    xrInitSwapchainImageViews(context);
+    xrInitRenderPass(context);
+    xrInitDescriptorSetLayout(context);
+    xrInitGraphicsPiplineCache(context);
+    xrInitGraphicsPipline(context);
+    xrInitCommandPool(context);
+    xrInitDepthStencilImage(context);
+    xrInitMSAAColorImage(context);
+    xrInitFrameBuffers(context);
 
-    homeModel = new xr::Model();
+    homeModel = new XRModel();
     bool homeModelLoaded = loadModal("../resources/models/chalet/chalet.obj", homeModel);
 
     if (!homeModelLoaded)
@@ -200,8 +209,8 @@ void initializeVulkan()
 
     LOG_INFO("Home model loaded");
 
-    homeTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
-    memset((void *)homeTexture, 0, sizeof(xr::Texture));
+    homeTexture = (XRTexture *)malloc(sizeof(XRTexture));
+    memset((void *)homeTexture, 0, sizeof(XRTexture));
 
     stbi_uc *homeTextureData = nullptr;
     loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
@@ -211,7 +220,7 @@ void initializeVulkan()
         assert(0 && "Not able to load home texture.");
     }
 
-    renderer->initTextureImage(context, homeModel, homeTexture, homeTextureData);
+    xrInitTextureImage(context, homeModel, homeTexture, homeTextureData);
     LOG_INFO("Home texture loaded");
 
     // Free the texture data as no longer required
@@ -222,13 +231,13 @@ void initializeVulkan()
         LOG_INFO("Free home texture data");
     }
 
-    renderer->initTextureImageView(context, homeModel, homeTexture);
-    renderer->initTextureSampler(context, homeModel, homeTexture);
-    renderer->initVertexBuffer(context, homeModel);
-    renderer->initIndexBuffer(context, homeModel);
-    renderer->initUniformBuffers(context, homeModel);
+    xrInitTextureImageView(context, homeModel, homeTexture);
+    xrInitTextureSampler(context, homeModel, homeTexture);
+    xrInitVertexBuffer(context, homeModel);
+    xrInitIndexBuffer(context, homeModel);
+    xrInitUniformBuffers(context, homeModel);
 
-    vikingRoomModel = new xr::Model();
+    vikingRoomModel = new XRModel();
     bool vikingRoomModelLoaded = loadModal("../resources/models/vikingRoom/vikingRoom.obj", vikingRoomModel);
 
     if (!vikingRoomModelLoaded)
@@ -238,8 +247,8 @@ void initializeVulkan()
 
     LOG_INFO("Viking room model loaded");
 
-    vikingRoomTexture = (xr::Texture *)malloc(sizeof(xr::Texture));
-    memset((void *)vikingRoomTexture, 0, sizeof(xr::Texture));
+    vikingRoomTexture = (XRTexture *)malloc(sizeof(XRTexture));
+    memset((void *)vikingRoomTexture, 0, sizeof(XRTexture));
 
     stbi_uc *vikingRoomTextureData = nullptr;
     loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
@@ -249,7 +258,7 @@ void initializeVulkan()
         assert(0 && "Not able to load viking room texture.");
     }
 
-    renderer->initTextureImage(context, vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
+    xrInitTextureImage(context, vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
     LOG_INFO("Viking room texture loaded");
 
     // Free the texture data as no longer required
@@ -260,16 +269,16 @@ void initializeVulkan()
         LOG_INFO("Free viking room texture loaded");
     }
 
-    renderer->initTextureImageView(context, vikingRoomModel, vikingRoomTexture);
-    renderer->initTextureSampler(context, vikingRoomModel, vikingRoomTexture);
-    renderer->initVertexBuffer(context, vikingRoomModel);
-    renderer->initIndexBuffer(context, vikingRoomModel);
-    renderer->initUniformBuffers(context, vikingRoomModel);
+    xrInitTextureImageView(context, vikingRoomModel, vikingRoomTexture);
+    xrInitTextureSampler(context, vikingRoomModel, vikingRoomTexture);
+    xrInitVertexBuffer(context, vikingRoomModel);
+    xrInitIndexBuffer(context, vikingRoomModel);
+    xrInitUniformBuffers(context, vikingRoomModel);
 
-    renderer->initDescriptorPool(context, 2);
-    renderer->initDescriptorSets(context, {homeModel, vikingRoomModel});
-    renderer->initCommandBuffers(context, {homeModel, vikingRoomModel});
-    renderer->initSynchronizations(context);
+    xrInitDescriptorPool(context, 2);
+    xrInitDescriptorSets(context, {homeModel, vikingRoomModel});
+    xrInitCommandBuffers(context, {homeModel, vikingRoomModel});
+    xrInitSynchronizations(context);
 }
 
 void cleanUp()
@@ -284,37 +293,37 @@ void cleanUp()
 
     if (renderer != nullptr)
     {
-        renderer->waitForIdle(context);
-        renderer->destroySynchronizations(context);
-        renderer->destroyCommandBuffers(context);
-        renderer->destroyDescriptorSets(context, {homeModel, vikingRoomModel});
-        renderer->destroyDescriptorPool(context);
+        xrWaitForIdle(context);
+        xrDestroySynchronizations(context);
+        xrDestroyCommandBuffers(context);
+        xrDestroyDescriptorSets(context, {homeModel, vikingRoomModel});
+        xrDestroyDescriptorPool(context);
 
-        renderer->destroyUniformBuffers(context, homeModel);
-        renderer->destroyIndexBuffer(context, homeModel);
-        renderer->destroyVertexBuffer(context, homeModel);
-        renderer->destroyTextureSampler(context, homeModel);
-        renderer->destroyTextureImageView(context, homeModel);
-        renderer->destroyTextureImage(context, homeModel);
+        xrDestroyUniformBuffers(context, homeModel);
+        xrDestroyIndexBuffer(context, homeModel);
+        xrDestroyVertexBuffer(context, homeModel);
+        xrDestroyTextureSampler(context, homeModel);
+        xrDestroyTextureImageView(context, homeModel);
+        xrDestroyTextureImage(context, homeModel);
 
-        renderer->destroyUniformBuffers(context, vikingRoomModel);
-        renderer->destroyIndexBuffer(context, vikingRoomModel);
-        renderer->destroyVertexBuffer(context, vikingRoomModel);
-        renderer->destroyTextureSampler(context, vikingRoomModel);
-        renderer->destroyTextureImageView(context, vikingRoomModel);
-        renderer->destroyTextureImage(context, vikingRoomModel);
+        xrDestroyUniformBuffers(context, vikingRoomModel);
+        xrDestroyIndexBuffer(context, vikingRoomModel);
+        xrDestroyVertexBuffer(context, vikingRoomModel);
+        xrDestroyTextureSampler(context, vikingRoomModel);
+        xrDestroyTextureImageView(context, vikingRoomModel);
+        xrDestroyTextureImage(context, vikingRoomModel);
 
-        renderer->destroyFrameBuffers(context);
-        renderer->destroyMSAAColorImage(context);
-        renderer->destroyDepthStencilImage(context);
-        renderer->destroyCommandPool(context);
-        renderer->destroyGraphicsPipline(context);
-        renderer->destroyGraphicsPiplineCache(context);
-        renderer->destroyDescriptorSetLayout(context);
-        renderer->destroyRenderPass(context);
-        renderer->destroySwapchainImageViews(context);
-        renderer->destroySwapchain(context);
-        renderer->destroyDevice(context);
+        xrDestroyFrameBuffers(context);
+        xrDestroyMSAAColorImage(context);
+        xrDestroyDepthStencilImage(context);
+        xrDestroyCommandPool(context);
+        xrDestroyGraphicsPipline(context);
+        xrDestroyGraphicsPiplineCache(context);
+        xrDestroyDescriptorSetLayout(context);
+        xrDestroyRenderPass(context);
+        xrDestroySwapchainImageViews(context);
+        xrDestroySwapchain(context);
+        xrDestroyDevice(context);
     }
 
     // The surface need to be destroyed before instance is deleted.
@@ -346,7 +355,7 @@ void cleanUp()
 
     if (renderer)
     {
-        renderer->destroyInstance(context);
+        xrDestroyInstance(context);
 
         delete renderer;
         renderer = nullptr;
@@ -379,7 +388,7 @@ void updateHomeModel()
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(homeModel->ubo), 0, sizeof(xr::UniformBufferObject));
+    memset((void *)&(homeModel->ubo), 0, sizeof(XRUniformBufferObject));
     homeModel->ubo.model = translationMatrix * rotationMatrix;
     homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceSize.width / (float)context->surfaceSize.height, 0.1f, 100.0f);
@@ -401,7 +410,7 @@ void updateVikingRoomModel()
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(xr::UniformBufferObject));
+    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(XRUniformBufferObject));
     vikingRoomModel->ubo.model = translationMatrix * rotationMatrix;
     vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     vikingRoomModel->ubo.projection =
@@ -460,7 +469,7 @@ int mainLoop()
 
                     updateHomeModel();
                     updateVikingRoomModel();
-                    renderer->render(context, {homeModel, vikingRoomModel});
+                    xrRender(context, {homeModel, vikingRoomModel});
                 }
             }
         }
@@ -505,7 +514,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (renderer != nullptr)
     {
-        renderer->recreateSwapChain(context, {homeModel, vikingRoomModel});
+        xrRecreateSwapChain(context, {homeModel, vikingRoomModel});
     }
 }
 

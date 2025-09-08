@@ -12,7 +12,7 @@
 
 #include "utils.h"
 
-bool loadModal(const char *modelFilePath, xr::Model *model)
+bool xrLoadModal(const char *modelFilePath, XRModel *model)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -24,27 +24,27 @@ bool loadModal(const char *modelFilePath, xr::Model *model)
 
     if (!warning.empty())
     {
-        LOG_WARNING(warning.c_str());
+        XR_LOG_WARNING(warning.c_str());
     }
 
     if (!error.empty())
     {
-        LOG_ERROR(error.c_str());
+        XR_LOG_ERROR(error.c_str());
     }
 
     if (!loaded)
     {
-        LOG_ERROR("Failed to load modal: %s | %s", modelFilePath, error.c_str());
+        XR_LOG_ERROR("Failed to load modal: %s | %s", modelFilePath, error.c_str());
         return false;
     }
 
-    std::unordered_map<xr::Vertex, uint32_t> uniqueVertices = {};
+    std::unordered_map<XRVertex, uint32_t> uniqueVertices = {};
 
     for (const tinyobj::shape_t &nextShape : shapes)
     {
         for (const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
         {
-            xr::Vertex nextVertex = {};
+            XRVertex nextVertex = {};
 
             // the attrib.vertices array is an array of float values instead of something like glm::vec3,
             // so you need to multiply the index by 3 to create group of 3 values.
@@ -73,7 +73,7 @@ bool loadModal(const char *modelFilePath, xr::Model *model)
     return true;
 };
 
-void loadTexture(const char *textureFilePath, xr::Texture *texture, stbi_uc **pixels)
+void xrLoadTexture(const char *textureFilePath, XRTexture *texture, stbi_uc **pixels)
 {
     int textureWidth = 0;
     int textureHeight = 0;

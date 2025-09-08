@@ -16,7 +16,7 @@ void cleanUp();
 
 int mainLoop();
 
-void render(xr::UniformBufferObject *ubo);
+void render(XRUniformBufferObject *ubo);
 void resize(uint32_t width, uint32_t height);
 void toggleFullscreen(bool isFullscreen);
 
@@ -27,5 +27,4 @@ bool isEscapeKeyPressed = false;
 std::string windowName;
 std::string windowTitle;
 
-xr::Context *context = nullptr;
-xr::Renderer *renderer = nullptr;
+XrContext *context = nullptr;

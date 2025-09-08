@@ -1,22 +1,14 @@
 #pragma once
 
 #include "platform.h"
-#include "debugger.h"
+#include "context.h"
 
-namespace xr
-{
-    class Instance
-    {
-      public:
-        Instance();
-        ~Instance();
+VkResult xrCreateVulkanInstance(
+    XrContext *context,
+    VkApplicationInfo *applicationInfo,
+    std::vector<const char *> *instanceLayers,
+    std::vector<const char *> *instanceExtensions,
+    VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo
+);
 
-        VkResult initVulkanInstance(
-            VkApplicationInfo *applicationInfo,
-            std::vector<const char *> *instanceLayers,
-            std::vector<const char *> *instanceExtensions,
-            VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo
-        );
-        VkInstance vkInstance = VK_NULL_HANDLE;
-    };
-} // namespace xr
+VkResult xrDestroyVulkanInstance(XrContext *context);
