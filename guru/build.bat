@@ -1,8 +1,8 @@
 cd shaders
 
-glslangValidator.exe -V shader.comp
-glslangValidator.exe -V shader.frag
-glslangValidator.exe -V shader.frag
+%VULKAN_SDK%\bin\glslangValidator.exe -V shader.comp
+%VULKAN_SDK%\bin\glslangValidator.exe -V shader.vert
+%VULKAN_SDK%\bin\glslangValidator.exe -V shader.frag
 
 cd ..
 
