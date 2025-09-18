@@ -8,10 +8,10 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/install/app/bin/app.exe",
+            "program": "${workspaceFolder}/build/windows/install/app/bin/app.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build/install/app/bin",
+            "cwd": "${workspaceFolder}/build/windows/install/app/bin",
             "environment": [],
             "externalConsole": false
         }

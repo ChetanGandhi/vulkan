@@ -1,57 +1,56 @@
 #include "logger.h"
 #include "utils.h"
 
-XR_API VkResult xrCreateLogger(const char* fileName, XrLogger* logger)
+XR_API VkResult xrCreateLogger(const char* fileName, XrLogger** logger)
 {
-    bool logFileCreated = true;
-
     char dateTime[100] = {0};
     size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
 
-    logger = (XrLogger*)malloc(sizeof(XrLogger));
+    *logger = (XrLogger*)malloc(sizeof(XrLogger));
+    memset((void*)*logger, 0, sizeof(XrLogger));
 
 #if defined(_WIN32) // check for Windows
 
-    fopen_s(&(logger->logfile), fileName, "w");
+    fopen_s(&(*logger)->logfile, fileName, "w");
 
 #elif defined(__linux) // check for Linux
 
-    logger->logfile = fopen(fileName, "w");
+    (*logger)->logfile = fopen(fileName, "w");
 
 #endif
 
-    if (logger->logfile == NULL)
+    if (!(*logger)->logfile)
     {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    fprintf_s(logger->logfile, "-----------------------------------\n");
-    fprintf_s(logger->logfile, "| Logs start: %s |\n", dateTime);
-    fprintf_s(logger->logfile, "-----------------------------------\n");
-    fflush(logger->logfile);
+    fprintf_s((*logger)->logfile, "-----------------------------------\n");
+    fprintf_s((*logger)->logfile, "| Logs start: %s |\n", dateTime);
+    fprintf_s((*logger)->logfile, "-----------------------------------\n");
+    fflush((*logger)->logfile);
 
     return VK_SUCCESS;
 }
 
-XR_API void xrDestroyLogger(XrLogger* logger)
+XR_API void xrDestroyLogger(XrLogger** logger)
 {
-    if (logger)
+    if ((*logger))
     {
-        if (logger->logfile)
+        if ((*logger)->logfile)
         {
             char dateTime[100];
             memset((void*)&dateTime, 0, sizeof(dateTime));
             size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
 
-            fprintf_s(logger->logfile, "-----------------------------------\n");
-            fprintf_s(logger->logfile, "| Logs end: %s   |\n", dateTime);
-            fprintf_s(logger->logfile, "-----------------------------------\n");
-            fflush(logger->logfile);
-            fclose(logger->logfile);
-            logger->logfile = VK_NULL_HANDLE;
+            fprintf_s((*logger)->logfile, "-----------------------------------\n");
+            fprintf_s((*logger)->logfile, "| Logs end: %s   |\n", dateTime);
+            fprintf_s((*logger)->logfile, "-----------------------------------\n");
+            fflush((*logger)->logfile);
+            fclose((*logger)->logfile);
+            (*logger)->logfile = VK_NULL_HANDLE;
         }
 
-        free(logger);
-        logger = VK_NULL_HANDLE;
+        free(*logger);
+        *logger = VK_NULL_HANDLE;
     }
 }

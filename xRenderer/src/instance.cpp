@@ -4,14 +4,13 @@ VkResult xrCreateVulkanInstance(
     XrContext *context,
     VkApplicationInfo *applicationInfo,
     std::vector<const char *> *instanceLayers,
-    std::vector<const char *> *instanceExtensions,
-    VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo
+    std::vector<const char *> *instanceExtensions
 )
 {
     VkInstanceCreateInfo instanceCreateInfo;
     memset((void *)&instanceCreateInfo, 0, sizeof(VkInstanceCreateInfo));
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pNext = debugUtilsMessengerCreateInfo;
+    instanceCreateInfo.pNext = VK_NULL_HANDLE;
     instanceCreateInfo.flags = 0;
     instanceCreateInfo.pApplicationInfo = applicationInfo;
     instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayers->size());

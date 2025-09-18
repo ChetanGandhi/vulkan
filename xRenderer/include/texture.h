@@ -5,8 +5,7 @@
 
 typedef struct XrTexture
 {
-    uint32_t width;
-    uint32_t height;
+    VkExtent2D extent;
     uint32_t channels;
     uint32_t mipLevels;
     VkFormat format;

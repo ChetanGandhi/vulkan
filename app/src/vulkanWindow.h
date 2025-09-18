@@ -5,18 +5,18 @@
 #include <xRenderer/common.h>
 #include <xRenderer/context.h>
 
-void initializePlatformSpecificWindow();
-void destroyPlatformSpecificWindow();
+void initializePlatformSpecificWindow(XrContext *context);
+void destroyPlatformSpecificWindow(XrContext *context);
 
-void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface);
-void destroyPlatformSpecificSurface();
+VkResult initPlatformSpecificSurface(XrContext *context);
+void destroyPlatformSpecificSurface(XrContext *context);
 
-void initializeVulkan();
-void cleanUp();
+void initializeVulkan(XrContext *context);
+void cleanUp(XrContext *context);
 
-int mainLoop();
+int mainLoop(XrContext *context);
 
-void render(XRUniformBufferObject *ubo);
+void render(XrContext *context, XrUniformBufferObject *ubo);
 void resize(uint32_t width, uint32_t height);
 void toggleFullscreen(bool isFullscreen);
 
@@ -27,4 +27,4 @@ bool isEscapeKeyPressed = false;
 std::string windowName;
 std::string windowTitle;
 
-XrContext *context = nullptr;
+XrContext *context = VK_NULL_HANDLE;

@@ -76,5 +76,5 @@ typedef struct XrLogger
     }
 } XrLogger;
 
-XR_API VkResult xrCreateLogger(const char* fileName, XrLogger* logger);
-XR_API void xrDestroyLogger(XrLogger* logger);
+XR_API VkResult xrCreateLogger(const char* fileName, XrLogger** logger);
+XR_API void xrDestroyLogger(XrLogger** logger);

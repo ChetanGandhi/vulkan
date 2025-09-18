@@ -7,15 +7,21 @@
 typedef struct XrContext
 {
     const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+    uint32_t swapchainImageCount = 2;
+    uint32_t currentFrame = 0;
     const char *vertexShaderFilePath = VK_NULL_HANDLE;
     const char *fragmentShaderFile = VK_NULL_HANDLE;
     XrLogger *logger = VK_NULL_HANDLE;
     VkInstance instance = VK_NULL_HANDLE;
-    VkDebugUtilsMessengerEXT pDebugMessenger = VK_NULL_HANDLE;
+    VkDebugReportCallbackEXT debugReportCallback = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
+    XrGpuDetails *gpuDetails = VK_NULL_HANDLE;
+    VkExtent2D surfaceExtent;
+    VkSurfaceFormatKHR surfaceFormat;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
+    XrSwapchainSupportDetails *swapchainSupportDetails;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
@@ -41,12 +47,4 @@ typedef struct XrContext
     std::vector<VkFence> inFlightFences;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
-
-    uint32_t swapchainImageCount = 2;
-    size_t currentFrame = 0;
-
-    VkSurfaceFormatKHR surfaceFormat = {};
-    XrSwapchainSupportDetails swapchainSupportDetails = {};
-    XrGpuDetails gpuDetails = {};
-    VkExtent2D surfaceSize = {};
 } XrContext;

@@ -7,10 +7,10 @@
 
 typedef struct XrModel
 {
-    std::vector<XrVertex> vertices;
-    std::vector<uint32_t> vertexIndices;
+    std::vector<XrVertex *> vertices = {};
+    std::vector<uint32_t> vertexIndices = {};
 
-    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<VkDescriptorSet> descriptorSets = {};
 
     VkBuffer vertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
@@ -18,9 +18,9 @@ typedef struct XrModel
     VkBuffer indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
 
-    XrUniformBufferObject ubo;
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    XrUniformBufferObject ubo = {};
+    std::vector<VkBuffer> uniformBuffers = {};
+    std::vector<VkDeviceMemory> uniformBuffersMemory = {};
 
     VkImage textureImage = VK_NULL_HANDLE;
     VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;

@@ -7,8 +7,7 @@ VkResult xrCreateVulkanInstance(
     XrContext *context,
     VkApplicationInfo *applicationInfo,
     std::vector<const char *> *instanceLayers,
-    std::vector<const char *> *instanceExtensions,
-    VkDebugUtilsMessengerCreateInfoEXT *debugUtilsMessengerCreateInfo
+    std::vector<const char *> *instanceExtensions
 );
 
 VkResult xrDestroyVulkanInstance(XrContext *context);

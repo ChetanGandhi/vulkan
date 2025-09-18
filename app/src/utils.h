@@ -1,7 +1,12 @@
 #pragma once
 
 #include <xRenderer/model.h>
+#include <xRenderer/texture.h>
 #include <xRenderer/vertex.h>
+#include <xRenderer/context.h>
 
-bool xrLoadModal(const char *modelFilePath, XRModel *model);
-void xrLoadTexture(const char *textureFilePath, XRTexture *texture, stbi_uc **pixels);
+#include "lib/stb/stb_image.h"
+#include "lib/tinyobj/tiny_obj_loader.h"
+
+bool xrLoadModal(XrContext *context, const char *modelFilePath, XrModel *model);
+void xrLoadTexture(XrContext *context, const char *textureFilePath, XrTexture *texture, stbi_uc **pixels);
