@@ -7,7 +7,7 @@
 
 typedef struct XrModel
 {
-    std::vector<XrVertex *> vertices = {};
+    std::vector<XrVertex> vertices = {};
     std::vector<uint32_t> vertexIndices = {};
 
     std::vector<VkDescriptorSet> descriptorSets = {};

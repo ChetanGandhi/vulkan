@@ -118,8 +118,8 @@ XR_API uint32_t xrFindMemoryTypeIndex(
     const VkMemoryPropertyFlags requiredMemoryProperties
 );
 
-XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer commandBuffer);
-XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer commandBuffer);
+XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer *commandBuffer);
+XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer *commandBuffer);
 
 // private
 void xrSetupLayersAndExtensions(XrContext *context);
@@ -129,7 +129,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
 
 VkResult xrTransitionImageLayout(
     XrContext *context,
-    VkImage image,
+    VkImage *image,
     VkFormat format,
     VkImageLayout oldImageLayout,
     VkImageLayout newImageLayout,

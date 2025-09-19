@@ -1372,7 +1372,9 @@ XR_API VkResult xrInitTextureImage(XrContext *context, XrModel *model, XrTexture
         &(model->textureImageMemory)
     );
 
-    xrTransitionImageLayout(context, model->textureImage, texture->format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels);
+    xrTransitionImageLayout(
+        context, &(model->textureImage), texture->format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels
+    );
 
     xrCopyBufferToImage(context, stagingImageBuffer, model->textureImage, &(texture->extent));
 
@@ -1400,7 +1402,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
     uint32_t mipHeight = texture->extent.height;
 
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    vkResult = xrBeginOneTimeCommand(context, commandBuffer);
+    vkResult = xrBeginOneTimeCommand(context, &commandBuffer);
 
     if (XR_IS_ERROR(vkResult))
     {
@@ -1518,7 +1520,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
     );
 
     // Now end the command buffer.
-    vkResult = xrEndOneTimeCommand(context, commandBuffer);
+    vkResult = xrEndOneTimeCommand(context, &commandBuffer);
 
     return vkResult;
 }
@@ -1630,7 +1632,7 @@ XR_API VkResult xrCreateBuffer(
     return vkResult;
 }
 
-XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer commandBuffer)
+XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer *commandBuffer)
 {
     VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1639,7 +1641,7 @@ XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer comman
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = 1;
 
-    VkResult vkResult = vkAllocateCommandBuffers(context->device, &commandBufferAllocateInfo, &commandBuffer);
+    VkResult vkResult = vkAllocateCommandBuffers(context->device, &commandBufferAllocateInfo, commandBuffer);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1651,12 +1653,12 @@ XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer comman
     commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-    return vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+    return vkBeginCommandBuffer(*commandBuffer, &commandBufferBeginInfo);
 }
 
-XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer commandBuffer)
+XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer *commandBuffer)
 {
-    VkResult vkResult = vkEndCommandBuffer(commandBuffer);
+    VkResult vkResult = vkEndCommandBuffer(*commandBuffer);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1669,7 +1671,7 @@ XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer commandB
     submitInfo.pWaitSemaphores = nullptr;
     submitInfo.pWaitDstStageMask = nullptr;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pCommandBuffers = commandBuffer;
     submitInfo.signalSemaphoreCount = 0;
     submitInfo.pSignalSemaphores = nullptr;
 
@@ -1680,14 +1682,14 @@ XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer commandB
     }
 
     vkQueueWaitIdle(context->graphicsQueue);
-    vkFreeCommandBuffers(context->device, context->commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(context->device, context->commandPool, 1, commandBuffer);
 
     return vkResult;
 }
 
 VkResult xrTransitionImageLayout(
     XrContext *context,
-    VkImage image,
+    VkImage *image,
     VkFormat format,
     VkImageLayout oldImageLayout,
     VkImageLayout newImageLayout,
@@ -1697,7 +1699,7 @@ VkResult xrTransitionImageLayout(
     VkResult vkResult = VK_SUCCESS;
 
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    vkResult = xrBeginOneTimeCommand(context, commandBuffer);
+    vkResult = xrBeginOneTimeCommand(context, &commandBuffer);
 
     if (XR_IS_ERROR(vkResult))
     {
@@ -1711,7 +1713,7 @@ VkResult xrTransitionImageLayout(
     imageMemoryBarrier.newLayout = newImageLayout;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    imageMemoryBarrier.image = image;
+    imageMemoryBarrier.image = *image;
     imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
     imageMemoryBarrier.subresourceRange.levelCount = mipLevels;
@@ -1744,7 +1746,7 @@ VkResult xrTransitionImageLayout(
 
     vkCmdPipelineBarrier(commandBuffer, sourceStageMask, destinationStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 
-    vkResult = xrEndOneTimeCommand(context, commandBuffer);
+    vkResult = xrEndOneTimeCommand(context, &commandBuffer);
 
     return vkResult;
 }
@@ -1754,7 +1756,7 @@ XR_API VkResult xrCopyBuffer(XrContext *context, VkBuffer sourceBuffer, VkBuffer
     VkResult vkResult = VK_SUCCESS;
 
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    vkResult = xrBeginOneTimeCommand(context, commandBuffer);
+    vkResult = xrBeginOneTimeCommand(context, &commandBuffer);
 
     if (XR_IS_ERROR(vkResult))
     {
@@ -1768,7 +1770,7 @@ XR_API VkResult xrCopyBuffer(XrContext *context, VkBuffer sourceBuffer, VkBuffer
 
     vkCmdCopyBuffer(commandBuffer, sourceBuffer, targetBuffer, 1, &copyRegion);
 
-    vkResult = xrEndOneTimeCommand(context, commandBuffer);
+    vkResult = xrEndOneTimeCommand(context, &commandBuffer);
 
     return vkResult;
 }
@@ -1778,7 +1780,7 @@ XR_API VkResult xrCopyBufferToImage(XrContext *context, VkBuffer buffer, VkImage
     VkResult vkResult = VK_SUCCESS;
 
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    vkResult = xrBeginOneTimeCommand(context, commandBuffer);
+    vkResult = xrBeginOneTimeCommand(context, &commandBuffer);
 
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
@@ -1797,7 +1799,7 @@ XR_API VkResult xrCopyBufferToImage(XrContext *context, VkBuffer buffer, VkImage
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    vkResult = xrEndOneTimeCommand(context, commandBuffer);
+    vkResult = xrEndOneTimeCommand(context, &commandBuffer);
 
     return vkResult;
 }
@@ -2154,9 +2156,9 @@ XR_API VkResult xrDestroyCommandBuffers(XrContext *context)
 
 XR_API VkResult xrInitSynchronizations(XrContext *context)
 {
-    context->imageAvailableSemaphores.resize(context->MAX_FRAMES_IN_FLIGHT);
-    context->renderFinishedSemaphores.resize(context->MAX_FRAMES_IN_FLIGHT);
-    context->inFlightFences.resize(context->MAX_FRAMES_IN_FLIGHT);
+    context->imageAvailableSemaphores.resize(context->swapchainImageCount);
+    context->renderFinishedSemaphores.resize(context->swapchainImageCount);
+    context->inFlightFences.resize(context->swapchainImageCount);
 
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -2168,7 +2170,7 @@ XR_API VkResult xrInitSynchronizations(XrContext *context)
     fenceCreateInfo.pNext = nullptr;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (size_t counter = 0; counter < context->MAX_FRAMES_IN_FLIGHT; ++counter)
+    for (size_t counter = 0; counter < context->swapchainImageCount; ++counter)
     {
         VkResult vkResult = vkCreateSemaphore(context->device, &semaphoreCreateInfo, nullptr, &context->imageAvailableSemaphores[counter]);
         if (XR_IS_ERROR(vkResult))
@@ -2194,7 +2196,7 @@ XR_API VkResult xrInitSynchronizations(XrContext *context)
 
 XR_API VkResult xrDestroySynchronizations(XrContext *context)
 {
-    for (size_t counter = 0; counter < context->MAX_FRAMES_IN_FLIGHT; ++counter)
+    for (size_t counter = 0; counter < context->swapchainImageCount; ++counter)
     {
         vkDestroySemaphore(context->device, context->imageAvailableSemaphores[counter], nullptr);
         vkDestroySemaphore(context->device, context->renderFinishedSemaphores[counter], nullptr);
@@ -2262,7 +2264,7 @@ XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models)
     VkResult vkResult = VK_SUCCESS;
 
     // Update the current frame count at start as we might return in between and fail to update the counter
-    context->currentFrame = (context->currentFrame + 1) % context->MAX_FRAMES_IN_FLIGHT;
+    context->currentFrame = (context->currentFrame + 1) % context->swapchainImageCount;
 
     vkResult = vkWaitForFences(context->device, 1, &(context->inFlightFences[context->currentFrame]), VK_TRUE, UINT64_MAX);
     if (XR_IS_ERROR(vkResult))
@@ -2347,18 +2349,14 @@ XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models)
         xrRecreateSwapChain(context, models);
         return vkResult;
     }
-    else if (vkResult == VK_SUBOPTIMAL_KHR)
+
+    if (vkResult == VK_SUBOPTIMAL_KHR)
     {
         XR_LOG_INFO(context->logger, "Swapchain suboptimal after presenting");
         xrRecreateSwapChain(context, models);
         return vkResult;
     }
-    else if (XR_IS_ERROR(vkResult))
-    {
-        return vkResult;
-    }
 
-    xrWaitForIdle(context);
     return vkResult;
 }
 

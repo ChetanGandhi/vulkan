@@ -6,8 +6,7 @@
 
 typedef struct XrContext
 {
-    const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-    uint32_t swapchainImageCount = 2;
+    uint32_t swapchainImageCount = 0;
     uint32_t currentFrame = 0;
     const char *vertexShaderFilePath = VK_NULL_HANDLE;
     const char *fragmentShaderFile = VK_NULL_HANDLE;

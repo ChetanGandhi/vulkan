@@ -369,24 +369,12 @@ void cleanUp(XrContext *context)
 
     if (homeModel)
     {
-        for (uint32_t index = 0; index < homeModel->vertices.size(); ++index)
-        {
-            free(homeModel->vertices[index]);
-            homeModel->vertices[index] = VK_NULL_HANDLE;
-        }
-
         free(homeModel);
         homeModel = nullptr;
     }
 
     if (vikingRoomModel)
     {
-        for (uint32_t index = 0; index < vikingRoomModel->vertices.size(); ++index)
-        {
-            free(vikingRoomModel->vertices[index]);
-            vikingRoomModel->vertices[index] = VK_NULL_HANDLE;
-        }
-
         free(vikingRoomModel);
         vikingRoomModel = nullptr;
     }

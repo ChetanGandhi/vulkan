@@ -1,5 +1,5 @@
 #define TINYOBJLOADER_IMPLEMENTATION
-#define TINYOBJLOADER_USE_MAPBOX_EARCUT
+// #define TINYOBJLOADER_USE_MAPBOX_EARCUT
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "utils.h"
@@ -33,16 +33,18 @@ bool xrLoadModal(XrContext *context, const char *modelFilePath, XrModel *model)
     }
 
     std::unordered_map<XrVertex, uint32_t> uniqueVertices = {};
+    std::vector<XrVertex> vertices = {};
+    std::vector<uint32_t> vertexIndices = {};
 
     for (const tinyobj::shape_t &nextShape : shapes)
     {
         for (const tinyobj::index_t &nextIndex : nextShape.mesh.indices)
         {
-            XrVertex *nextVertex = (XrVertex *)malloc(sizeof(XrVertex));
+            XrVertex nextVertex = {};
 
             // the attrib.vertices array is an array of float values instead of something like glm::vec3,
             // so you need to multiply the index by 3 to create group of 3 values.
-            nextVertex->position = glm::vec3(
+            nextVertex.position = glm::vec3(
                 attrib.vertices[3 * nextIndex.vertex_index + 0],
                 attrib.vertices[3 * nextIndex.vertex_index + 1],
                 attrib.vertices[3 * nextIndex.vertex_index + 2]
@@ -50,20 +52,23 @@ bool xrLoadModal(XrContext *context, const char *modelFilePath, XrModel *model)
 
             // the attrib.texcoords array is an array of float values instead of something like glm::vec2,
             // so you need to multiply the index by 2 to create group of 2 values.
-            nextVertex->textureCoordinates =
-                glm::vec2(attrib.texcoords[2 * nextIndex.texcoord_index + 0], 1.0 - attrib.texcoords[2 * nextIndex.texcoord_index + 1]);
+            nextVertex.textureCoordinates =
+                glm::vec2(attrib.texcoords[2 * nextIndex.texcoord_index + 0], 1.0f - attrib.texcoords[2 * nextIndex.texcoord_index + 1]);
 
-            nextVertex->color = glm::vec3(1.0f, 1.0f, 1.0f);
+            nextVertex.color = glm::vec3(1.0f, 1.0f, 1.0f);
 
-            if (uniqueVertices.count(*nextVertex) == 0)
+            if (uniqueVertices.count(nextVertex) == 0)
             {
-                uniqueVertices[*nextVertex] = static_cast<uint32_t>(model->vertices.size());
-                model->vertices.push_back(nextVertex);
+                uniqueVertices[nextVertex] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(nextVertex);
             }
 
-            model->vertexIndices.push_back(uniqueVertices[*nextVertex]);
+            vertexIndices.push_back(uniqueVertices[nextVertex]);
         }
     }
+
+    model->vertices.assign(vertices.begin(), vertices.end());
+    model->vertexIndices.assign(vertexIndices.begin(), vertexIndices.end());
 
     return true;
 };
