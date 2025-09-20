@@ -9,7 +9,8 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "${default}",
-            "mergeConfigurations": true
+            "mergeConfigurations": true,
+            "configurationProvider": "ms-vscode.cmake-tools"
         },
         {
             "name": "Linux",

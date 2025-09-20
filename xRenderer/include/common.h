@@ -3,14 +3,14 @@
 #include "platform.h"
 #include <glm/glm.hpp>
 
-struct XrSwapchainSupportDetails
+typedef struct XrSwapchainSupportDetails
 {
-    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     std::vector<VkPresentModeKHR> presentModes;
-};
+} XrSwapchainSupportDetails;
 
-struct XrGpuDetails
+typedef struct XrPhysicalDevice
 {
     uint32_t rank = 0;
     uint32_t graphicsFamilyIndex = UINT32_MAX;
@@ -20,11 +20,11 @@ struct XrGpuDetails
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties properties = {};
     VkPhysicalDeviceMemoryProperties memoryProperties = {};
-};
+} XrPhysicalDevice;
 
-struct XrUniformBufferObject
+typedef struct XrUniformBufferObject
 {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 projection;
-};
+} XrUniformBufferObject;

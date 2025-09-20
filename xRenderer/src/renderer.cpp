@@ -47,7 +47,7 @@ XR_API void xrWaitForIdle(XrContext *context)
     vkDeviceWaitIdle(context->device);
 }
 
-XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrGpuDetails> &gpuDetailsList)
+XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> &gpuList)
 {
     uint32_t gpuCount = 0;
     vkEnumeratePhysicalDevices(context->instance, &gpuCount, VK_NULL_HANDLE);
@@ -62,7 +62,7 @@ XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrGpuDetail
 
     for (uint32_t counter = 0; counter < gpuCount; ++counter)
     {
-        XrGpuDetails nextPhysicalDevice = {};
+        XrPhysicalDevice nextPhysicalDevice = {};
         nextPhysicalDevice.gpu = deviceList[counter];
         nextPhysicalDevice.properties = {};
         nextPhysicalDevice.memoryProperties = {};
@@ -70,7 +70,7 @@ XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrGpuDetail
         vkGetPhysicalDeviceProperties(nextPhysicalDevice.gpu, &nextPhysicalDevice.properties);
         vkGetPhysicalDeviceMemoryProperties(nextPhysicalDevice.gpu, &nextPhysicalDevice.memoryProperties);
 
-        gpuDetailsList.push_back(nextPhysicalDevice);
+        gpuList.push_back(nextPhysicalDevice);
     }
 }
 
@@ -94,7 +94,7 @@ XR_API uint32_t xrFindMemoryTypeIndex(
     return UINT32_MAX;
 }
 
-void xrRankDevice(XrContext *context, XrGpuDetails *gpuDetails)
+void xrRankDevice(XrContext *context, XrPhysicalDevice *gpuDetails)
 {
     // Higher the rank, more suitable the device
     uint32_t rank = 0;
@@ -159,7 +159,7 @@ void xrRankDevice(XrContext *context, XrGpuDetails *gpuDetails)
     gpuDetails->rank = rank;
 }
 
-void xrFindSuitableDeviceQueues(XrContext *context, XrGpuDetails *gpuDetails)
+void xrFindSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpuDetails)
 {
     uint32_t familyCount = 0;
     uint32_t graphicsFamilyIndex = UINT32_MAX;
@@ -209,7 +209,7 @@ void xrFindSuitableDeviceQueues(XrContext *context, XrGpuDetails *gpuDetails)
     gpuDetails->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
 }
 
-void xrFindMaxMSAASampleCount(XrGpuDetails *gpuDetails)
+void xrFindMaxMSAASampleCount(XrPhysicalDevice *gpuDetails)
 {
     VkSampleCountFlags sampleCountFlags =
         gpuDetails->properties.limits.framebufferColorSampleCounts & gpuDetails->properties.limits.framebufferDepthSampleCounts;
@@ -280,10 +280,10 @@ bool xrCheckDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu)
 
 XR_API VkResult xrInitDevice(XrContext *context)
 {
-    std::vector<XrGpuDetails> gpuDetailsList(0);
-    xrListAllPhysicalDevices(context, gpuDetailsList);
+    std::vector<XrPhysicalDevice> gpuList(0);
+    xrListAllPhysicalDevices(context, gpuList);
 
-    uint32_t gpuCount = static_cast<uint32_t>(gpuDetailsList.size());
+    uint32_t gpuCount = static_cast<uint32_t>(gpuList.size());
     uint32_t lastRank = 0;
     int32_t selectedGpuIndex = -1;
 
@@ -291,7 +291,7 @@ XR_API VkResult xrInitDevice(XrContext *context)
 
     for (uint32_t counter = 0; counter < gpuCount; ++counter)
     {
-        XrGpuDetails *nextGpuDetails = &gpuDetailsList[counter];
+        XrPhysicalDevice *nextGpuDetails = &gpuList[counter];
         xrFindSuitableDeviceQueues(context, nextGpuDetails);
         xrFindMaxMSAASampleCount(nextGpuDetails);
         xrRankDevice(context, nextGpuDetails);
@@ -306,10 +306,10 @@ XR_API VkResult xrInitDevice(XrContext *context)
 
     if (selectedGpuIndex > -1)
     {
-        XrGpuDetails *nextGpuDetails = &gpuDetailsList[selectedGpuIndex];
-        context->gpuDetails = (XrGpuDetails *)malloc(sizeof(XrGpuDetails));
-        memset((void *)context->gpuDetails, 0, sizeof(XrGpuDetails));
-        memcpy((void *)context->gpuDetails, nextGpuDetails, sizeof(XrGpuDetails));
+        XrPhysicalDevice *nextGpuDetails = &gpuList[selectedGpuIndex];
+        context->gpu = (XrPhysicalDevice *)malloc(sizeof(XrPhysicalDevice));
+        memset((void *)context->gpu, 0, sizeof(XrPhysicalDevice));
+        memcpy((void *)context->gpu, nextGpuDetails, sizeof(XrPhysicalDevice));
     }
     else
     {
@@ -318,7 +318,7 @@ XR_API VkResult xrInitDevice(XrContext *context)
 
     XR_LOG_INFO(context->logger, "---------- Selected GPU Properties ----------");
 
-    xrPrintGpuProperties(context, context->gpuDetails, selectedGpuIndex + 1, gpuCount);
+    xrPrintGpuProperties(context, context->gpu, selectedGpuIndex + 1, gpuCount);
 
     XR_LOG_INFO(context->logger, "---------- Selected GPU Properties End ----------");
 
@@ -332,9 +332,9 @@ XR_API VkResult xrInitDevice(XrContext *context)
 
     {
         uint32_t layerCount = 0;
-        vkEnumerateDeviceLayerProperties(context->gpuDetails->gpu, &layerCount, VK_NULL_HANDLE);
+        vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, VK_NULL_HANDLE);
         std::vector<VkLayerProperties> layerPropertiesList(layerCount);
-        vkEnumerateDeviceLayerProperties(context->gpuDetails->gpu, &layerCount, layerPropertiesList.data());
+        vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, layerPropertiesList.data());
         xrPrintDeviceLayerProperties(context, layerPropertiesList);
     }
 
@@ -350,19 +350,19 @@ XR_API VkResult xrInitLogicalDevice(XrContext *context)
     deviceGraphicQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     deviceGraphicQueueCreateInfo.pNext = nullptr;
     deviceGraphicQueueCreateInfo.flags = 0;
-    deviceGraphicQueueCreateInfo.queueFamilyIndex = context->gpuDetails->graphicsFamilyIndex;
+    deviceGraphicQueueCreateInfo.queueFamilyIndex = context->gpu->graphicsFamilyIndex;
     deviceGraphicQueueCreateInfo.queueCount = 1;
     deviceGraphicQueueCreateInfo.pQueuePriorities = queuePriorities.data();
 
     deviceQueueCreateInfos.push_back(deviceGraphicQueueCreateInfo);
 
-    if (context->gpuDetails->hasSeparatePresentQueue)
+    if (context->gpu->hasSeparatePresentQueue)
     {
         VkDeviceQueueCreateInfo devicePresentQueueCreateInfo = {};
         devicePresentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         devicePresentQueueCreateInfo.pNext = nullptr;
         devicePresentQueueCreateInfo.flags = 0;
-        devicePresentQueueCreateInfo.queueFamilyIndex = context->gpuDetails->presentFamilyIndex;
+        devicePresentQueueCreateInfo.queueFamilyIndex = context->gpu->presentFamilyIndex;
         devicePresentQueueCreateInfo.queueCount = 1;
         devicePresentQueueCreateInfo.pQueuePriorities = queuePriorities.data();
 
@@ -384,22 +384,22 @@ XR_API VkResult xrInitLogicalDevice(XrContext *context)
     deviceCreateInfo.ppEnabledExtensionNames = context->deviceExtensions.data();
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
-    VkResult vkResult = vkCreateDevice(context->gpuDetails->gpu, &deviceCreateInfo, VK_NULL_HANDLE, &(context->device));
+    VkResult vkResult = vkCreateDevice(context->gpu->gpu, &deviceCreateInfo, VK_NULL_HANDLE, &(context->device));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
     }
 
     // Create the graphic queue using graphicsFamilyIndex for given physical device.
-    vkGetDeviceQueue(context->device, context->gpuDetails->graphicsFamilyIndex, 0, &(context->graphicsQueue));
+    vkGetDeviceQueue(context->device, context->gpu->graphicsFamilyIndex, 0, &(context->graphicsQueue));
 
-    if (!context->gpuDetails->hasSeparatePresentQueue)
+    if (!context->gpu->hasSeparatePresentQueue)
     {
         context->presentQueue = context->graphicsQueue;
     }
     else
     {
-        vkGetDeviceQueue(context->device, context->gpuDetails->presentFamilyIndex, 0, &(context->presentQueue));
+        vkGetDeviceQueue(context->device, context->gpu->presentFamilyIndex, 0, &(context->presentQueue));
     }
 
     return VK_SUCCESS;
@@ -420,7 +420,6 @@ VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu
     uint32_t formatCount = 0;
     uint32_t presentModeCount = 0;
 
-    XR_LOG_INFO(context->logger, "%d", !context->surface, details->surfaceCapabilities);
     vkResult = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, context->surface, &(details->surfaceCapabilities));
     if (XR_IS_ERROR(vkResult))
     {
@@ -433,7 +432,6 @@ VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu
         return vkResult;
     }
 
-    XR_LOG_INFO(context->logger, "xrInitSwapchain_s");
     details->surfaceFormats.resize(formatCount);
 
     vkResult = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, context->surface, &formatCount, details->surfaceFormats.data());
@@ -442,23 +440,18 @@ VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu
         return vkResult;
     }
 
-    XR_LOG_INFO(context->logger, "xrInitSwapchain_q");
-
     vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, context->surface, &presentModeCount, nullptr);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
     }
-    XR_LOG_INFO(context->logger, "xrInitSwapchain_e");
 
     details->presentModes.resize(presentModeCount);
-    XR_LOG_INFO(context->logger, "xrInitSwapchain_a");
     vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, context->surface, &presentModeCount, details->presentModes.data());
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
     }
-    XR_LOG_INFO(context->logger, "xrInitSwapchain_z");
 
     return vkResult;
 }
@@ -545,7 +538,7 @@ XR_API VkResult xrInitSwapchain(XrContext *context)
     context->swapchainSupportDetails = (XrSwapchainSupportDetails *)malloc(sizeof(XrSwapchainSupportDetails));
     memset((void *)context->swapchainSupportDetails, 0, sizeof(XrSwapchainSupportDetails));
 
-    xrQuerySwapchainSupportDetails(context, context->gpuDetails->gpu, context->swapchainSupportDetails);
+    xrQuerySwapchainSupportDetails(context, context->gpu->gpu, context->swapchainSupportDetails);
 
     if (!context->swapchainSupportDetails->surfaceFormats.size())
     {
@@ -612,9 +605,9 @@ XR_API VkResult xrInitSwapchain(XrContext *context)
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (context->gpuDetails->hasSeparatePresentQueue)
+    if (context->gpu->hasSeparatePresentQueue)
     {
-        std::vector<uint32_t> indices = {context->gpuDetails->graphicsFamilyIndex, context->gpuDetails->presentFamilyIndex};
+        std::vector<uint32_t> indices = {context->gpu->graphicsFamilyIndex, context->gpu->presentFamilyIndex};
 
         swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swapchainCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(indices.size()); // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
@@ -683,16 +676,29 @@ XR_API VkResult xrDestroySwapchainImageViews(XrContext *context)
     return VK_SUCCESS;
 }
 
-XR_API VkResult xrCreateShaderModule(XrContext *context, std::vector<char> &code, VkShaderModule *shaderModule)
+XR_API VkResult xrCreateShaderModule(XrContext *context, const char *shaderFilePath, VkShaderModule *shaderModule)
 {
+    std::vector<char> shaderCode;
+
+    if (!xrReadFile(shaderFilePath, &shaderCode))
+    {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderModuleCreateInfo.pNext = nullptr;
     shaderModuleCreateInfo.flags = 0;
-    shaderModuleCreateInfo.codeSize = code.size();
-    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+    shaderModuleCreateInfo.codeSize = shaderCode.size();
+    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(shaderCode.data());
 
     return vkCreateShaderModule(context->device, &shaderModuleCreateInfo, nullptr, shaderModule);
+}
+
+XR_API VkResult xrDestroyShaderModule(XrContext *context, VkShaderModule shaderModule)
+{
+    vkDestroyShaderModule(context->device, shaderModule, nullptr);
+    return VK_SUCCESS;
 }
 
 XR_API VkResult xrInitGraphicsPiplineCache(XrContext *context)
@@ -723,47 +729,13 @@ XR_API VkResult xrDestroyGraphicsPiplineCache(XrContext *context)
 XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 {
     VkResult vkResult = VK_SUCCESS;
-    std::vector<char> vertexShaderCode;
-    std::vector<char> fragmentShaderCode;
-
-    if (!xrReadFile(context->vertexShaderFilePath, &vertexShaderCode))
-    {
-        XR_LOG_ERROR(context->logger, "Cannot open vertex shader file: %s", context->vertexShaderFilePath);
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
-
-    if (!xrReadFile(context->fragmentShaderFile, &fragmentShaderCode))
-    {
-        XR_LOG_ERROR(context->logger, "Cannot open fragment shader file: %s", context->fragmentShaderFile);
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
-
-    VkShaderModule vertexShaderModule;
-    memset((void *)&vertexShaderModule, 0, sizeof(VkShaderModule));
-
-    vkResult = xrCreateShaderModule(context, vertexShaderCode, &vertexShaderModule);
-
-    if (XR_IS_ERROR(vkResult))
-    {
-        return vkResult;
-    }
-
-    VkShaderModule fragmentShaderModule;
-    memset((void *)&fragmentShaderModule, 0, sizeof(VkShaderModule));
-
-    vkResult = xrCreateShaderModule(context, fragmentShaderCode, &fragmentShaderModule);
-
-    if (XR_IS_ERROR(vkResult))
-    {
-        return vkResult;
-    }
 
     VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
     vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertexShaderStageCreateInfo.pNext = nullptr;
     vertexShaderStageCreateInfo.flags = 0;
     vertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertexShaderStageCreateInfo.module = vertexShaderModule;
+    vertexShaderStageCreateInfo.module = context->vertexShaderModule;
     vertexShaderStageCreateInfo.pName = "main";
     vertexShaderStageCreateInfo.pSpecializationInfo = nullptr;
 
@@ -772,7 +744,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
     fragmentShaderStageCreateInfo.pNext = nullptr;
     fragmentShaderStageCreateInfo.flags = 0;
     fragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragmentShaderStageCreateInfo.module = fragmentShaderModule;
+    fragmentShaderStageCreateInfo.module = context->fragmentShaderModule;
     fragmentShaderStageCreateInfo.pName = "main";
     fragmentShaderStageCreateInfo.pSpecializationInfo = nullptr;
 
@@ -838,7 +810,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampleStateCreateInfo.pNext = nullptr;
     multisampleStateCreateInfo.flags = 0;
-    multisampleStateCreateInfo.rasterizationSamples = context->gpuDetails->msaaSamples;
+    multisampleStateCreateInfo.rasterizationSamples = context->gpu->msaaSamples;
     multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
     multisampleStateCreateInfo.minSampleShading = 1.0f;
     multisampleStateCreateInfo.pSampleMask = nullptr;
@@ -935,9 +907,6 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
         return vkResult;
     }
 
-    vkDestroyShaderModule(context->device, fragmentShaderModule, nullptr);
-    vkDestroyShaderModule(context->device, vertexShaderModule, nullptr);
-
     return vkResult;
 }
 
@@ -974,7 +943,7 @@ VkFormat xrFindSupportedFormat(VkPhysicalDevice gpu, std::vector<VkFormat> &form
 VkFormat xrFindDepthFormat(XrContext *context)
 {
     std::vector<VkFormat> formatsToCheck = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
-    return xrFindSupportedFormat(context->gpuDetails->gpu, formatsToCheck, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    return xrFindSupportedFormat(context->gpu->gpu, formatsToCheck, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
 bool xrHasStencilComponent(VkFormat format)
@@ -994,7 +963,7 @@ XR_API VkResult xrInitDepthStencilImage(XrContext *context)
         context,
         &context->surfaceExtent,
         1,
-        context->gpuDetails->msaaSamples,
+        context->gpu->msaaSamples,
         depthStencilFormat,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -1024,7 +993,7 @@ XR_API VkResult xrInitMSAAColorImage(XrContext *context)
         context,
         &context->surfaceExtent,
         1,
-        context->gpuDetails->msaaSamples,
+        context->gpu->msaaSamples,
         context->surfaceFormat.format,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -1053,7 +1022,7 @@ XR_API VkResult xrInitRenderPass(XrContext *context)
     VkAttachmentDescription colorAttachmentDescription = {};
     colorAttachmentDescription.flags = 0;
     colorAttachmentDescription.format = context->surfaceFormat.format;
-    colorAttachmentDescription.samples = context->gpuDetails->msaaSamples;
+    colorAttachmentDescription.samples = context->gpu->msaaSamples;
     colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -1064,7 +1033,7 @@ XR_API VkResult xrInitRenderPass(XrContext *context)
     VkAttachmentDescription depthStencilAttachmentDescription = {};
     depthStencilAttachmentDescription.flags = 0;
     depthStencilAttachmentDescription.format = xrFindDepthFormat(context);
-    depthStencilAttachmentDescription.samples = context->gpuDetails->msaaSamples;
+    depthStencilAttachmentDescription.samples = context->gpu->msaaSamples;
     depthStencilAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthStencilAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthStencilAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -1232,7 +1201,7 @@ XR_API VkResult xrInitCommandPool(XrContext *context)
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolCreateInfo.pNext = nullptr;
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    commandPoolCreateInfo.queueFamilyIndex = context->gpuDetails->graphicsFamilyIndex;
+    commandPoolCreateInfo.queueFamilyIndex = context->gpu->graphicsFamilyIndex;
 
     VkResult vkResult = vkCreateCommandPool(context->device, &commandPoolCreateInfo, nullptr, &(context->commandPool));
     if (XR_IS_ERROR(vkResult))
@@ -1291,7 +1260,7 @@ XR_API VkResult xrCreateImage(
     VkMemoryRequirements imageMemoryRequirements = {};
     vkGetImageMemoryRequirements(context->device, *image, &imageMemoryRequirements);
 
-    uint32_t memoryIndex = xrFindMemoryTypeIndex(&(context->gpuDetails->memoryProperties), &imageMemoryRequirements, memoryPropertyFlags);
+    uint32_t memoryIndex = xrFindMemoryTypeIndex(&(context->gpu->memoryProperties), &imageMemoryRequirements, memoryPropertyFlags);
 
     VkMemoryAllocateInfo memoryAllocationInfo = {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1604,7 +1573,7 @@ XR_API VkResult xrCreateBuffer(
     VkMemoryRequirements bufferMemoryRequirements = {};
     vkGetBufferMemoryRequirements(context->device, *buffer, &bufferMemoryRequirements);
 
-    uint32_t memoryIndex = xrFindMemoryTypeIndex(&(context->gpuDetails->memoryProperties), &bufferMemoryRequirements, memoryProperties);
+    uint32_t memoryIndex = xrFindMemoryTypeIndex(&(context->gpu->memoryProperties), &bufferMemoryRequirements, memoryProperties);
 
     if (XR_CHECK_RESULT(memoryIndex, UINT32_MAX))
     {
@@ -2383,7 +2352,7 @@ void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> &models, u
 
 // Debug methods
 
-XR_API void xrPrintGpuProperties(XrContext *context, XrGpuDetails *gpuDetails, uint32_t currentGpuIndex, uint32_t totalGpuCount)
+XR_API void xrPrintGpuProperties(XrContext *context, XrPhysicalDevice *gpuDetails, uint32_t currentGpuIndex, uint32_t totalGpuCount)
 {
     if (!gpuDetails)
     {

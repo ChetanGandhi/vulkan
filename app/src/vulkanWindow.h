@@ -1,5 +1,28 @@
 #pragma once
 
+#ifndef NDEBUG
+
+#define XR_ENABLE_RUNTIME_DEBUG 1
+#define XR_ENABLE_DEBUG_REPORT_LOGGING 1
+#define XR_ENABLE_DEBUG_REPORT_VERBOSE_BIT (XR_ENABLE_DEBUG_REPORT_LOGGING & 1)
+#define XR_ENABLE_DEBUG_REPORT_INFORMATION_BIT (XR_ENABLE_DEBUG_REPORT_LOGGING & 1)
+#define XR_ENABLE_FPS 1
+
+#else
+
+#define XR_ENABLE_RUNTIME_DEBUG 0
+#define XR_ENABLE_DEBUG_REPORT_LOGGING 0
+#define XR_ENABLE_DEBUG_REPORT_VERBOSE_BIT 0
+#define XR_ENABLE_DEBUG_REPORT_INFORMATION_BIT 0
+#define XR_ENABLE_FPS 0
+
+#endif
+
+#define XR_ENABLE_RUNTIME_DEBUG 0
+#define XR_ENABLE_DEBUG_REPORT_LOGGING 0
+#define XR_ENABLE_DEBUG_REPORT_VERBOSE_BIT 0
+#define XR_ENABLE_DEBUG_REPORT_INFORMATION_BIT 0
+
 #include <xRenderer/platform.h>
 #include <xRenderer/renderer.h>
 #include <xRenderer/common.h>
@@ -11,7 +34,7 @@ void destroyPlatformSpecificWindow(XrContext *context);
 VkResult initPlatformSpecificSurface(XrContext *context);
 void destroyPlatformSpecificSurface(XrContext *context);
 
-void initializeVulkan(XrContext *context);
+VkResult initializeVulkan(XrContext *context);
 void cleanUp(XrContext *context);
 
 int mainLoop(XrContext *context);

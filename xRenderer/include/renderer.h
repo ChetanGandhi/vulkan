@@ -80,7 +80,8 @@ XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> &m
 
 XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models);
 
-XR_API VkResult xrCreateShaderModule(XrContext *context, std::vector<char> &code, VkShaderModule shaderModule);
+XR_API VkResult xrCreateShaderModule(XrContext *context, const char *shaderFilePath, VkShaderModule *shaderModule);
+XR_API VkResult xrDestroyShaderModule(XrContext *context, VkShaderModule shaderModule);
 
 XR_API VkResult xrCreateBuffer(
     XrContext *context,
@@ -110,7 +111,7 @@ xrCreateImageView(XrContext *context, VkImage image, VkFormat format, VkImageVie
 XR_API VkResult xrCopyBuffer(XrContext *context, VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
 
 XR_API VkResult xrCopyBufferToImage(XrContext *context, VkBuffer buffer, VkImage image, VkExtent2D *extent);
-XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrGpuDetails> &gpuDetailsList);
+XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> &gpuList);
 
 XR_API uint32_t xrFindMemoryTypeIndex(
     const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties,
@@ -150,15 +151,15 @@ void xrChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> &surfaceFormats, VkSu
 VkPresentModeKHR xrChoosePresentMode(XrContext *context, std::vector<VkPresentModeKHR> &presentModes);
 void xrChooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *surfaceExtent);
 
-void xrRankDevice(XrContext *context, XrGpuDetails *gpuDetails);
-void xrFindSuitableDeviceQueues(XrContext *context, XrGpuDetails *gpuDetails);
-void xrFindMaxMSAASampleCount(XrContext *context, XrGpuDetails *gpuDetails);
+void xrRankDevice(XrContext *context, XrPhysicalDevice *gpu);
+void xrFindSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpu);
+void xrFindMaxMSAASampleCount(XrContext *context, XrPhysicalDevice *gpu);
 bool xrCheckDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu);
 bool xrHasStencilComponent(XrContext *context, VkFormat format);
 
 // Debug methods
 
-XR_API void xrPrintGpuProperties(XrContext *context, XrGpuDetails *details, uint32_t currentGpuIndex, uint32_t totalGpuCount);
+XR_API void xrPrintGpuProperties(XrContext *context, XrPhysicalDevice *details, uint32_t currentGpuIndex, uint32_t totalGpuCount);
 XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties);
 XR_API void xrPrintDeviceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties);
 XR_API void xrPrintSurfaceFormatsDetails(XrContext *context, std::vector<VkSurfaceFormatKHR> &surfaceFormats);

@@ -60,7 +60,3 @@
 #include <assert.h>
 #include <time.h>
 #include <vulkan/vulkan.h>
-
-#include "buildParam.h"
-#include "utils.h"
-#include "logger.h"

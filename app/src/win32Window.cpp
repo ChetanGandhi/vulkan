@@ -83,14 +83,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     context = (XrContext *)malloc(sizeof(XrContext));
     memset((void *)context, 0, sizeof(XrContext));
-
-    xrCreateLogger("debug_win32.log", &(context->logger));
-
-    context->vertexShaderFilePath = "../shaders/vert.spv";
-    context->fragmentShaderFile = "../shaders/frag.spv";
     context->surfaceExtent.width = 800;
     context->surfaceExtent.height = 600;
 
+    xrCreateLogger("debug_win32.log", &(context->logger));
     initializePlatformSpecificWindow(context);
     initializeVulkan(context);
 
@@ -170,7 +166,7 @@ void destroyPlatformSpecificWindow()
     UnregisterClass(className.c_str(), hGlobalInstance);
 }
 
-void initializeVulkan(XrContext *context)
+VkResult initializeVulkan(XrContext *context)
 {
     VkApplicationInfo applicationInfo;
     memset((void *)&applicationInfo, 0, sizeof(VkApplicationInfo));
@@ -192,7 +188,18 @@ void initializeVulkan(XrContext *context)
     xrInitRenderPass(context);
     xrInitDescriptorSetLayout(context);
     xrInitGraphicsPiplineCache(context);
+
+    xrCreateShaderModule(context, "../shaders/vert.spv", &(context->vertexShaderModule));
+    xrCreateShaderModule(context, "../shaders/frag.spv", &(context->fragmentShaderModule));
+
     xrInitGraphicsPipline(context);
+
+    xrDestroyShaderModule(context, context->vertexShaderModule);
+    context->vertexShaderModule = VK_NULL_HANDLE;
+
+    xrDestroyShaderModule(context, context->fragmentShaderModule);
+    context->fragmentShaderModule = VK_NULL_HANDLE;
+
     xrInitCommandPool(context);
     xrInitDepthStencilImage(context);
     xrInitMSAAColorImage(context);
@@ -206,7 +213,7 @@ void initializeVulkan(XrContext *context)
 
     if (!homeModelLoaded)
     {
-        assert(0 && "Not able to load home model.");
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     XR_LOG_INFO(context->logger, "Home model loaded");
@@ -219,7 +226,7 @@ void initializeVulkan(XrContext *context)
 
     if (!homeTextureData)
     {
-        assert(0 && "Not able to load home texture.");
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     xrInitTextureImage(context, homeModel, homeTexture, homeTextureData);
@@ -286,6 +293,8 @@ void initializeVulkan(XrContext *context)
     xrInitDescriptorSets(context, models);
     xrInitCommandBuffers(context, models);
     xrInitSynchronizations(context);
+
+    return VK_SUCCESS;
 }
 
 void cleanUp(XrContext *context)
@@ -342,10 +351,10 @@ void cleanUp(XrContext *context)
         context->swapchainSupportDetails = VK_NULL_HANDLE;
     }
 
-    if (context->gpuDetails)
+    if (context->gpu)
     {
-        free(context->gpuDetails);
-        context->gpuDetails = VK_NULL_HANDLE;
+        free(context->gpu);
+        context->gpu = VK_NULL_HANDLE;
     }
 
     if (context->logger)

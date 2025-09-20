@@ -8,13 +8,13 @@ typedef struct XrContext
 {
     uint32_t swapchainImageCount = 0;
     uint32_t currentFrame = 0;
-    const char *vertexShaderFilePath = VK_NULL_HANDLE;
-    const char *fragmentShaderFile = VK_NULL_HANDLE;
+    VkShaderModule vertexShaderModule;
+    VkShaderModule fragmentShaderModule;
     XrLogger *logger = VK_NULL_HANDLE;
     VkInstance instance = VK_NULL_HANDLE;
     VkDebugReportCallbackEXT debugReportCallback = VK_NULL_HANDLE;
+    XrPhysicalDevice *gpu = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
-    XrGpuDetails *gpuDetails = VK_NULL_HANDLE;
     VkExtent2D surfaceExtent;
     VkSurfaceFormatKHR surfaceFormat;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
