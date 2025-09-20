@@ -18,11 +18,6 @@
 
 #endif
 
-#define XR_ENABLE_RUNTIME_DEBUG 0
-#define XR_ENABLE_DEBUG_REPORT_LOGGING 0
-#define XR_ENABLE_DEBUG_REPORT_VERBOSE_BIT 0
-#define XR_ENABLE_DEBUG_REPORT_INFORMATION_BIT 0
-
 #include <xRenderer/platform.h>
 #include <xRenderer/renderer.h>
 #include <xRenderer/common.h>
