@@ -335,7 +335,7 @@ XR_API VkResult xrInitDevice(XrContext *context)
         vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, VK_NULL_HANDLE);
         std::vector<VkLayerProperties> layerPropertiesList(layerCount);
         vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, layerPropertiesList.data());
-        xrPrintDeviceLayerProperties(context, layerPropertiesList);
+        xrPrintDeviceLayerProperties(context, &layerPropertiesList);
     }
 
     return VK_SUCCESS;
@@ -545,7 +545,7 @@ XR_API VkResult xrInitSwapchain(XrContext *context)
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    xrPrintSurfaceFormatsDetails(context, context->swapchainSupportDetails->surfaceFormats);
+    xrPrintSurfaceFormatsDetails(context, &(context->swapchainSupportDetails->surfaceFormats));
     xrChooseSurfaceFormat(context->swapchainSupportDetails->surfaceFormats, &(context->surfaceFormat));
     xrChooseSurfaceExtent(context->swapchainSupportDetails->surfaceCapabilities, &(context->surfaceExtent));
 
@@ -1348,7 +1348,7 @@ XR_API VkResult xrInitTextureImage(XrContext *context, XrModel *model, XrTexture
     xrCopyBufferToImage(context, stagingImageBuffer, model->textureImage, &(texture->extent));
 
     // Generate the mipmaps images and then transition image layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
-    xrGenerateMipmaps(context, model->textureImage, texture);
+    xrGenerateMipmaps(context, &(model->textureImage), texture);
 
     vkDestroyBuffer(context->device, stagingImageBuffer, VK_NULL_HANDLE);
     vkFreeMemory(context->device, stagingImageBufferMemory, VK_NULL_HANDLE);
@@ -1364,7 +1364,7 @@ XR_API VkResult xrDestroyTextureImage(XrContext *context, XrModel *model)
     return VK_SUCCESS;
 }
 
-VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture)
+VkResult xrGenerateMipmaps(XrContext *context, VkImage *image, XrTexture *texture)
 {
     VkResult vkResult = VK_SUCCESS;
     uint32_t mipWidth = texture->extent.width;
@@ -1381,7 +1381,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     imageMemoryBarrier.pNext = VK_NULL_HANDLE;
-    imageMemoryBarrier.image = image;
+    imageMemoryBarrier.image = *image;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1447,7 +1447,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
         imageBlit.dstSubresource.layerCount = 1;
 
         vkCmdBlitImage(
-            commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR
+            commandBuffer, *image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR
         );
 
         imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -1959,14 +1959,14 @@ XR_API VkResult xrDestroyDescriptorPool(XrContext *context)
     return VK_SUCCESS;
 }
 
-XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> &models)
+XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> *models)
 {
     VkResult vkResult = VK_SUCCESS;
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts(context->swapchainImages.size(), context->descriptorSetLayout);
 
-    for (size_t index = 0; index < models.size(); ++index)
+    for (size_t index = 0; index < models->size(); ++index)
     {
-        XrModel *model = models[index];
+        XrModel *model = (*models)[index];
         VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
         descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         descriptorSetAllocateInfo.pNext = VK_NULL_HANDLE;
@@ -2026,11 +2026,11 @@ XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> 
     return vkResult;
 }
 
-XR_API VkResult xrDestroyDescriptorSets(XrContext *context, std::vector<XrModel *> &models)
+XR_API VkResult xrDestroyDescriptorSets(XrContext *context, std::vector<XrModel *> *models)
 {
-    for (size_t index = 0; index < models.size(); ++index)
+    for (size_t index = 0; index < models->size(); ++index)
     {
-        XrModel *model = models[index];
+        XrModel *model = (*models)[index];
 
         // If you want to explicitly destroy the descriptorSet, then set
         // poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
@@ -2050,7 +2050,7 @@ XR_API VkResult xrDestroyDescriptorSets(XrContext *context, std::vector<XrModel 
     return VK_SUCCESS;
 }
 
-XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> &models)
+XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> *models)
 {
     VkResult vkResult = VK_SUCCESS;
 
@@ -2103,9 +2103,9 @@ XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> 
 
         VkDeviceSize offset = {0};
 
-        for (size_t index = 0; index < models.size(); ++index)
+        for (size_t index = 0; index < models->size(); ++index)
         {
-            XrModel *model = models[index];
+            XrModel *model = (*models)[index];
             vkCmdBindVertexBuffers(context->commandBuffers[counter], 0, 1, &(model->vertexBuffer), &offset);
             vkCmdBindIndexBuffer(context->commandBuffers[counter], model->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(
@@ -2197,7 +2197,7 @@ XR_API VkResult xrDestroySynchronizations(XrContext *context)
     return VK_SUCCESS;
 }
 
-XR_API VkResult xrRecreateSwapChain(XrContext *context, std::vector<XrModel *> &models)
+XR_API VkResult xrRecreateSwapChain(XrContext *context, std::vector<XrModel *> *models)
 {
     XR_LOG_INFO(context->logger, "---------- Recreate SwapChain --------");
     xrCleanupSwapChain(context, models);
@@ -2210,19 +2210,19 @@ XR_API VkResult xrRecreateSwapChain(XrContext *context, std::vector<XrModel *> &
     xrInitMSAAColorImage(context);
     xrInitFrameBuffers(context);
 
-    for (size_t index = 0; index < models.size(); ++index)
+    for (size_t index = 0; index < models->size(); ++index)
     {
-        xrInitUniformBuffers(context, models[index]);
+        xrInitUniformBuffers(context, (*models)[index]);
     }
 
-    xrInitDescriptorPool(context, models.size());
+    xrInitDescriptorPool(context, models->size());
     xrInitDescriptorSets(context, models);
     xrInitCommandBuffers(context, models);
     xrInitSynchronizations(context);
     return VK_SUCCESS;
 }
 
-XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> &models)
+XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> *models)
 {
     xrWaitForIdle(context);
     xrDestroySynchronizations(context);
@@ -2230,9 +2230,9 @@ XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> &m
     xrDestroyDescriptorSets(context, models);
     xrDestroyDescriptorPool(context);
 
-    for (size_t index = 0; index < models.size(); ++index)
+    for (size_t index = 0; index < models->size(); ++index)
     {
-        xrDestroyUniformBuffers(context, models[index]);
+        xrDestroyUniformBuffers(context, (*models)[index]);
     }
 
     xrDestroyFrameBuffers(context);
@@ -2246,7 +2246,7 @@ XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> &m
     return VK_SUCCESS;
 }
 
-XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models)
+XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> *models)
 {
     VkResult vkResult = VK_SUCCESS;
 
@@ -2347,13 +2347,13 @@ XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models)
     return vkResult;
 }
 
-void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> &models, uint32_t imageIndex)
+void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> *models, uint32_t imageIndex)
 {
     VkResult vkResult = VK_SUCCESS;
 
-    for (size_t index = 0; index < models.size(); ++index)
+    for (size_t index = 0; index < models->size(); ++index)
     {
-        XrModel *model = models[index];
+        XrModel *model = (*models)[index];
         void *data = VK_NULL_HANDLE;
         vkResult = vkMapMemory(context->device, model->uniformBuffersMemory[imageIndex], 0, sizeof(XrUniformBufferObject), 0, &data);
 
@@ -2363,7 +2363,7 @@ void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> &models, u
             continue;
         }
 
-        memcpy(data, &model->ubo, sizeof(XrUniformBufferObject));
+        memcpy(data, &(model->ubo), sizeof(XrUniformBufferObject));
         vkUnmapMemory(context->device, model->uniformBuffersMemory[imageIndex]);
     }
 }
@@ -2410,53 +2410,43 @@ XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLay
     XR_LOG_INFO(context->logger, "---------- Instance Layer Properties End [%d] ----------", properties->size());
 }
 
-XR_API void xrPrintDeviceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties)
+XR_API void xrPrintDeviceLayerProperties(XrContext *context, std::vector<VkLayerProperties> *properties)
 {
-#ifndef NDEBUG
+    XR_LOG_INFO(context->logger, "---------- Device Layer Properties [%d] ----------", properties->size());
 
-    XR_LOG_INFO(context->logger, "---------- Device Layer Properties ----------");
-
-    for (VkLayerProperties &nextProperty : properties)
+    for (uint32_t index = 0; index < properties->size(); ++index)
     {
-        XR_LOG_INFO(context->logger, "Layer Name\t\t: %s", nextProperty.layerName);
-        XR_LOG_INFO(context->logger, "Description\t\t: %s", nextProperty.description);
-        XR_LOG_INFO(context->logger, "Spec Version\t\t: %d", nextProperty.specVersion);
-        XR_LOG_INFO(context->logger, "Implementation Version\t: %d", nextProperty.implementationVersion);
+        VkLayerProperties nextProperty = (*properties)[index];
+        XR_LOG_INFO(context->logger, "Layer Name             : %s", nextProperty.layerName);
+        XR_LOG_INFO(context->logger, "Description            : %s", nextProperty.description);
+        XR_LOG_INFO(context->logger, "Spec Version           : %d", nextProperty.specVersion);
+        XR_LOG_INFO(context->logger, "Implementation Version : %d", nextProperty.implementationVersion);
         XR_LOG_INFO(context->logger, "------------------------------------------------------------");
     }
 
-    XR_LOG_INFO(context->logger, "---------- Device Layer Properties End [%d] ----------", properties.size());
-
-#endif
+    XR_LOG_INFO(context->logger, "---------- Device Layer Properties End ----------");
 }
 
-XR_API void xrPrintSurfaceFormatsDetails(XrContext *context, std::vector<VkSurfaceFormatKHR> &surfaceFormats)
+XR_API void xrPrintSurfaceFormatsDetails(XrContext *context, std::vector<VkSurfaceFormatKHR> *surfaceFormats)
 {
-#ifndef NDEBUG
+    XR_LOG_INFO(context->logger, "---------- Surface Formats [%d] ----------", surfaceFormats->size());
 
-    XR_LOG_INFO(context->logger, "---------- Surface Formats ----------");
-
-    for (VkSurfaceFormatKHR &nextSurfaceFormat : surfaceFormats)
+    for (uint32_t index = 0; index < surfaceFormats->size(); ++index)
     {
-        XR_LOG_INFO(context->logger, "format\t\t: %d", nextSurfaceFormat.format);
-        XR_LOG_INFO(context->logger, "colorSpace\t: %d", nextSurfaceFormat.colorSpace);
+        VkSurfaceFormatKHR nextSurfaceFormat = (*surfaceFormats)[index];
+        XR_LOG_INFO(context->logger, "format        : %d", nextSurfaceFormat.format);
+        XR_LOG_INFO(context->logger, "colorSpace    : %d", nextSurfaceFormat.colorSpace);
         XR_LOG_INFO(context->logger, "------------------------------------------------------------");
     }
 
-    XR_LOG_INFO(context->logger, "---------- Surface Formats Details End [%d] ----------", surfaceFormats.size());
-
-#endif
+    XR_LOG_INFO(context->logger, "---------- Surface Formats End ----------");
 }
 
 XR_API void xrPrintSwapChainImageCount(XrContext *context, uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount)
 {
-#ifndef NDEBUG
-
     XR_LOG_INFO(context->logger, "---------- Swapchain Image Count ----------");
     XR_LOG_INFO(context->logger, "Min\t: %d", minImageCount);
     XR_LOG_INFO(context->logger, "Max\t: %d", maxImageCount);
     XR_LOG_INFO(context->logger, "Current\t: %d", currentImageCount);
     XR_LOG_INFO(context->logger, "---------- Swapchain Image Count End ----------");
-
-#endif
 }

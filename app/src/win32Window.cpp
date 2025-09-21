@@ -290,8 +290,8 @@ VkResult initializeVulkan(XrContext *context)
     models.push_back(vikingRoomModel);
 
     xrInitDescriptorPool(context, models.size());
-    xrInitDescriptorSets(context, models);
-    xrInitCommandBuffers(context, models);
+    xrInitDescriptorSets(context, &models);
+    xrInitCommandBuffers(context, &models);
     xrInitSynchronizations(context);
 
     return VK_SUCCESS;
@@ -310,7 +310,7 @@ void cleanUp(XrContext *context)
     xrWaitForIdle(context);
     xrDestroySynchronizations(context);
     xrDestroyCommandBuffers(context);
-    xrDestroyDescriptorSets(context, models);
+    xrDestroyDescriptorSets(context, &models);
     xrDestroyDescriptorPool(context);
 
     xrDestroyUniformBuffers(context, homeModel);
@@ -485,7 +485,7 @@ int mainLoop(XrContext *context)
 
                     updateHomeModel();
                     updateVikingRoomModel();
-                    xrRender(context, models);
+                    xrRender(context, &models);
                 }
             }
         }
@@ -529,7 +529,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (context)
     {
-        xrRecreateSwapChain(context, models);
+        xrRecreateSwapChain(context, &models);
     }
 }
 
