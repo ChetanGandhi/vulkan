@@ -11,7 +11,6 @@ XR_API void xrWaitForIdle(XrContext *context);
 XR_API VkResult xrInitInstance(XrContext *context, VkApplicationInfo *applicationInfo);
 XR_API VkResult xrDestroyInstance(XrContext *context);
 
-XR_API VkResult xrInitDevice(XrContext *context);
 XR_API VkResult xrInitLogicalDevice(XrContext *context);
 XR_API VkResult xrDestroyDevice(XrContext *context);
 
@@ -81,7 +80,7 @@ XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> *m
 XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> *models);
 
 XR_API VkResult xrCreateShaderModule(XrContext *context, const char *shaderFilePath, VkShaderModule *shaderModule);
-XR_API VkResult xrDestroyShaderModule(XrContext *context, VkShaderModule shaderModule);
+XR_API VkResult xrDestroyShaderModule(XrContext *context, VkShaderModule *shaderModule);
 
 XR_API VkResult xrCreateBuffer(
     XrContext *context,
@@ -111,7 +110,6 @@ xrCreateImageView(XrContext *context, VkImage image, VkFormat format, VkImageVie
 XR_API VkResult xrCopyBuffer(XrContext *context, VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
 
 XR_API VkResult xrCopyBufferToImage(XrContext *context, VkBuffer buffer, VkImage image, VkExtent2D *extent);
-XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> *gpuList);
 
 XR_API uint32_t xrFindMemoryTypeIndex(
     const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties,
@@ -137,7 +135,7 @@ VkResult xrTransitionImageLayout(
     uint32_t mipLevels
 );
 
-VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu, XrSwapchainSupportDetails *details);
+XR_API VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu, XrSwapchainSupportDetails *details);
 
 VkFormat xrFindSupportedFormat(
     XrContext *context,
@@ -150,12 +148,6 @@ VkFormat xrFindDepthFormat(XrContext *context);
 void xrChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> *surfaceFormats, VkSurfaceFormatKHR *format);
 VkPresentModeKHR xrChoosePresentMode(XrContext *context, std::vector<VkPresentModeKHR> *presentModes);
 void xrChooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *surfaceExtent);
-
-void xrRankDevice(XrContext *context, XrPhysicalDevice *gpu);
-void xrFindSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpu);
-void xrFindMaxMSAASampleCount(XrContext *context, XrPhysicalDevice *gpu);
-bool xrCheckDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu);
-bool xrHasStencilComponent(XrContext *context, VkFormat format);
 
 // Debug methods
 

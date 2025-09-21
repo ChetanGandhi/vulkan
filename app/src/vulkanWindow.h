@@ -29,6 +29,15 @@ void destroyPlatformSpecificWindow(XrContext *context);
 VkResult initPlatformSpecificSurface(XrContext *context);
 void destroyPlatformSpecificSurface(XrContext *context);
 
+void listAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> *gpuList);
+void rankDevice(XrContext *context, XrPhysicalDevice *gpu);
+void findSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpu);
+void findMaxMSAASampleCount(XrContext *context, XrPhysicalDevice *gpu);
+bool checkDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu);
+bool hasStencilComponent(XrContext *context, VkFormat format);
+void printGpuProperties(XrContext *context, XrPhysicalDevice *gpuDetails, uint32_t currentGpuIndex, uint32_t totalGpuCount);
+
+VkResult initDevice(XrContext *context);
 VkResult initializeVulkan(XrContext *context);
 void cleanUp(XrContext *context);
 
