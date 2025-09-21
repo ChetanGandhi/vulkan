@@ -25,11 +25,11 @@ WINDOWPLACEMENT wpPrev = {sizeof(WINDOWPLACEMENT)};
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow);
 
-XrModel *homeModel = nullptr;
-XrTexture *homeTexture = nullptr;
+XrModel *homeModel = VK_NULL_HANDLE;
+XrTexture *homeTexture = VK_NULL_HANDLE;
 
-XrModel *vikingRoomModel = nullptr;
-XrTexture *vikingRoomTexture = nullptr;
+XrModel *vikingRoomModel = VK_NULL_HANDLE;
+XrTexture *vikingRoomTexture = VK_NULL_HANDLE;
 
 std::vector<XrModel *> models;
 
@@ -171,11 +171,11 @@ VkResult initializeVulkan(XrContext *context)
     VkApplicationInfo applicationInfo;
     memset((void *)&applicationInfo, 0, sizeof(VkApplicationInfo));
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.pNext = nullptr;
+    applicationInfo.pNext = VK_NULL_HANDLE;
     applicationInfo.apiVersion = VK_API_VERSION_1_0;
     applicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     applicationInfo.pApplicationName = "Vulkan";
-    applicationInfo.pEngineName = nullptr;
+    applicationInfo.pEngineName = VK_NULL_HANDLE;
     applicationInfo.engineVersion = 0;
 
     xrInitInstance(context, &applicationInfo);
@@ -221,7 +221,7 @@ VkResult initializeVulkan(XrContext *context)
     homeTexture = (XrTexture *)malloc(sizeof(XrTexture));
     memset((void *)homeTexture, 0, sizeof(XrTexture));
 
-    stbi_uc *homeTextureData = nullptr;
+    stbi_uc *homeTextureData = VK_NULL_HANDLE;
     xrLoadTexture(context, "../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
 
     if (!homeTextureData)
@@ -236,7 +236,7 @@ VkResult initializeVulkan(XrContext *context)
     if (homeTextureData)
     {
         free(homeTextureData);
-        homeTextureData = nullptr;
+        homeTextureData = VK_NULL_HANDLE;
         XR_LOG_INFO(context->logger, "Free home texture data");
     }
 
@@ -261,7 +261,7 @@ VkResult initializeVulkan(XrContext *context)
     vikingRoomTexture = (XrTexture *)malloc(sizeof(XrTexture));
     memset((void *)vikingRoomTexture, 0, sizeof(XrTexture));
 
-    stbi_uc *vikingRoomTextureData = nullptr;
+    stbi_uc *vikingRoomTextureData = VK_NULL_HANDLE;
     xrLoadTexture(context, "../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
 
     if (!vikingRoomTextureData)
@@ -276,7 +276,7 @@ VkResult initializeVulkan(XrContext *context)
     if (vikingRoomTextureData)
     {
         free(vikingRoomTextureData);
-        vikingRoomTextureData = nullptr;
+        vikingRoomTextureData = VK_NULL_HANDLE;
         XR_LOG_INFO(context->logger, "Free viking room texture loaded");
     }
 
@@ -367,31 +367,31 @@ void cleanUp(XrContext *context)
     if (homeTexture)
     {
         free(homeTexture);
-        homeTexture = nullptr;
+        homeTexture = VK_NULL_HANDLE;
     }
 
     if (vikingRoomTexture)
     {
         free(vikingRoomTexture);
-        vikingRoomTexture = nullptr;
+        vikingRoomTexture = VK_NULL_HANDLE;
     }
 
     if (homeModel)
     {
         free(homeModel);
-        homeModel = nullptr;
+        homeModel = VK_NULL_HANDLE;
     }
 
     if (vikingRoomModel)
     {
         free(vikingRoomModel);
-        vikingRoomModel = nullptr;
+        vikingRoomModel = VK_NULL_HANDLE;
     }
 
     models.clear();
 
     free(context);
-    context = nullptr;
+    context = VK_NULL_HANDLE;
 }
 
 void updateHomeModel()
@@ -498,17 +498,17 @@ VkResult initPlatformSpecificSurface(XrContext *context)
 {
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.pNext = nullptr;
+    surfaceCreateInfo.pNext = VK_NULL_HANDLE;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.hinstance = hGlobalInstance;
     surfaceCreateInfo.hwnd = hWindow;
 
-    return vkCreateWin32SurfaceKHR(context->instance, &surfaceCreateInfo, nullptr, &(context->surface));
+    return vkCreateWin32SurfaceKHR(context->instance, &surfaceCreateInfo, VK_NULL_HANDLE, &(context->surface));
 }
 
 void destroyPlatformSpecificSurface(XrContext *context)
 {
-    vkDestroySurfaceKHR(context->instance, context->surface, nullptr);
+    vkDestroySurfaceKHR(context->instance, context->surface, VK_NULL_HANDLE);
     context->surface = VK_NULL_HANDLE;
 }
 

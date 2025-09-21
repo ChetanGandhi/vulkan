@@ -66,19 +66,19 @@ XR_API VkResult xrDestroyUniformBuffers(XrContext *context, XrModel *model);
 XR_API VkResult xrInitDescriptorPool(XrContext *context, size_t models);
 XR_API VkResult xrDestroyDescriptorPool(XrContext *context);
 
-XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> &models);
-XR_API VkResult xrDestroyDescriptorSets(XrContext *context, std::vector<XrModel *> &models);
+XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> *models);
+XR_API VkResult xrDestroyDescriptorSets(XrContext *context, std::vector<XrModel *> *models);
 
-XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> &models);
+XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> *models);
 XR_API VkResult xrDestroyCommandBuffers(XrContext *context);
 
 XR_API VkResult xrInitSynchronizations(XrContext *context);
 XR_API VkResult xrDestroySynchronizations(XrContext *context);
 
-XR_API VkResult xrRecreateSwapChain(XrContext *context, std::vector<XrModel *> &models);
-XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> &models);
+XR_API VkResult xrRecreateSwapChain(XrContext *context, std::vector<XrModel *> *models);
+XR_API VkResult xrCleanupSwapChain(XrContext *context, std::vector<XrModel *> *models);
 
-XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models);
+XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> *models);
 
 XR_API VkResult xrCreateShaderModule(XrContext *context, const char *shaderFilePath, VkShaderModule *shaderModule);
 XR_API VkResult xrDestroyShaderModule(XrContext *context, VkShaderModule shaderModule);
@@ -111,7 +111,7 @@ xrCreateImageView(XrContext *context, VkImage image, VkFormat format, VkImageVie
 XR_API VkResult xrCopyBuffer(XrContext *context, VkBuffer sourceBuffer, VkBuffer targetBuffer, VkDeviceSize size);
 
 XR_API VkResult xrCopyBufferToImage(XrContext *context, VkBuffer buffer, VkImage image, VkExtent2D *extent);
-XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> &gpuList);
+XR_API void xrListAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> *gpuList);
 
 XR_API uint32_t xrFindMemoryTypeIndex(
     const VkPhysicalDeviceMemoryProperties *gpuMemoryProperties,
@@ -124,9 +124,9 @@ XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer *command
 
 // private
 void xrSetupLayersAndExtensions(XrContext *context);
-void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> &models, uint32_t imageIndex);
+void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> *models, uint32_t imageIndex);
 
-VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture);
+VkResult xrGenerateMipmaps(XrContext *context, VkImage *image, XrTexture *texture);
 
 VkResult xrTransitionImageLayout(
     XrContext *context,
@@ -142,13 +142,13 @@ VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu
 VkFormat xrFindSupportedFormat(
     XrContext *context,
     VkPhysicalDevice gpu,
-    std::vector<VkFormat> &formatsToCheck,
+    std::vector<VkFormat> *formatsToCheck,
     VkImageTiling imageTiling,
     VkFormatFeatureFlags formatFeatureFlags
 );
 VkFormat xrFindDepthFormat(XrContext *context);
-void xrChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> &surfaceFormats, VkSurfaceFormatKHR *format);
-VkPresentModeKHR xrChoosePresentMode(XrContext *context, std::vector<VkPresentModeKHR> &presentModes);
+void xrChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> *surfaceFormats, VkSurfaceFormatKHR *format);
+VkPresentModeKHR xrChoosePresentMode(XrContext *context, std::vector<VkPresentModeKHR> *presentModes);
 void xrChooseSurfaceExtent(VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D *surfaceExtent);
 
 void xrRankDevice(XrContext *context, XrPhysicalDevice *gpu);
@@ -159,8 +159,8 @@ bool xrHasStencilComponent(XrContext *context, VkFormat format);
 
 // Debug methods
 
-XR_API void xrPrintGpuProperties(XrContext *context, XrPhysicalDevice *details, uint32_t currentGpuIndex, uint32_t totalGpuCount);
-XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties);
-XR_API void xrPrintDeviceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties);
-XR_API void xrPrintSurfaceFormatsDetails(XrContext *context, std::vector<VkSurfaceFormatKHR> &surfaceFormats);
+XR_API void xrPrintGpuProperties(XrContext *context, XrPhysicalDevice *gpu, uint32_t currentGpuIndex, uint32_t totalGpuCount);
+XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLayerProperties> *properties);
+XR_API void xrPrintDeviceLayerProperties(XrContext *context, std::vector<VkLayerProperties> *properties);
+XR_API void xrPrintSurfaceFormatsDetails(XrContext *context, std::vector<VkSurfaceFormatKHR> *surfaceFormats);
 XR_API void xrPrintSwapChainImageCount(XrContext *context, uint32_t minImageCount, uint32_t maxImageCount, uint32_t currentImageCount);

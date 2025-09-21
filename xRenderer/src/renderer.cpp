@@ -165,7 +165,7 @@ void xrFindSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpuDetails
     uint32_t graphicsFamilyIndex = UINT32_MAX;
     uint32_t presentFamilyIndex = UINT32_MAX;
 
-    vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, VK_NULL_HANDLE);
     std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, familyPropertiesList.data());
 
@@ -248,7 +248,7 @@ bool xrCheckDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu)
 {
     uint32_t availableDeviceExtensionsCount = 0;
 
-    VkResult vkResult = vkEnumerateDeviceExtensionProperties(gpu, nullptr, &availableDeviceExtensionsCount, nullptr);
+    VkResult vkResult = vkEnumerateDeviceExtensionProperties(gpu, VK_NULL_HANDLE, &availableDeviceExtensionsCount, VK_NULL_HANDLE);
 
     if (XR_IS_ERROR(vkResult))
     {
@@ -261,7 +261,7 @@ bool xrCheckDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu)
     }
 
     std::vector<VkExtensionProperties> availableDeviceExtensions(availableDeviceExtensionsCount);
-    vkResult = vkEnumerateDeviceExtensionProperties(gpu, nullptr, &availableDeviceExtensionsCount, availableDeviceExtensions.data());
+    vkResult = vkEnumerateDeviceExtensionProperties(gpu, VK_NULL_HANDLE, &availableDeviceExtensionsCount, availableDeviceExtensions.data());
 
     if (XR_IS_ERROR(vkResult))
     {
@@ -327,7 +327,7 @@ XR_API VkResult xrInitDevice(XrContext *context)
         vkEnumerateInstanceLayerProperties(&layerCount, VK_NULL_HANDLE);
         std::vector<VkLayerProperties> layerPropertiesList(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, layerPropertiesList.data());
-        xrPrintInstanceLayerProperties(context, layerPropertiesList);
+        xrPrintInstanceLayerProperties(context, &layerPropertiesList);
     }
 
     {
@@ -348,7 +348,7 @@ XR_API VkResult xrInitLogicalDevice(XrContext *context)
 
     VkDeviceQueueCreateInfo deviceGraphicQueueCreateInfo = {};
     deviceGraphicQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    deviceGraphicQueueCreateInfo.pNext = nullptr;
+    deviceGraphicQueueCreateInfo.pNext = VK_NULL_HANDLE;
     deviceGraphicQueueCreateInfo.flags = 0;
     deviceGraphicQueueCreateInfo.queueFamilyIndex = context->gpu->graphicsFamilyIndex;
     deviceGraphicQueueCreateInfo.queueCount = 1;
@@ -360,7 +360,7 @@ XR_API VkResult xrInitLogicalDevice(XrContext *context)
     {
         VkDeviceQueueCreateInfo devicePresentQueueCreateInfo = {};
         devicePresentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        devicePresentQueueCreateInfo.pNext = nullptr;
+        devicePresentQueueCreateInfo.pNext = VK_NULL_HANDLE;
         devicePresentQueueCreateInfo.flags = 0;
         devicePresentQueueCreateInfo.queueFamilyIndex = context->gpu->presentFamilyIndex;
         devicePresentQueueCreateInfo.queueCount = 1;
@@ -376,7 +376,7 @@ XR_API VkResult xrInitLogicalDevice(XrContext *context)
 
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pNext = nullptr;
+    deviceCreateInfo.pNext = VK_NULL_HANDLE;
     deviceCreateInfo.flags = 0;
     deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
     deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
@@ -426,7 +426,7 @@ VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu
         return vkResult;
     }
 
-    vkResult = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, context->surface, &formatCount, nullptr);
+    vkResult = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, context->surface, &formatCount, VK_NULL_HANDLE);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -440,7 +440,7 @@ VkResult xrQuerySwapchainSupportDetails(XrContext *context, VkPhysicalDevice gpu
         return vkResult;
     }
 
-    vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, context->surface, &presentModeCount, nullptr);
+    vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, context->surface, &presentModeCount, VK_NULL_HANDLE);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -589,7 +589,7 @@ XR_API VkResult xrInitSwapchain(XrContext *context)
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.pNext = nullptr;
+    swapchainCreateInfo.pNext = VK_NULL_HANDLE;
     swapchainCreateInfo.flags = 0;
     swapchainCreateInfo.surface = context->surface;
     swapchainCreateInfo.minImageCount = context->swapchainImageCount;
@@ -616,17 +616,17 @@ XR_API VkResult xrInitSwapchain(XrContext *context)
     else
     {
         swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        swapchainCreateInfo.queueFamilyIndexCount = 0;     // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
-        swapchainCreateInfo.pQueueFamilyIndices = nullptr; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+        swapchainCreateInfo.queueFamilyIndexCount = 0;            // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
+        swapchainCreateInfo.pQueueFamilyIndices = VK_NULL_HANDLE; // Ignored if imageSharingMode is VK_SHARING_MODE_EXCLUSIVE
     }
 
-    VkResult vkResult = vkCreateSwapchainKHR(context->device, &swapchainCreateInfo, nullptr, &(context->swapchain));
+    VkResult vkResult = vkCreateSwapchainKHR(context->device, &swapchainCreateInfo, VK_NULL_HANDLE, &(context->swapchain));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
     }
 
-    vkResult = vkGetSwapchainImagesKHR(context->device, context->swapchain, &(context->swapchainImageCount), nullptr);
+    vkResult = vkGetSwapchainImagesKHR(context->device, context->swapchain, &(context->swapchainImageCount), VK_NULL_HANDLE);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -644,7 +644,7 @@ XR_API VkResult xrInitSwapchain(XrContext *context)
 
 XR_API VkResult xrDestroySwapchain(XrContext *context)
 {
-    vkDestroySwapchainKHR(context->device, context->swapchain, nullptr);
+    vkDestroySwapchainKHR(context->device, context->swapchain, VK_NULL_HANDLE);
     context->swapchain = VK_NULL_HANDLE;
     context->swapchainImages.clear();
     return VK_SUCCESS;
@@ -668,7 +668,7 @@ XR_API VkResult xrDestroySwapchainImageViews(XrContext *context)
 {
     for (VkImageView imageView : context->swapchainImageViews)
     {
-        vkDestroyImageView(context->device, imageView, nullptr);
+        vkDestroyImageView(context->device, imageView, VK_NULL_HANDLE);
     }
 
     context->swapchainImageViews.clear();
@@ -687,17 +687,17 @@ XR_API VkResult xrCreateShaderModule(XrContext *context, const char *shaderFileP
 
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    shaderModuleCreateInfo.pNext = nullptr;
+    shaderModuleCreateInfo.pNext = VK_NULL_HANDLE;
     shaderModuleCreateInfo.flags = 0;
     shaderModuleCreateInfo.codeSize = shaderCode.size();
     shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(shaderCode.data());
 
-    return vkCreateShaderModule(context->device, &shaderModuleCreateInfo, nullptr, shaderModule);
+    return vkCreateShaderModule(context->device, &shaderModuleCreateInfo, VK_NULL_HANDLE, shaderModule);
 }
 
 XR_API VkResult xrDestroyShaderModule(XrContext *context, VkShaderModule shaderModule)
 {
-    vkDestroyShaderModule(context->device, shaderModule, nullptr);
+    vkDestroyShaderModule(context->device, shaderModule, VK_NULL_HANDLE);
     return VK_SUCCESS;
 }
 
@@ -710,7 +710,7 @@ XR_API VkResult xrInitGraphicsPiplineCache(XrContext *context)
     pipelineCacheCreateInfo.initialDataSize = 0;
     pipelineCacheCreateInfo.pInitialData = NULL;
 
-    VkResult vkResult = vkCreatePipelineCache(context->device, &pipelineCacheCreateInfo, nullptr, &(context->pipelineCache));
+    VkResult vkResult = vkCreatePipelineCache(context->device, &pipelineCacheCreateInfo, VK_NULL_HANDLE, &(context->pipelineCache));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -721,7 +721,7 @@ XR_API VkResult xrInitGraphicsPiplineCache(XrContext *context)
 
 XR_API VkResult xrDestroyGraphicsPiplineCache(XrContext *context)
 {
-    vkDestroyPipelineCache(context->device, context->pipelineCache, nullptr);
+    vkDestroyPipelineCache(context->device, context->pipelineCache, VK_NULL_HANDLE);
     context->pipelineCache = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -732,21 +732,21 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
     vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexShaderStageCreateInfo.pNext = nullptr;
+    vertexShaderStageCreateInfo.pNext = VK_NULL_HANDLE;
     vertexShaderStageCreateInfo.flags = 0;
     vertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertexShaderStageCreateInfo.module = context->vertexShaderModule;
     vertexShaderStageCreateInfo.pName = "main";
-    vertexShaderStageCreateInfo.pSpecializationInfo = nullptr;
+    vertexShaderStageCreateInfo.pSpecializationInfo = VK_NULL_HANDLE;
 
     VkPipelineShaderStageCreateInfo fragmentShaderStageCreateInfo = {};
     fragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragmentShaderStageCreateInfo.pNext = nullptr;
+    fragmentShaderStageCreateInfo.pNext = VK_NULL_HANDLE;
     fragmentShaderStageCreateInfo.flags = 0;
     fragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragmentShaderStageCreateInfo.module = context->fragmentShaderModule;
     fragmentShaderStageCreateInfo.pName = "main";
-    fragmentShaderStageCreateInfo.pSpecializationInfo = nullptr;
+    fragmentShaderStageCreateInfo.pSpecializationInfo = VK_NULL_HANDLE;
 
     VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
@@ -755,7 +755,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputStateCreateInfo.pNext = nullptr;
+    vertexInputStateCreateInfo.pNext = VK_NULL_HANDLE;
     vertexInputStateCreateInfo.flags = 0;
     vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
     vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexBindingDescription;
@@ -764,7 +764,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {};
     inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssemblyStateCreateInfo.pNext = nullptr;
+    inputAssemblyStateCreateInfo.pNext = VK_NULL_HANDLE;
     inputAssemblyStateCreateInfo.flags = 0;
     inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
@@ -784,7 +784,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {};
     viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportStateCreateInfo.pNext = nullptr;
+    viewportStateCreateInfo.pNext = VK_NULL_HANDLE;
     viewportStateCreateInfo.flags = 0;
     viewportStateCreateInfo.viewportCount = 1;
     viewportStateCreateInfo.pViewports = &viewport;
@@ -793,7 +793,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = {};
     rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizationStateCreateInfo.pNext = nullptr;
+    rasterizationStateCreateInfo.pNext = VK_NULL_HANDLE;
     rasterizationStateCreateInfo.flags = 0;
     rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
     rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
@@ -808,18 +808,18 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo = {};
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampleStateCreateInfo.pNext = nullptr;
+    multisampleStateCreateInfo.pNext = VK_NULL_HANDLE;
     multisampleStateCreateInfo.flags = 0;
     multisampleStateCreateInfo.rasterizationSamples = context->gpu->msaaSamples;
     multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
     multisampleStateCreateInfo.minSampleShading = 1.0f;
-    multisampleStateCreateInfo.pSampleMask = nullptr;
+    multisampleStateCreateInfo.pSampleMask = VK_NULL_HANDLE;
     multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
     multisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
 
     VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = {};
     depthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilStateCreateInfo.pNext = nullptr;
+    depthStencilStateCreateInfo.pNext = VK_NULL_HANDLE;
     depthStencilStateCreateInfo.flags = 0;
     depthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
     depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
@@ -843,7 +843,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineColorBlendStateCreateInfo colorBlendingStateCreateInfo = {};
     colorBlendingStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlendingStateCreateInfo.pNext = nullptr;
+    colorBlendingStateCreateInfo.pNext = VK_NULL_HANDLE;
     colorBlendingStateCreateInfo.flags = 0;
     colorBlendingStateCreateInfo.logicOpEnable = VK_FALSE;
     colorBlendingStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
@@ -860,21 +860,21 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicStateCreateInfo.pNext = nullptr;
+    dynamicStateCreateInfo.pNext = VK_NULL_HANDLE;
     dynamicStateCreateInfo.flags = 0;
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutCreateInfo.pNext = nullptr;
+    pipelineLayoutCreateInfo.pNext = VK_NULL_HANDLE;
     pipelineLayoutCreateInfo.flags = 0;
     pipelineLayoutCreateInfo.setLayoutCount = 1;
     pipelineLayoutCreateInfo.pSetLayouts = &(context->descriptorSetLayout);
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
     pipelineLayoutCreateInfo.pPushConstantRanges = 0;
 
-    vkResult = vkCreatePipelineLayout(context->device, &pipelineLayoutCreateInfo, nullptr, &(context->pipelineLayout));
+    vkResult = vkCreatePipelineLayout(context->device, &pipelineLayoutCreateInfo, VK_NULL_HANDLE, &(context->pipelineLayout));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -882,13 +882,13 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineCreateInfo.pNext = nullptr;
+    pipelineCreateInfo.pNext = VK_NULL_HANDLE;
     pipelineCreateInfo.flags = 0;
     pipelineCreateInfo.stageCount = 2;
     pipelineCreateInfo.pStages = shaderStageCreateInfos;
     pipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
     pipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-    pipelineCreateInfo.pTessellationState = nullptr;
+    pipelineCreateInfo.pTessellationState = VK_NULL_HANDLE;
     pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
     pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
     pipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
@@ -901,7 +901,7 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
 
-    vkResult = vkCreateGraphicsPipelines(context->device, context->pipelineCache, 1, &pipelineCreateInfo, nullptr, &(context->pipeline));
+    vkResult = vkCreateGraphicsPipelines(context->device, context->pipelineCache, 1, &pipelineCreateInfo, VK_NULL_HANDLE, &(context->pipeline));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -912,8 +912,8 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
 
 XR_API VkResult xrDestroyGraphicsPipline(XrContext *context)
 {
-    vkDestroyPipeline(context->device, context->pipeline, nullptr);
-    vkDestroyPipelineLayout(context->device, context->pipelineLayout, nullptr);
+    vkDestroyPipeline(context->device, context->pipeline, VK_NULL_HANDLE);
+    vkDestroyPipelineLayout(context->device, context->pipelineLayout, VK_NULL_HANDLE);
     context->pipeline = VK_NULL_HANDLE;
     context->pipelineLayout = VK_NULL_HANDLE;
     return VK_SUCCESS;
@@ -978,9 +978,9 @@ XR_API VkResult xrInitDepthStencilImage(XrContext *context)
 
 XR_API VkResult xrDestroyDepthStencilImage(XrContext *context)
 {
-    vkDestroyImageView(context->device, context->depthImageView, nullptr);
-    vkDestroyImage(context->device, context->depthImage, nullptr);
-    vkFreeMemory(context->device, context->depthImageMemory, nullptr);
+    vkDestroyImageView(context->device, context->depthImageView, VK_NULL_HANDLE);
+    vkDestroyImage(context->device, context->depthImage, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, context->depthImageMemory, VK_NULL_HANDLE);
     context->depthImageView = VK_NULL_HANDLE;
     context->depthImage = VK_NULL_HANDLE;
     context->depthImageMemory = VK_NULL_HANDLE;
@@ -1008,9 +1008,9 @@ XR_API VkResult xrInitMSAAColorImage(XrContext *context)
 
 XR_API VkResult xrDestroyMSAAColorImage(XrContext *context)
 {
-    vkDestroyImageView(context->device, context->msaaColorImageView, nullptr);
-    vkDestroyImage(context->device, context->msaaColorImage, nullptr);
-    vkFreeMemory(context->device, context->msaaColorImageMemory, nullptr);
+    vkDestroyImageView(context->device, context->msaaColorImageView, VK_NULL_HANDLE);
+    vkDestroyImage(context->device, context->msaaColorImage, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, context->msaaColorImageMemory, VK_NULL_HANDLE);
     context->msaaColorImageView = VK_NULL_HANDLE;
     context->msaaColorImage = VK_NULL_HANDLE;
     context->msaaColorImageMemory = VK_NULL_HANDLE;
@@ -1068,13 +1068,13 @@ XR_API VkResult xrInitRenderPass(XrContext *context)
     subpassDescription.flags = 0;
     subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpassDescription.inputAttachmentCount = 0;
-    subpassDescription.pInputAttachments = nullptr;
+    subpassDescription.pInputAttachments = VK_NULL_HANDLE;
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &colorAttachmentReference;
     subpassDescription.pResolveAttachments = &colorAttachmentResolveReference;
     subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
     subpassDescription.preserveAttachmentCount = 0;
-    subpassDescription.pPreserveAttachments = nullptr;
+    subpassDescription.pPreserveAttachments = VK_NULL_HANDLE;
 
     std::array<VkAttachmentDescription, 3> attachments = {colorAttachmentDescription, depthStencilAttachmentDescription, colorAttachmentResolveDescription};
 
@@ -1088,7 +1088,7 @@ XR_API VkResult xrInitRenderPass(XrContext *context)
 
     VkRenderPassCreateInfo renderPassCreateInfo = {};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.pNext = nullptr;
+    renderPassCreateInfo.pNext = VK_NULL_HANDLE;
     renderPassCreateInfo.flags = 0;
     renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     renderPassCreateInfo.pAttachments = attachments.data();
@@ -1097,7 +1097,7 @@ XR_API VkResult xrInitRenderPass(XrContext *context)
     renderPassCreateInfo.dependencyCount = 1;
     renderPassCreateInfo.pDependencies = &subpassDependency;
 
-    VkResult vkResult = vkCreateRenderPass(context->device, &renderPassCreateInfo, nullptr, &(context->renderPass));
+    VkResult vkResult = vkCreateRenderPass(context->device, &renderPassCreateInfo, VK_NULL_HANDLE, &(context->renderPass));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1108,7 +1108,7 @@ XR_API VkResult xrInitRenderPass(XrContext *context)
 
 XR_API VkResult xrDestroyRenderPass(XrContext *context)
 {
-    vkDestroyRenderPass(context->device, context->renderPass, nullptr);
+    vkDestroyRenderPass(context->device, context->renderPass, VK_NULL_HANDLE);
     context->renderPass = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -1120,25 +1120,25 @@ XR_API VkResult xrInitDescriptorSetLayout(XrContext *context)
     uboDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboDescriptorSetLayoutBinding.descriptorCount = 1;
     uboDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+    uboDescriptorSetLayoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
 
     VkDescriptorSetLayoutBinding samplerDescriptorSetLayoutBinding = {};
     samplerDescriptorSetLayoutBinding.binding = 1;
     samplerDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplerDescriptorSetLayoutBinding.descriptorCount = 1;
     samplerDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    samplerDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+    samplerDescriptorSetLayoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
 
     std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = {uboDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
     descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCreateInfo.pNext = nullptr;
+    descriptorSetLayoutCreateInfo.pNext = VK_NULL_HANDLE;
     descriptorSetLayoutCreateInfo.flags = 0;
     descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
     descriptorSetLayoutCreateInfo.pBindings = layoutBindings.data();
 
-    VkResult vkResult = vkCreateDescriptorSetLayout(context->device, &descriptorSetLayoutCreateInfo, nullptr, &context->descriptorSetLayout);
+    VkResult vkResult = vkCreateDescriptorSetLayout(context->device, &descriptorSetLayoutCreateInfo, VK_NULL_HANDLE, &context->descriptorSetLayout);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1149,7 +1149,7 @@ XR_API VkResult xrInitDescriptorSetLayout(XrContext *context)
 
 XR_API VkResult xrDestroyDescriptorSetLayout(XrContext *context)
 {
-    vkDestroyDescriptorSetLayout(context->device, context->descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(context->device, context->descriptorSetLayout, VK_NULL_HANDLE);
     context->descriptorSetLayout = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -1165,7 +1165,7 @@ XR_API VkResult xrInitFrameBuffers(XrContext *context)
 
         VkFramebufferCreateInfo framebufferCreateInfo = {};
         framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCreateInfo.pNext = nullptr;
+        framebufferCreateInfo.pNext = VK_NULL_HANDLE;
         framebufferCreateInfo.flags = 0;
         framebufferCreateInfo.renderPass = context->renderPass;
         framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -1174,7 +1174,7 @@ XR_API VkResult xrInitFrameBuffers(XrContext *context)
         framebufferCreateInfo.height = context->surfaceExtent.height;
         framebufferCreateInfo.layers = 1;
 
-        vkResult = vkCreateFramebuffer(context->device, &framebufferCreateInfo, nullptr, &(context->framebuffers[swapchainImageCounter]));
+        vkResult = vkCreateFramebuffer(context->device, &framebufferCreateInfo, VK_NULL_HANDLE, &(context->framebuffers[swapchainImageCounter]));
         if (XR_IS_ERROR(vkResult))
         {
             return vkResult;
@@ -1188,7 +1188,7 @@ XR_API VkResult xrDestroyFrameBuffers(XrContext *context)
 {
     for (VkFramebuffer nextFrameBuffer : context->framebuffers)
     {
-        vkDestroyFramebuffer(context->device, nextFrameBuffer, nullptr);
+        vkDestroyFramebuffer(context->device, nextFrameBuffer, VK_NULL_HANDLE);
     }
 
     context->framebuffers.clear();
@@ -1199,11 +1199,11 @@ XR_API VkResult xrInitCommandPool(XrContext *context)
 {
     VkCommandPoolCreateInfo commandPoolCreateInfo = {};
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolCreateInfo.pNext = nullptr;
+    commandPoolCreateInfo.pNext = VK_NULL_HANDLE;
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolCreateInfo.queueFamilyIndex = context->gpu->graphicsFamilyIndex;
 
-    VkResult vkResult = vkCreateCommandPool(context->device, &commandPoolCreateInfo, nullptr, &(context->commandPool));
+    VkResult vkResult = vkCreateCommandPool(context->device, &commandPoolCreateInfo, VK_NULL_HANDLE, &(context->commandPool));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1214,7 +1214,7 @@ XR_API VkResult xrInitCommandPool(XrContext *context)
 
 XR_API VkResult xrDestroyCommandPool(XrContext *context)
 {
-    vkDestroyCommandPool(context->device, context->commandPool, nullptr);
+    vkDestroyCommandPool(context->device, context->commandPool, VK_NULL_HANDLE);
     context->commandPool = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -1234,7 +1234,7 @@ XR_API VkResult xrCreateImage(
 {
     VkImageCreateInfo imageCreateInfo = {};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageCreateInfo.pNext = nullptr;
+    imageCreateInfo.pNext = VK_NULL_HANDLE;
     imageCreateInfo.flags = 0;
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
@@ -1248,10 +1248,10 @@ XR_API VkResult xrCreateImage(
     imageCreateInfo.usage = usage;
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.queueFamilyIndexCount = 0;
-    imageCreateInfo.pQueueFamilyIndices = nullptr;
+    imageCreateInfo.pQueueFamilyIndices = VK_NULL_HANDLE;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkResult vkResult = vkCreateImage(context->device, &imageCreateInfo, nullptr, image);
+    VkResult vkResult = vkCreateImage(context->device, &imageCreateInfo, VK_NULL_HANDLE, image);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1264,11 +1264,11 @@ XR_API VkResult xrCreateImage(
 
     VkMemoryAllocateInfo memoryAllocationInfo = {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocationInfo.pNext = nullptr;
+    memoryAllocationInfo.pNext = VK_NULL_HANDLE;
     memoryAllocationInfo.allocationSize = imageMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
-    vkResult = vkAllocateMemory(context->device, &memoryAllocationInfo, nullptr, imageMemory);
+    vkResult = vkAllocateMemory(context->device, &memoryAllocationInfo, VK_NULL_HANDLE, imageMemory);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1284,7 +1284,7 @@ xrCreateImageView(XrContext *context, VkImage image, VkFormat format, VkImageVie
 {
     VkImageViewCreateInfo imageViewCreateInfo = {};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewCreateInfo.pNext = nullptr;
+    imageViewCreateInfo.pNext = VK_NULL_HANDLE;
     imageViewCreateInfo.flags = 0;
     imageViewCreateInfo.image = image;
     imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1299,7 +1299,7 @@ xrCreateImageView(XrContext *context, VkImage image, VkFormat format, VkImageVie
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-    VkResult vkResult = vkCreateImageView(context->device, &imageViewCreateInfo, nullptr, imageView);
+    VkResult vkResult = vkCreateImageView(context->device, &imageViewCreateInfo, VK_NULL_HANDLE, imageView);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1323,7 +1323,7 @@ XR_API VkResult xrInitTextureImage(XrContext *context, XrModel *model, XrTexture
         &stagingImageBufferMemory
     );
 
-    void *data = nullptr;
+    void *data = VK_NULL_HANDLE;
     vkMapMemory(context->device, stagingImageBufferMemory, 0, deviceSize, 0, &data);
     memcpy(data, pixels, deviceSize);
     vkUnmapMemory(context->device, stagingImageBufferMemory);
@@ -1350,15 +1350,15 @@ XR_API VkResult xrInitTextureImage(XrContext *context, XrModel *model, XrTexture
     // Generate the mipmaps images and then transition image layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
     xrGenerateMipmaps(context, model->textureImage, texture);
 
-    vkDestroyBuffer(context->device, stagingImageBuffer, nullptr);
-    vkFreeMemory(context->device, stagingImageBufferMemory, nullptr);
+    vkDestroyBuffer(context->device, stagingImageBuffer, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, stagingImageBufferMemory, VK_NULL_HANDLE);
     return VK_SUCCESS;
 }
 
 XR_API VkResult xrDestroyTextureImage(XrContext *context, XrModel *model)
 {
-    vkDestroyImage(context->device, model->textureImage, nullptr);
-    vkFreeMemory(context->device, model->textureImageMemory, nullptr);
+    vkDestroyImage(context->device, model->textureImage, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, model->textureImageMemory, VK_NULL_HANDLE);
     model->textureImage = VK_NULL_HANDLE;
     model->textureImageMemory = VK_NULL_HANDLE;
     return VK_SUCCESS;
@@ -1380,7 +1380,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
 
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    imageMemoryBarrier.pNext = nullptr;
+    imageMemoryBarrier.pNext = VK_NULL_HANDLE;
     imageMemoryBarrier.image = image;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1401,7 +1401,9 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
         imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         imageMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+        vkCmdPipelineBarrier(
+            commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier
+        );
 
         VkImageBlit imageBlit = {};
 
@@ -1457,7 +1459,16 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
         // This transition waits on the current blit command to finish.
         // All sampling operations will wait on this transition to finish.
         vkCmdPipelineBarrier(
-            commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+            commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0,
+            VK_NULL_HANDLE,
+            0,
+            VK_NULL_HANDLE,
+            1,
+            &imageMemoryBarrier
         );
 
         // Divide the current mip dimensions by 2
@@ -1485,7 +1496,7 @@ VkResult xrGenerateMipmaps(XrContext *context, VkImage image, XrTexture *texture
     imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     vkCmdPipelineBarrier(
-        commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+        commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier
     );
 
     // Now end the command buffer.
@@ -1502,7 +1513,7 @@ XR_API VkResult xrInitTextureImageView(XrContext *context, XrModel *model, XrTex
 
 XR_API VkResult xrDestroyTextureImageView(XrContext *context, XrModel *model)
 {
-    vkDestroyImageView(context->device, model->textureImageView, nullptr);
+    vkDestroyImageView(context->device, model->textureImageView, VK_NULL_HANDLE);
     model->textureImageView = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -1511,7 +1522,7 @@ XR_API VkResult xrInitTextureSampler(XrContext *context, XrModel *model, XrTextu
 {
     VkSamplerCreateInfo samplerCreateInfo = {};
     samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerCreateInfo.pNext = nullptr;
+    samplerCreateInfo.pNext = VK_NULL_HANDLE;
     samplerCreateInfo.flags = 0;
     samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
     samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
@@ -1529,7 +1540,7 @@ XR_API VkResult xrInitTextureSampler(XrContext *context, XrModel *model, XrTextu
     samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
     samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 
-    VkResult vkResult = vkCreateSampler(context->device, &samplerCreateInfo, nullptr, &(model->textureSampler));
+    VkResult vkResult = vkCreateSampler(context->device, &samplerCreateInfo, VK_NULL_HANDLE, &(model->textureSampler));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1540,7 +1551,7 @@ XR_API VkResult xrInitTextureSampler(XrContext *context, XrModel *model, XrTextu
 
 XR_API VkResult xrDestroyTextureSampler(XrContext *context, XrModel *model)
 {
-    vkDestroySampler(context->device, model->textureSampler, nullptr);
+    vkDestroySampler(context->device, model->textureSampler, VK_NULL_HANDLE);
     model->textureSampler = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -1556,15 +1567,15 @@ XR_API VkResult xrCreateBuffer(
 {
     VkBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.pNext = nullptr;
+    bufferCreateInfo.pNext = VK_NULL_HANDLE;
     bufferCreateInfo.flags = 0;
     bufferCreateInfo.size = size;
     bufferCreateInfo.usage = bufferUsage;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferCreateInfo.queueFamilyIndexCount = 0;
-    bufferCreateInfo.pQueueFamilyIndices = nullptr; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
+    bufferCreateInfo.pQueueFamilyIndices = VK_NULL_HANDLE; // ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT
 
-    VkResult vkResult = vkCreateBuffer(context->device, &bufferCreateInfo, nullptr, buffer);
+    VkResult vkResult = vkCreateBuffer(context->device, &bufferCreateInfo, VK_NULL_HANDLE, buffer);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1582,11 +1593,11 @@ XR_API VkResult xrCreateBuffer(
 
     VkMemoryAllocateInfo memoryAllocationInfo = {};
     memoryAllocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocationInfo.pNext = nullptr;
+    memoryAllocationInfo.pNext = VK_NULL_HANDLE;
     memoryAllocationInfo.allocationSize = bufferMemoryRequirements.size;
     memoryAllocationInfo.memoryTypeIndex = memoryIndex;
 
-    vkResult = vkAllocateMemory(context->device, &memoryAllocationInfo, nullptr, bufferMemory);
+    vkResult = vkAllocateMemory(context->device, &memoryAllocationInfo, VK_NULL_HANDLE, bufferMemory);
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1605,7 +1616,7 @@ XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer *comma
 {
     VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandBufferAllocateInfo.pNext = nullptr;
+    commandBufferAllocateInfo.pNext = VK_NULL_HANDLE;
     commandBufferAllocateInfo.commandPool = context->commandPool;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = 1;
@@ -1618,9 +1629,9 @@ XR_API VkResult xrBeginOneTimeCommand(XrContext *context, VkCommandBuffer *comma
 
     VkCommandBufferBeginInfo commandBufferBeginInfo = {};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    commandBufferBeginInfo.pNext = nullptr;
+    commandBufferBeginInfo.pNext = VK_NULL_HANDLE;
     commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    commandBufferBeginInfo.pInheritanceInfo = nullptr;
+    commandBufferBeginInfo.pInheritanceInfo = VK_NULL_HANDLE;
 
     return vkBeginCommandBuffer(*commandBuffer, &commandBufferBeginInfo);
 }
@@ -1635,14 +1646,14 @@ XR_API VkResult xrEndOneTimeCommand(XrContext *context, VkCommandBuffer *command
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pNext = nullptr;
+    submitInfo.pNext = VK_NULL_HANDLE;
     submitInfo.waitSemaphoreCount = 0;
-    submitInfo.pWaitSemaphores = nullptr;
-    submitInfo.pWaitDstStageMask = nullptr;
+    submitInfo.pWaitSemaphores = VK_NULL_HANDLE;
+    submitInfo.pWaitDstStageMask = VK_NULL_HANDLE;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = commandBuffer;
     submitInfo.signalSemaphoreCount = 0;
-    submitInfo.pSignalSemaphores = nullptr;
+    submitInfo.pSignalSemaphores = VK_NULL_HANDLE;
 
     vkResult = vkQueueSubmit(context->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     if (XR_IS_ERROR(vkResult))
@@ -1677,7 +1688,7 @@ VkResult xrTransitionImageLayout(
 
     VkImageMemoryBarrier imageMemoryBarrier = {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    imageMemoryBarrier.pNext = nullptr;
+    imageMemoryBarrier.pNext = VK_NULL_HANDLE;
     imageMemoryBarrier.oldLayout = oldImageLayout;
     imageMemoryBarrier.newLayout = newImageLayout;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1713,7 +1724,7 @@ VkResult xrTransitionImageLayout(
         return VK_ERROR_NOT_PERMITTED;
     }
 
-    vkCmdPipelineBarrier(commandBuffer, sourceStageMask, destinationStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+    vkCmdPipelineBarrier(commandBuffer, sourceStageMask, destinationStageMask, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
 
     vkResult = xrEndOneTimeCommand(context, &commandBuffer);
 
@@ -1790,7 +1801,7 @@ XR_API VkResult xrInitVertexBuffer(XrContext *context, XrModel *model)
         return vkResult;
     }
 
-    void *stagingBufferData = nullptr;
+    void *stagingBufferData = VK_NULL_HANDLE;
     vkResult = vkMapMemory(context->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
 
     if (XR_IS_ERROR(vkResult))
@@ -1808,7 +1819,7 @@ XR_API VkResult xrInitVertexBuffer(XrContext *context, XrModel *model)
 
     if (XR_IS_ERROR(vkResult))
     {
-        vkFreeMemory(context->device, stagingBufferMemory, nullptr);
+        vkFreeMemory(context->device, stagingBufferMemory, VK_NULL_HANDLE);
         return vkResult;
     }
 
@@ -1816,19 +1827,19 @@ XR_API VkResult xrInitVertexBuffer(XrContext *context, XrModel *model)
 
     if (XR_IS_ERROR(vkResult))
     {
-        vkFreeMemory(context->device, stagingBufferMemory, nullptr);
-        vkDestroyBuffer(context->device, stagingBuffer, nullptr);
+        vkFreeMemory(context->device, stagingBufferMemory, VK_NULL_HANDLE);
+        vkDestroyBuffer(context->device, stagingBuffer, VK_NULL_HANDLE);
         return vkResult;
     }
 
-    vkDestroyBuffer(context->device, stagingBuffer, nullptr);
+    vkDestroyBuffer(context->device, stagingBuffer, VK_NULL_HANDLE);
     return vkResult;
 }
 
 XR_API VkResult xrDestroyVertexBuffer(XrContext *context, XrModel *model)
 {
-    vkDestroyBuffer(context->device, model->vertexBuffer, nullptr);
-    vkFreeMemory(context->device, model->vertexBufferMemory, nullptr);
+    vkDestroyBuffer(context->device, model->vertexBuffer, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, model->vertexBufferMemory, VK_NULL_HANDLE);
     model->vertexBuffer = VK_NULL_HANDLE;
     model->vertexBufferMemory = VK_NULL_HANDLE;
     return VK_SUCCESS;
@@ -1847,7 +1858,7 @@ XR_API VkResult xrInitIndexBuffer(XrContext *context, XrModel *model)
 
     xrCreateBuffer(context, size, stagingBufferUsage, stagingMemoryProperties, &stagingBuffer, &stagingBufferMemory);
 
-    void *stagingBufferData = nullptr;
+    void *stagingBufferData = VK_NULL_HANDLE;
     vkResult = vkMapMemory(context->device, stagingBufferMemory, 0, size, 0, &stagingBufferData);
     if (XR_IS_ERROR(vkResult))
     {
@@ -1862,16 +1873,16 @@ XR_API VkResult xrInitIndexBuffer(XrContext *context, XrModel *model)
 
     xrCreateBuffer(context, size, indexBufferUsage, indexMemoryProperties, &(model->indexBuffer), &(model->indexBufferMemory));
     xrCopyBuffer(context, stagingBuffer, model->indexBuffer, size);
-    vkDestroyBuffer(context->device, stagingBuffer, nullptr);
-    vkFreeMemory(context->device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(context->device, stagingBuffer, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, stagingBufferMemory, VK_NULL_HANDLE);
 
     return vkResult;
 }
 
 XR_API VkResult xrDestroyIndexBuffer(XrContext *context, XrModel *model)
 {
-    vkDestroyBuffer(context->device, model->indexBuffer, nullptr);
-    vkFreeMemory(context->device, model->indexBufferMemory, nullptr);
+    vkDestroyBuffer(context->device, model->indexBuffer, VK_NULL_HANDLE);
+    vkFreeMemory(context->device, model->indexBufferMemory, VK_NULL_HANDLE);
     model->indexBuffer = VK_NULL_HANDLE;
     model->indexBufferMemory = VK_NULL_HANDLE;
     return VK_SUCCESS;
@@ -1898,8 +1909,8 @@ XR_API VkResult xrDestroyUniformBuffers(XrContext *context, XrModel *model)
 {
     for (size_t counter = 0; counter < context->swapchainImages.size(); ++counter)
     {
-        vkDestroyBuffer(context->device, model->uniformBuffers[counter], nullptr);
-        vkFreeMemory(context->device, model->uniformBuffersMemory[counter], nullptr);
+        vkDestroyBuffer(context->device, model->uniformBuffers[counter], VK_NULL_HANDLE);
+        vkFreeMemory(context->device, model->uniformBuffersMemory[counter], VK_NULL_HANDLE);
     }
 
     model->uniformBuffers.clear();
@@ -1922,7 +1933,7 @@ XR_API VkResult xrInitDescriptorPool(XrContext *context, size_t models)
 
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.pNext = nullptr;
+    poolCreateInfo.pNext = VK_NULL_HANDLE;
     poolCreateInfo.flags = 0;
     // If you want to explicitly destroy the descriptorSet, then set this bit
     // else you will get runtime error while destroying the descriptorSet.
@@ -1932,7 +1943,7 @@ XR_API VkResult xrInitDescriptorPool(XrContext *context, size_t models)
     poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolCreateInfo.pPoolSizes = poolSizes.data();
 
-    VkResult vkResult = vkCreateDescriptorPool(context->device, &poolCreateInfo, nullptr, &(context->descriptorPool));
+    VkResult vkResult = vkCreateDescriptorPool(context->device, &poolCreateInfo, VK_NULL_HANDLE, &(context->descriptorPool));
     if (XR_IS_ERROR(vkResult))
     {
         return vkResult;
@@ -1943,7 +1954,7 @@ XR_API VkResult xrInitDescriptorPool(XrContext *context, size_t models)
 
 XR_API VkResult xrDestroyDescriptorPool(XrContext *context)
 {
-    vkDestroyDescriptorPool(context->device, context->descriptorPool, nullptr);
+    vkDestroyDescriptorPool(context->device, context->descriptorPool, VK_NULL_HANDLE);
     context->descriptorPool = VK_NULL_HANDLE;
     return VK_SUCCESS;
 }
@@ -1958,7 +1969,7 @@ XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> 
         XrModel *model = models[index];
         VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
         descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        descriptorSetAllocateInfo.pNext = nullptr;
+        descriptorSetAllocateInfo.pNext = VK_NULL_HANDLE;
         descriptorSetAllocateInfo.descriptorPool = context->descriptorPool;
         descriptorSetAllocateInfo.descriptorSetCount = static_cast<uint32_t>(context->swapchainImages.size());
         descriptorSetAllocateInfo.pSetLayouts = descriptorSetLayouts.data();
@@ -1985,30 +1996,30 @@ XR_API VkResult xrInitDescriptorSets(XrContext *context, std::vector<XrModel *> 
 
             VkWriteDescriptorSet uniformBudderDescriptorWrite = {};
             uniformBudderDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            uniformBudderDescriptorWrite.pNext = nullptr;
+            uniformBudderDescriptorWrite.pNext = VK_NULL_HANDLE;
             uniformBudderDescriptorWrite.dstSet = model->descriptorSets[counter];
             uniformBudderDescriptorWrite.dstBinding = 0;
             uniformBudderDescriptorWrite.dstArrayElement = 0;
             uniformBudderDescriptorWrite.descriptorCount = 1;
             uniformBudderDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            uniformBudderDescriptorWrite.pImageInfo = nullptr;
+            uniformBudderDescriptorWrite.pImageInfo = VK_NULL_HANDLE;
             uniformBudderDescriptorWrite.pBufferInfo = &descriptorBufferInfo;
-            uniformBudderDescriptorWrite.pTexelBufferView = nullptr;
+            uniformBudderDescriptorWrite.pTexelBufferView = VK_NULL_HANDLE;
 
             VkWriteDescriptorSet textureImageDescriptorWrite = {};
             textureImageDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            textureImageDescriptorWrite.pNext = nullptr;
+            textureImageDescriptorWrite.pNext = VK_NULL_HANDLE;
             textureImageDescriptorWrite.dstSet = model->descriptorSets[counter];
             textureImageDescriptorWrite.dstBinding = 1;
             textureImageDescriptorWrite.dstArrayElement = 0;
             textureImageDescriptorWrite.descriptorCount = 1;
             textureImageDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             textureImageDescriptorWrite.pImageInfo = &descriptorImageInfo;
-            textureImageDescriptorWrite.pBufferInfo = nullptr;
-            textureImageDescriptorWrite.pTexelBufferView = nullptr;
+            textureImageDescriptorWrite.pBufferInfo = VK_NULL_HANDLE;
+            textureImageDescriptorWrite.pTexelBufferView = VK_NULL_HANDLE;
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites = {uniformBudderDescriptorWrite, textureImageDescriptorWrite};
-            vkUpdateDescriptorSets(context->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            vkUpdateDescriptorSets(context->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, VK_NULL_HANDLE);
         }
     }
 
@@ -2047,7 +2058,7 @@ XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> 
 
     VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandBufferAllocateInfo.pNext = nullptr;
+    commandBufferAllocateInfo.pNext = VK_NULL_HANDLE;
     commandBufferAllocateInfo.commandPool = context->commandPool;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = static_cast<uint32_t>(context->commandBuffers.size());
@@ -2062,9 +2073,9 @@ XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> 
     {
         VkCommandBufferBeginInfo commandBufferBeginInfo = {};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        commandBufferBeginInfo.pNext = nullptr;
+        commandBufferBeginInfo.pNext = VK_NULL_HANDLE;
         commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-        commandBufferBeginInfo.pInheritanceInfo = nullptr;
+        commandBufferBeginInfo.pInheritanceInfo = VK_NULL_HANDLE;
 
         vkBeginCommandBuffer(context->commandBuffers[counter], &commandBufferBeginInfo);
 
@@ -2080,7 +2091,7 @@ XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> 
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassBeginInfo.pNext = nullptr;
+        renderPassBeginInfo.pNext = VK_NULL_HANDLE;
         renderPassBeginInfo.renderPass = context->renderPass;
         renderPassBeginInfo.framebuffer = context->framebuffers[counter];
         renderPassBeginInfo.renderArea = renderArea;
@@ -2098,7 +2109,14 @@ XR_API VkResult xrInitCommandBuffers(XrContext *context, std::vector<XrModel *> 
             vkCmdBindVertexBuffers(context->commandBuffers[counter], 0, 1, &(model->vertexBuffer), &offset);
             vkCmdBindIndexBuffer(context->commandBuffers[counter], model->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(
-                context->commandBuffers[counter], VK_PIPELINE_BIND_POINT_GRAPHICS, context->pipelineLayout, 0, 1, &(model->descriptorSets[counter]), 0, nullptr
+                context->commandBuffers[counter],
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                context->pipelineLayout,
+                0,
+                1,
+                &(model->descriptorSets[counter]),
+                0,
+                VK_NULL_HANDLE
             );
 
             vkCmdDrawIndexed(context->commandBuffers[counter], static_cast<uint32_t>(model->vertexIndices.size()), 1, 0, 0, 0);
@@ -2131,29 +2149,29 @@ XR_API VkResult xrInitSynchronizations(XrContext *context)
 
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphoreCreateInfo.pNext = nullptr;
+    semaphoreCreateInfo.pNext = VK_NULL_HANDLE;
     semaphoreCreateInfo.flags = 0;
 
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceCreateInfo.pNext = nullptr;
+    fenceCreateInfo.pNext = VK_NULL_HANDLE;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t counter = 0; counter < context->swapchainImageCount; ++counter)
     {
-        VkResult vkResult = vkCreateSemaphore(context->device, &semaphoreCreateInfo, nullptr, &context->imageAvailableSemaphores[counter]);
+        VkResult vkResult = vkCreateSemaphore(context->device, &semaphoreCreateInfo, VK_NULL_HANDLE, &context->imageAvailableSemaphores[counter]);
         if (XR_IS_ERROR(vkResult))
         {
             return vkResult;
         }
 
-        vkResult = vkCreateSemaphore(context->device, &semaphoreCreateInfo, nullptr, &context->renderFinishedSemaphores[counter]);
+        vkResult = vkCreateSemaphore(context->device, &semaphoreCreateInfo, VK_NULL_HANDLE, &context->renderFinishedSemaphores[counter]);
         if (XR_IS_ERROR(vkResult))
         {
             return vkResult;
         }
 
-        vkResult = vkCreateFence(context->device, &fenceCreateInfo, nullptr, &(context->inFlightFences[counter]));
+        vkResult = vkCreateFence(context->device, &fenceCreateInfo, VK_NULL_HANDLE, &(context->inFlightFences[counter]));
         if (XR_IS_ERROR(vkResult))
         {
             return vkResult;
@@ -2167,9 +2185,9 @@ XR_API VkResult xrDestroySynchronizations(XrContext *context)
 {
     for (size_t counter = 0; counter < context->swapchainImageCount; ++counter)
     {
-        vkDestroySemaphore(context->device, context->imageAvailableSemaphores[counter], nullptr);
-        vkDestroySemaphore(context->device, context->renderFinishedSemaphores[counter], nullptr);
-        vkDestroyFence(context->device, context->inFlightFences[counter], nullptr);
+        vkDestroySemaphore(context->device, context->imageAvailableSemaphores[counter], VK_NULL_HANDLE);
+        vkDestroySemaphore(context->device, context->renderFinishedSemaphores[counter], VK_NULL_HANDLE);
+        vkDestroyFence(context->device, context->inFlightFences[counter], VK_NULL_HANDLE);
     }
 
     context->imageAvailableSemaphores.clear();
@@ -2282,7 +2300,7 @@ XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models)
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pNext = nullptr;
+    submitInfo.pNext = VK_NULL_HANDLE;
     submitInfo.waitSemaphoreCount = static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(waitSemaphores[0]));
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitPipelineStages;
@@ -2301,13 +2319,13 @@ XR_API VkResult xrRender(XrContext *context, std::vector<XrModel *> &models)
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pNext = nullptr;
+    presentInfo.pNext = VK_NULL_HANDLE;
     presentInfo.waitSemaphoreCount = static_cast<uint32_t>(sizeof(signalSemaphores) / sizeof(signalSemaphores[0]));
     presentInfo.pWaitSemaphores = signalSemaphores;
     presentInfo.swapchainCount = static_cast<uint32_t>(sizeof(swapchains) / sizeof(swapchains[0]));
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &activeSwapchainImageId;
-    presentInfo.pResults = nullptr;
+    presentInfo.pResults = VK_NULL_HANDLE;
 
     vkResult = vkQueuePresentKHR(context->presentQueue, &presentInfo);
 
@@ -2336,7 +2354,7 @@ void xrUpdateUniformBuffer(XrContext *context, std::vector<XrModel *> &models, u
     for (size_t index = 0; index < models.size(); ++index)
     {
         XrModel *model = models[index];
-        void *data = nullptr;
+        void *data = VK_NULL_HANDLE;
         vkResult = vkMapMemory(context->device, model->uniformBuffersMemory[imageIndex], 0, sizeof(XrUniformBufferObject), 0, &data);
 
         if (XR_IS_ERROR(vkResult))
@@ -2375,14 +2393,13 @@ XR_API void xrPrintGpuProperties(XrContext *context, XrPhysicalDevice *gpuDetail
     XR_LOG_INFO(context->logger, "---------- GPU Properties End ----------");
 }
 
-XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties)
+XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLayerProperties> *properties)
 {
-#ifndef NDEBUG
-
     XR_LOG_INFO(context->logger, "---------- Instance Layer Properties ----------");
 
-    for (VkLayerProperties &nextProperty : properties)
+    for (uint32_t index = 0; index < properties->size(); ++index)
     {
+        VkLayerProperties nextProperty = (*properties)[index];
         XR_LOG_INFO(context->logger, "Layer Name\t\t: %s", nextProperty.layerName);
         XR_LOG_INFO(context->logger, "Description\t\t: %s", nextProperty.description);
         XR_LOG_INFO(context->logger, "Spec Version\t\t: %d", nextProperty.specVersion);
@@ -2390,9 +2407,7 @@ XR_API void xrPrintInstanceLayerProperties(XrContext *context, std::vector<VkLay
         XR_LOG_INFO(context->logger, "------------------------------------------------------------");
     }
 
-    XR_LOG_INFO(context->logger, "---------- Instance Layer Properties End [%d] ----------", properties.size());
-
-#endif
+    XR_LOG_INFO(context->logger, "---------- Instance Layer Properties End [%d] ----------", properties->size());
 }
 
 XR_API void xrPrintDeviceLayerProperties(XrContext *context, std::vector<VkLayerProperties> &properties)

@@ -22,11 +22,11 @@ bool isCloseButtonClicked = false;
 int main(void);
 void handleEvent(const xcb_generic_event_t *event);
 
-XRModel *homeModel = nullptr;
-XRTexture *homeTexture = nullptr;
+XRModel *homeModel = VK_NULL_HANDLE;
+XRTexture *homeTexture = VK_NULL_HANDLE;
 
-XRModel *vikingRoomModel = nullptr;
-XRTexture *vikingRoomTexture = nullptr;
+XRModel *vikingRoomModel = VK_NULL_HANDLE;
+XRTexture *vikingRoomTexture = VK_NULL_HANDLE;
 
 void handleEvent(const xcb_generic_event_t *event)
 {
@@ -202,7 +202,7 @@ void destroyPlatformSpecificWindow()
     if (xcbConnection)
     {
         xcb_disconnect(xcbConnection);
-        xcbConnection = nullptr;
+        xcbConnection = VK_NULL_HANDLE;
     }
 }
 
@@ -241,7 +241,7 @@ void initializeVulkan()
     homeTexture = (XRTexture *)malloc(sizeof(XRTexture));
     memset((void *)homeTexture, 0, sizeof(XRTexture));
 
-    stbi_uc *homeTextureData = nullptr;
+    stbi_uc *homeTextureData = VK_NULL_HANDLE;
     loadTexture("../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
 
     if (!homeTextureData)
@@ -256,7 +256,7 @@ void initializeVulkan()
     if (homeTextureData)
     {
         free(homeTextureData);
-        homeTextureData = nullptr;
+        homeTextureData = VK_NULL_HANDLE;
         LOG_INFO("Free home texture data");
     }
 
@@ -279,7 +279,7 @@ void initializeVulkan()
     vikingRoomTexture = (XRTexture *)malloc(sizeof(XRTexture));
     memset((void *)vikingRoomTexture, 0, sizeof(XRTexture));
 
-    stbi_uc *vikingRoomTextureData = nullptr;
+    stbi_uc *vikingRoomTextureData = VK_NULL_HANDLE;
     loadTexture("../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
 
     if (!vikingRoomTextureData)
@@ -294,7 +294,7 @@ void initializeVulkan()
     if (vikingRoomTextureData)
     {
         free(vikingRoomTextureData);
-        vikingRoomTextureData = nullptr;
+        vikingRoomTextureData = VK_NULL_HANDLE;
         LOG_INFO("Free viking room texture loaded");
     }
 
@@ -320,7 +320,7 @@ void cleanUp()
         toggleFullscreen(isFullscreen);
     }
 
-    if (renderer != nullptr)
+    if (renderer != VK_NULL_HANDLE)
     {
         renderer->waitForIdle(context);
         renderer->destroySynchronizations(context);
@@ -361,25 +361,25 @@ void cleanUp()
     if (homeTexture)
     {
         free(homeTexture);
-        homeTexture = nullptr;
+        homeTexture = VK_NULL_HANDLE;
     }
 
     if (vikingRoomTexture)
     {
         free(vikingRoomTexture);
-        vikingRoomTexture = nullptr;
+        vikingRoomTexture = VK_NULL_HANDLE;
     }
 
     if (homeModel)
     {
         delete homeModel;
-        homeModel = nullptr;
+        homeModel = VK_NULL_HANDLE;
     }
 
     if (vikingRoomModel)
     {
         delete vikingRoomModel;
-        vikingRoomModel = nullptr;
+        vikingRoomModel = VK_NULL_HANDLE;
     }
 
     if (renderer)
@@ -387,19 +387,19 @@ void cleanUp()
         renderer->destroyInstance(context);
 
         delete renderer;
-        renderer = nullptr;
+        renderer = VK_NULL_HANDLE;
     }
 
     if (context->debugger)
     {
         delete context->debugger;
-        context->debugger = nullptr;
+        context->debugger = VK_NULL_HANDLE;
     }
 
     if (context)
     {
         delete context;
-        context = nullptr;
+        context = VK_NULL_HANDLE;
     }
 
     destroyPlatformSpecificWindow();
@@ -507,18 +507,18 @@ void initPlatformSpecificSurface(VkInstance *instance, VkSurfaceKHR *surface)
 {
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo = {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.pNext = nullptr;
+    surfaceCreateInfo.pNext = VK_NULL_HANDLE;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.connection = xcbConnection;
     surfaceCreateInfo.window = xcbWindow;
 
-    VkResult result = vkCreateXcbSurfaceKHR(*instance, &surfaceCreateInfo, nullptr, surface);
+    VkResult result = vkCreateXcbSurfaceKHR(*instance, &surfaceCreateInfo, VK_NULL_HANDLE, surface);
     CHECK_ERROR(result);
 }
 
 void destroyPlatformSpecificSurface()
 {
-    vkDestroySurfaceKHR(context->instance->vkInstance, context->surface, nullptr);
+    vkDestroySurfaceKHR(context->instance->vkInstance, context->surface, VK_NULL_HANDLE);
     context->surface = VK_NULL_HANDLE;
 }
 
@@ -537,7 +537,7 @@ void resize(uint32_t width, uint32_t height)
     context->surfaceSize.width = width;
     context->surfaceSize.height = height;
 
-    if (renderer != nullptr)
+    if (renderer != VK_NULL_HANDLE)
     {
         renderer->recreateSwapChain(context, {homeModel, vikingRoomModel});
     }

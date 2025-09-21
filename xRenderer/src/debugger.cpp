@@ -37,7 +37,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL xrDebugMessengerCallback(
     }
 
     XrContext *context = static_cast<XrContext *>(userData);
-    XR_LOG(context->logger, severity, layerPrefix, " (", messageCode, ") ", message);
+    XR_LOG(context->logger, severity, layerPrefix, "(", messageCode, ")", " | [Object:", object, "] | ", message);
 
     return false;
 }
