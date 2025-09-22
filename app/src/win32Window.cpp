@@ -28,7 +28,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 XrModel *homeModel = VK_NULL_HANDLE;
 XrTexture *homeTexture = VK_NULL_HANDLE;
 
-XrModel *vikingRoomModel = VK_NULL_HANDLE;
+// XrModel *vikingRoomModel = VK_NULL_HANDLE;
 XrTexture *vikingRoomTexture = VK_NULL_HANDLE;
 
 std::vector<XrModel *> models;
@@ -513,7 +513,7 @@ VkResult initializeVulkan(XrContext *context)
     homeModel = (XrModel *)malloc(sizeof(XrModel));
     memset((void *)homeModel, 0, sizeof(XrModel));
 
-    bool homeModelLoaded = xrLoadModal(context, "../resources/models/chalet/chalet.obj", homeModel);
+    bool homeModelLoaded = xrLoadModal(context, "../resources/models/fox/fox.obj", homeModel);
 
     if (!homeModelLoaded)
     {
@@ -527,7 +527,7 @@ VkResult initializeVulkan(XrContext *context)
     memset((void *)homeTexture, 0, sizeof(XrTexture));
 
     stbi_uc *homeTextureData = VK_NULL_HANDLE;
-    xrLoadTexture(context, "../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
+    xrLoadTexture(context, "../resources/models/fox/fox.png", homeTexture, &homeTextureData);
 
     if (!homeTextureData)
     {
@@ -552,50 +552,50 @@ VkResult initializeVulkan(XrContext *context)
     xrInitIndexBuffer(context, homeModel);
     xrInitUniformBuffers(context, homeModel);
 
-    vikingRoomModel = (XrModel *)malloc(sizeof(XrModel));
-    memset((void *)vikingRoomModel, 0, sizeof(XrModel));
+    // vikingRoomModel = (XrModel *)malloc(sizeof(XrModel));
+    // memset((void *)vikingRoomModel, 0, sizeof(XrModel));
 
-    bool vikingRoomModelLoaded = xrLoadModal(context, "../resources/models/vikingRoom/vikingRoom.obj", vikingRoomModel);
+    // bool vikingRoomModelLoaded = xrLoadModal(context, "../resources/models/fox/fox.obj", vikingRoomModel);
 
-    if (!vikingRoomModelLoaded)
-    {
-        XR_LOG_ERROR(context->logger, "Not able to load viking room model.");
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
+    // if (!vikingRoomModelLoaded)
+    // {
+    //     XR_LOG_ERROR(context->logger, "Not able to load viking room model.");
+    //     return VK_ERROR_INITIALIZATION_FAILED;
+    // }
 
-    XR_LOG_INFO(context->logger, "Viking room model loaded");
+    // XR_LOG_INFO(context->logger, "Viking room model loaded");
 
-    vikingRoomTexture = (XrTexture *)malloc(sizeof(XrTexture));
-    memset((void *)vikingRoomTexture, 0, sizeof(XrTexture));
+    // vikingRoomTexture = (XrTexture *)malloc(sizeof(XrTexture));
+    // memset((void *)vikingRoomTexture, 0, sizeof(XrTexture));
 
-    stbi_uc *vikingRoomTextureData = VK_NULL_HANDLE;
-    xrLoadTexture(context, "../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
+    // stbi_uc *vikingRoomTextureData = VK_NULL_HANDLE;
+    // xrLoadTexture(context, "../resources/models/fox/fox.png", vikingRoomTexture, &vikingRoomTextureData);
 
-    if (!vikingRoomTextureData)
-    {
-        XR_LOG_ERROR(context->logger, "Not able to load viking room texture");
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
+    // if (!vikingRoomTextureData)
+    // {
+    //     XR_LOG_ERROR(context->logger, "Not able to load viking room texture");
+    //     return VK_ERROR_INITIALIZATION_FAILED;
+    // }
 
-    xrInitTextureImage(context, vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
-    XR_LOG_INFO(context->logger, "Viking room texture loaded");
+    // xrInitTextureImage(context, vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
+    // XR_LOG_INFO(context->logger, "Viking room texture loaded");
 
-    // Free the texture data as no longer required
-    if (vikingRoomTextureData)
-    {
-        free(vikingRoomTextureData);
-        vikingRoomTextureData = VK_NULL_HANDLE;
-        XR_LOG_INFO(context->logger, "Free viking room texture loaded");
-    }
+    // // Free the texture data as no longer required
+    // if (vikingRoomTextureData)
+    // {
+    //     free(vikingRoomTextureData);
+    //     vikingRoomTextureData = VK_NULL_HANDLE;
+    //     XR_LOG_INFO(context->logger, "Free viking room texture loaded");
+    // }
 
-    xrInitTextureImageView(context, vikingRoomModel, vikingRoomTexture);
-    xrInitTextureSampler(context, vikingRoomModel, vikingRoomTexture);
-    xrInitVertexBuffer(context, vikingRoomModel);
-    xrInitIndexBuffer(context, vikingRoomModel);
-    xrInitUniformBuffers(context, vikingRoomModel);
+    // xrInitTextureImageView(context, vikingRoomModel, vikingRoomTexture);
+    // xrInitTextureSampler(context, vikingRoomModel, vikingRoomTexture);
+    // xrInitVertexBuffer(context, vikingRoomModel);
+    // xrInitIndexBuffer(context, vikingRoomModel);
+    // xrInitUniformBuffers(context, vikingRoomModel);
 
     models.push_back(homeModel);
-    models.push_back(vikingRoomModel);
+    // models.push_back(vikingRoomModel);
 
     xrInitDescriptorPool(context, models.size());
     xrInitDescriptorSets(context, &models);
@@ -628,12 +628,12 @@ void cleanUp(XrContext *context)
     xrDestroyTextureImageView(context, homeModel);
     xrDestroyTextureImage(context, homeModel);
 
-    xrDestroyUniformBuffers(context, vikingRoomModel);
-    xrDestroyIndexBuffer(context, vikingRoomModel);
-    xrDestroyVertexBuffer(context, vikingRoomModel);
-    xrDestroyTextureSampler(context, vikingRoomModel);
-    xrDestroyTextureImageView(context, vikingRoomModel);
-    xrDestroyTextureImage(context, vikingRoomModel);
+    // xrDestroyUniformBuffers(context, vikingRoomModel);
+    // xrDestroyIndexBuffer(context, vikingRoomModel);
+    // xrDestroyVertexBuffer(context, vikingRoomModel);
+    // xrDestroyTextureSampler(context, vikingRoomModel);
+    // xrDestroyTextureImageView(context, vikingRoomModel);
+    // xrDestroyTextureImage(context, vikingRoomModel);
 
     xrDestroyFrameBuffers(context);
     xrDestroyMSAAColorImage(context);
@@ -690,11 +690,11 @@ void cleanUp(XrContext *context)
         homeModel = VK_NULL_HANDLE;
     }
 
-    if (vikingRoomModel)
-    {
-        free(vikingRoomModel);
-        vikingRoomModel = VK_NULL_HANDLE;
-    }
+    // if (vikingRoomModel)
+    // {
+    //     free(vikingRoomModel);
+    //     vikingRoomModel = VK_NULL_HANDLE;
+    // }
 
     models.clear();
 
@@ -708,13 +708,15 @@ void updateHomeModel()
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, -1.0f));
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+    // glm::mat4 rotationXMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    // glm::mat4 rotationZMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(4.75f, 4.75f, 4.75f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
     memset((void *)&(homeModel->ubo), 0, sizeof(XrUniformBufferObject));
-    homeModel->ubo.model = translationMatrix * rotationMatrix;
-    homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    homeModel->ubo.model = translationMatrix * scaleMatrix;
+    homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
@@ -724,28 +726,30 @@ void updateHomeModel()
     homeModel->ubo.projection[1][1] *= -1.0f;
 }
 
-void updateVikingRoomModel()
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+// void updateVikingRoomModel()
+// {
+//     static auto startTime = std::chrono::high_resolution_clock::now();
+//     auto currentTime = std::chrono::high_resolution_clock::now();
+//     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 1.5f, -1.0f));
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+//     glm::mat4 rotationXMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+//     glm::mat4 rotationZMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(3.01f, 3.01f, 3.01f));
 
-    // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(XrUniformBufferObject));
-    vikingRoomModel->ubo.model = translationMatrix * rotationMatrix;
-    vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    vikingRoomModel->ubo.projection =
-        glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
+//     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
+//     memset((void *)&(vikingRoomModel->ubo), 0, sizeof(XrUniformBufferObject));
+//     vikingRoomModel->ubo.model = translationMatrix * scaleMatrix * rotationXMatrix * rotationZMatrix;
+//     vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//     vikingRoomModel->ubo.projection =
+//         glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
 
-    // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
-    // If we do not fix this then the image will be rendered upside-down.
-    // The easy way to fix this is to flip the sign on the scaling factor of Y axis
-    // in the projection matrix.
-    vikingRoomModel->ubo.projection[1][1] *= -1.0f;
-}
+//     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
+//     // If we do not fix this then the image will be rendered upside-down.
+//     // The easy way to fix this is to flip the sign on the scaling factor of Y axis
+//     // in the projection matrix.
+//     vikingRoomModel->ubo.projection[1][1] *= -1.0f;
+// }
 
 int mainLoop(XrContext *context)
 {
@@ -792,7 +796,7 @@ int mainLoop(XrContext *context)
                     }
 
                     updateHomeModel();
-                    updateVikingRoomModel();
+                    // updateVikingRoomModel();
                     xrRender(context, &models);
                 }
             }
