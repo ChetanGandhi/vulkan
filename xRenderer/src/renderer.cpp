@@ -474,7 +474,8 @@ XR_API VkResult xrInitGraphicsPipline(XrContext *context)
     VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
     VkVertexInputBindingDescription vertexBindingDescription = XrVertex::xrGetBindingDescription();
-    std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescription = XrVertex::xrGetAttributeDescription();
+    std::vector<VkVertexInputAttributeDescription> vertexAttributeDescription = {};
+    XrVertex::xrGetAttributeDescription(&vertexAttributeDescription);
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

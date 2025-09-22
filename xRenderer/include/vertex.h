@@ -9,6 +9,8 @@ typedef struct XrVertex
     glm::vec3 position;
     glm::vec3 color;
     glm::vec2 textureCoordinates;
+    glm::vec3 normal;
+    glm::vec3 tangent;
 
     static VkVertexInputBindingDescription xrGetBindingDescription()
     {
@@ -20,7 +22,7 @@ typedef struct XrVertex
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> xrGetAttributeDescription()
+    static void xrGetAttributeDescription(std::vector<VkVertexInputAttributeDescription> *attributeDescriptions)
     {
         VkVertexInputAttributeDescription positionAttributeDescription = {};
         positionAttributeDescription.binding = 0;
@@ -40,16 +42,30 @@ typedef struct XrVertex
         textureCoordinatesAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
         textureCoordinatesAttributeDescription.offset = offsetof(XrVertex, textureCoordinates);
 
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {
-            positionAttributeDescription, colorAttributeDescription, textureCoordinatesAttributeDescription
-        };
+        VkVertexInputAttributeDescription normalAttributeDescription = {};
+        normalAttributeDescription.binding = 0;
+        normalAttributeDescription.location = 3;
+        normalAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
+        normalAttributeDescription.offset = offsetof(XrVertex, normal);
 
-        return attributeDescriptions;
+        VkVertexInputAttributeDescription tangentAttributeDescription = {};
+        tangentAttributeDescription.binding = 0;
+        tangentAttributeDescription.location = 4;
+        tangentAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
+        tangentAttributeDescription.offset = offsetof(XrVertex, tangent);
+
+        attributeDescriptions->push_back(positionAttributeDescription);
+        attributeDescriptions->push_back(colorAttributeDescription);
+        attributeDescriptions->push_back(textureCoordinatesAttributeDescription);
+        attributeDescriptions->push_back(normalAttributeDescription);
+        attributeDescriptions->push_back(tangentAttributeDescription);
     }
 
     bool operator==(const XrVertex &otherVertex) const
+
     {
-        return position == otherVertex.position && color == otherVertex.color && textureCoordinates == otherVertex.textureCoordinates;
+        return position == otherVertex.position && color == otherVertex.color && textureCoordinates == otherVertex.textureCoordinates &&
+               normal == otherVertex.normal && tangent == otherVertex.tangent;
     }
 } XrVertex;
 
