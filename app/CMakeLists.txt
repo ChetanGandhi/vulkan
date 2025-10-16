@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.28.3)
 
 # Require out-of-source builds
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
@@ -81,6 +81,7 @@ target_include_directories(
     ${Vulkan_INCLUDE_DIRS}
     $ENV{XRENDERER_PATH}/include
     $ENV{XRENDERER_PATH}/lib
+    $ENV{XRENDERER_PATH}/lib/glm
     ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_SOURCE_DIR}
 )

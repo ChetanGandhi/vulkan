@@ -24,9 +24,9 @@ XR_API VkResult xrCreateLogger(const char* fileName, XrLogger** logger)
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    fprintf_s((*logger)->logfile, "-----------------------------------\n");
-    fprintf_s((*logger)->logfile, "| Logs start: %s |\n", dateTime);
-    fprintf_s((*logger)->logfile, "-----------------------------------\n");
+    fprintf((*logger)->logfile, "-----------------------------------\n");
+    fprintf((*logger)->logfile, "| Logs start: %s |\n", dateTime);
+    fprintf((*logger)->logfile, "-----------------------------------\n");
     fflush((*logger)->logfile);
 
     return VK_SUCCESS;
@@ -42,9 +42,9 @@ XR_API void xrDestroyLogger(XrLogger** logger)
             memset((void*)&dateTime, 0, sizeof(dateTime));
             size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
 
-            fprintf_s((*logger)->logfile, "-----------------------------------\n");
-            fprintf_s((*logger)->logfile, "| Logs end: %s   |\n", dateTime);
-            fprintf_s((*logger)->logfile, "-----------------------------------\n");
+            fprintf((*logger)->logfile, "-----------------------------------\n");
+            fprintf((*logger)->logfile, "| Logs end: %s   |\n", dateTime);
+            fprintf((*logger)->logfile, "-----------------------------------\n");
             fflush((*logger)->logfile);
             fclose((*logger)->logfile);
             (*logger)->logfile = VK_NULL_HANDLE;

@@ -14,6 +14,17 @@
             "cwd": "${workspaceFolder}/build/windows/install/app/bin",
             "environment": [],
             "externalConsole": false
+        },
+        {
+            "name": "(Linux) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux/install/app/bin/app",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/linux/install/app/bin",
+            "environment": [],
+            "externalConsole": false
         }
     ]
 }

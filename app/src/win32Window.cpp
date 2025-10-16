@@ -119,10 +119,8 @@ void initializePlatformSpecificWindow(XrContext *context)
 
     if (!RegisterClassEx(&wndclassex))
     {
-        assert(1 && "Cannot register window class.\n");
         XR_LOG_INFO(context->logger, "Error: Unable to open XgDisplay.\n");
-        // TODO: Call cleanup.
-        fflush(stdout);
+        cleanUp();
         std::exit(EXIT_FAILURE);
     }
 
@@ -149,9 +147,8 @@ void initializePlatformSpecificWindow(XrContext *context)
 
     if (!hWindow)
     {
-        assert(0 && "Cannot create window.\n");
-        XR_LOG_INFO(context->logger, "Cannot create window.\n");
-        fflush(stdout);
+        XR_LOG_ERROR(context->logger, "Cannot create window.\n");
+        cleanup();
         std::exit(EXIT_FAILURE);
     }
 

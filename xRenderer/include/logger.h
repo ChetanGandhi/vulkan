@@ -38,14 +38,14 @@ typedef struct XrLogger
         char dateTime[100];
         memset((void*)&dateTime, 0, sizeof(dateTime));
         size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
-        fprintf_s(this->logfile, "%s | %s:%04d | %s | [%s] | ", dateTime, file, line, function, tag);
+        fprintf(this->logfile, "%s | %s:%04d | %s | [%s] | ", dateTime, file, line, function, tag);
 
         va_list args;
         va_start(args, message);
         vfprintf(this->logfile, message, args);
         va_end(args);
 
-        fprintf_s(this->logfile, "\n");
+        fprintf(this->logfile, "\n");
         fflush(this->logfile);
     }
 
@@ -60,19 +60,19 @@ typedef struct XrLogger
         memset((void*)&dateTime, 0, sizeof(dateTime));
         size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
 
-        fprintf_s(this->logfile, "%s | %s:%04d | %s | [UUID] | %s", dateTime, file, line, function, message);
+        fprintf(this->logfile, "%s | %s:%04d | %s | [UUID] | %s", dateTime, file, line, function, message);
 
         for (int counter = 0; counter < VK_UUID_SIZE; ++counter)
         {
-            fprintf_s(this->logfile, "%2d", (uint32_t)uuid[counter]);
+            fprintf(this->logfile, "%2d", (uint32_t)uuid[counter]);
 
             if (counter == 3 || counter == 5 || counter == 7 || counter == 9)
             {
-                fprintf_s(this->logfile, "-");
+                fprintf(this->logfile, "-");
             }
         }
 
-        fprintf_s(this->logfile, "\n");
+        fprintf(this->logfile, "\n");
         fflush(this->logfile);
     }
 } XrLogger;
