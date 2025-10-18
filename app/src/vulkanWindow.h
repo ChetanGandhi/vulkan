@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef NDEBUG
+#ifdef DEBUG
 
 #define XR_ENABLE_RUNTIME_DEBUG 1
 #define XR_ENABLE_DEBUG_REPORT_LOGGING 1
@@ -29,7 +29,7 @@ void destroyPlatformSpecificWindow(XrContext *context);
 VkResult initPlatformSpecificSurface(XrContext *context);
 void destroyPlatformSpecificSurface(XrContext *context);
 
-void listAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> *gpuList);
+void listAllPhysicalDevices(XrContext *context, XrPhysicalDevice *gpus, uint32_t *count);
 void rankDevice(XrContext *context, XrPhysicalDevice *gpu);
 void findSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpu);
 void findMaxMSAASampleCount(XrContext *context, XrPhysicalDevice *gpu);
@@ -43,7 +43,7 @@ void cleanUp(XrContext *context);
 
 int mainLoop(XrContext *context);
 
-void render(XrContext *context, XrUniformBufferObject *ubo);
+void render();
 void resize(uint32_t width, uint32_t height);
 void toggleFullscreen(bool isFullscreen);
 

@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows) Launch",
+            "name": "(Windows) XR",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/windows/install/app/bin/app.exe",

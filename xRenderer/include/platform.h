@@ -46,13 +46,17 @@
 
 #endif
 
+#ifndef _ARRAYSIZE
+
+#define _ARRAYSIZE(array) (sizeof(array) / sizeof((array)[0]))
+
+#endif
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <chrono>
-#include <vector>
-#include <array>
 #include <set>
 #include <unordered_map>
 #include <string>

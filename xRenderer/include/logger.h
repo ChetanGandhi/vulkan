@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <cstdarg>
 
-#ifndef NDEBUG
+#ifdef DEBUG
 
 #define XR_LOG(logger, xr_tag, xr_message, ...) logger->xrLog(__FILE__, __FUNCTION__, __LINE__, xr_tag, xr_message, ##__VA_ARGS__)
 #define XR_LOG_INFO(logger, xr_message, ...) logger->xrLog(__FILE__, __FUNCTION__, __LINE__, "INFO", xr_message, ##__VA_ARGS__)
@@ -24,6 +24,8 @@
 
 #endif
 
+#define XR_IS_ERROR(result) (result != VK_SUCCESS)
+
 typedef struct XrLogger
 {
     FILE* logfile = VK_NULL_HANDLE;
@@ -36,8 +38,8 @@ typedef struct XrLogger
         }
 
         char dateTime[100];
-        memset((void*)&dateTime, 0, sizeof(dateTime));
-        size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
+        memset((void*)dateTime, 0, _ARRAYSIZE(dateTime));
+        xrCurrentDateTime(dateTime, _ARRAYSIZE(dateTime));
         fprintf(this->logfile, "%s | %s:%04d | %s | [%s] | ", dateTime, file, line, function, tag);
 
         va_list args;
@@ -57,8 +59,8 @@ typedef struct XrLogger
         }
 
         char dateTime[100];
-        memset((void*)&dateTime, 0, sizeof(dateTime));
-        size_t size = xrCurrentDateTime(dateTime, sizeof(dateTime));
+        memset((void*)dateTime, 0, _ARRAYSIZE(dateTime));
+        xrCurrentDateTime(dateTime, _ARRAYSIZE(dateTime));
 
         fprintf(this->logfile, "%s | %s:%04d | %s | [UUID] | %s", dateTime, file, line, function, message);
 

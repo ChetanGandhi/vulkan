@@ -5,7 +5,6 @@
 #include <xRenderer/logger.h>
 #include <xRenderer/debugger.h>
 #include <xRenderer/model.h>
-#include <xRenderer/texture.h>
 
 #include "lib/stb/stb_image.h"
 
@@ -24,12 +23,13 @@ int main(void);
 void handleEvent(const xcb_generic_event_t *event);
 
 XrModel *homeModel = VK_NULL_HANDLE;
-XrTexture *homeTexture = VK_NULL_HANDLE;
+void updateHomeModel(XrUniformBuffer *);
 
 XrModel *vikingRoomModel = VK_NULL_HANDLE;
-XrTexture *vikingRoomTexture = VK_NULL_HANDLE;
+void updateVikingRoomModel(XrUniformBuffer *);
 
-std::vector<XrModel *> models;
+uint32_t modelsCount = 2;
+XrModel **models = VK_NULL_HANDLE;
 
 void handleEvent(const xcb_generic_event_t *event)
 {
@@ -54,7 +54,8 @@ void handleEvent(const xcb_generic_event_t *event)
                     isEscapeKeyPressed = true;
                     break;
 
-                case 0x29: // 'f; key code
+                case 'f':
+                case 'F':
                     isFullscreen = !isFullscreen;
                     toggleFullscreen(isFullscreen);
                     break;
@@ -83,6 +84,8 @@ void handleEvent(const xcb_generic_event_t *event)
 
 int main(void)
 {
+    VkResult vkResult = VK_SUCCESS;
+
     windowName = "VulkanWindow";
     windowTitle = "Vulkan Window | XWindows";
 
@@ -92,8 +95,17 @@ int main(void)
     context->surfaceExtent.height = 600;
 
     xrCreateLogger("debug_win32.log", &(context->logger));
+
     initializePlatformSpecificWindow(context);
-    initializeVulkan(context);
+
+    vkResult = initializeVulkan(context);
+
+    if (XR_IS_ERROR(vkResult))
+    {
+        XR_LOG_ERROR(context->logger, "Failed to initialize Vulkan (%d)", vkResult);
+        cleanUp(context);
+        exit(EXIT_FAILURE);
+    }
 
     int returnCode = mainLoop(context);
 
@@ -204,33 +216,6 @@ void destroyPlatformSpecificWindow()
     }
 }
 
-void listAllPhysicalDevices(XrContext *context, std::vector<XrPhysicalDevice> *gpuList)
-{
-    uint32_t gpuCount = 0;
-    vkEnumeratePhysicalDevices(context->instance, &gpuCount, VK_NULL_HANDLE);
-
-    if (gpuCount == 0)
-    {
-        return;
-    }
-
-    std::vector<VkPhysicalDevice> deviceList(gpuCount);
-    vkEnumeratePhysicalDevices(context->instance, &gpuCount, deviceList.data());
-
-    for (uint32_t counter = 0; counter < gpuCount; ++counter)
-    {
-        XrPhysicalDevice nextPhysicalDevice = {};
-        nextPhysicalDevice.gpu = deviceList[counter];
-        nextPhysicalDevice.properties = {};
-        nextPhysicalDevice.memoryProperties = {};
-
-        vkGetPhysicalDeviceProperties(nextPhysicalDevice.gpu, &nextPhysicalDevice.properties);
-        vkGetPhysicalDeviceMemoryProperties(nextPhysicalDevice.gpu, &nextPhysicalDevice.memoryProperties);
-
-        gpuList->push_back(nextPhysicalDevice);
-    }
-}
-
 void rankDevice(XrContext *context, XrPhysicalDevice *gpuDetails)
 {
     // Higher the rank, more suitable the device
@@ -240,9 +225,9 @@ void rankDevice(XrContext *context, XrPhysicalDevice *gpuDetails)
 
     if (extensionSupported)
     {
-        XrSwapchainSupportDetails details = {};
+        XrSwapchainSupport details = {};
         xrQuerySwapchainSupportDetails(context, gpuDetails->gpu, &details);
-        swapchainSupported = !details.surfaceFormats.empty() && !details.presentModes.empty();
+        swapchainSupported = !details.surfaceFormatsCount && !details.presentModesCount;
     }
 
     VkPhysicalDeviceFeatures supportedFeatures = {};
@@ -303,14 +288,16 @@ void findSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpuDetails)
     uint32_t presentFamilyIndex = UINT32_MAX;
 
     vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, VK_NULL_HANDLE);
-    std::vector<VkQueueFamilyProperties> familyPropertiesList(familyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, familyPropertiesList.data());
+    VkQueueFamilyProperties *familyPropertiesList = (VkQueueFamilyProperties *)malloc(sizeof(VkQueueFamilyProperties) * familyCount);
+    memset((void *)familyPropertiesList, 0, sizeof(VkQueueFamilyProperties) * familyCount);
+
+    vkGetPhysicalDeviceQueueFamilyProperties(gpuDetails->gpu, &familyCount, familyPropertiesList);
 
     for (uint32_t queueCounter = 0; queueCounter < familyCount; ++queueCounter)
     {
-        VkQueueFamilyProperties nextFamilyProperties = familyPropertiesList[queueCounter];
+        VkQueueFamilyProperties *nextFamilyProperties = &familyPropertiesList[queueCounter];
 
-        if (nextFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (nextFamilyProperties->queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             graphicsFamilyIndex = queueCounter;
         }
@@ -344,6 +331,8 @@ void findSuitableDeviceQueues(XrContext *context, XrPhysicalDevice *gpuDetails)
     gpuDetails->graphicsFamilyIndex = graphicsFamilyIndex;
     gpuDetails->presentFamilyIndex = presentFamilyIndex;
     gpuDetails->hasSeparatePresentQueue = (presentFamilyIndex != graphicsFamilyIndex);
+
+    XR_FREE(familyPropertiesList);
 }
 
 void findMaxMSAASampleCount(XrPhysicalDevice *gpuDetails)
@@ -389,7 +378,7 @@ bool checkDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu)
 
     if (XR_IS_ERROR(vkResult))
     {
-        return vkResult;
+        return false;
     }
 
     if (availableDeviceExtensionsCount == 0)
@@ -397,22 +386,41 @@ bool checkDeviceExtensionSupport(XrContext *context, VkPhysicalDevice gpu)
         return false;
     }
 
-    std::vector<VkExtensionProperties> availableDeviceExtensions(availableDeviceExtensionsCount);
-    vkResult = vkEnumerateDeviceExtensionProperties(gpu, VK_NULL_HANDLE, &availableDeviceExtensionsCount, availableDeviceExtensions.data());
+    VkExtensionProperties *availableDeviceExtensions = (VkExtensionProperties *)malloc(sizeof(VkExtensionProperties) * availableDeviceExtensionsCount);
+    memset((void *)availableDeviceExtensions, 0, sizeof(VkExtensionProperties) * availableDeviceExtensionsCount);
+
+    vkResult = vkEnumerateDeviceExtensionProperties(gpu, VK_NULL_HANDLE, &availableDeviceExtensionsCount, availableDeviceExtensions);
 
     if (XR_IS_ERROR(vkResult))
     {
-        return vkResult;
+        XR_FREE(availableDeviceExtensions);
+        return false;
     }
 
-    std::set<std::string> requiredExtensions(context->deviceExtensions.begin(), context->deviceExtensions.end());
+    VkBool32 found = VK_FALSE;
 
-    for (VkExtensionProperties &nextExtensionProperties : availableDeviceExtensions)
+    for (uint32_t requiredExtensionsIndex = 0; requiredExtensionsIndex < context->deviceExtensionsCount; ++requiredExtensionsIndex)
     {
-        requiredExtensions.erase(nextExtensionProperties.extensionName);
+        found = VK_FALSE;
+
+        for (uint32_t availableExtensionsIndex = 0; availableExtensionsIndex < availableDeviceExtensionsCount; ++availableExtensionsIndex)
+        {
+            if (strcmp(context->deviceExtensions[requiredExtensionsIndex], availableDeviceExtensions[availableExtensionsIndex].extensionName) == 0)
+            {
+                found = VK_TRUE;
+                break;
+            }
+        }
+
+        if (found != VK_TRUE)
+        {
+            break;
+        }
     }
 
-    return requiredExtensions.empty();
+    XR_FREE(availableDeviceExtensions);
+
+    return found == VK_TRUE;
 }
 
 void printGpuProperties(XrContext *context, XrPhysicalDevice *gpu, uint32_t currentGpuIndex, uint32_t totalGpuCount)
@@ -440,40 +448,78 @@ void printGpuProperties(XrContext *context, XrPhysicalDevice *gpu, uint32_t curr
 
 VkResult initDevice(XrContext *context)
 {
-    std::vector<XrPhysicalDevice> gpuList(0);
-    listAllPhysicalDevices(context, &gpuList);
+    VkResult vkResult = VK_SUCCESS;
 
-    uint32_t gpuCount = static_cast<uint32_t>(gpuList.size());
+    XrPhysicalDevice *gpus = VK_NULL_HANDLE;
+    uint32_t gpuCount = 0;
     uint32_t lastRank = 0;
     int32_t selectedGpuIndex = -1;
 
-    XR_LOG_INFO(context->logger, "Total GPU Found: %d", gpuCount);
+    vkResult = vkEnumeratePhysicalDevices(context->instance, &gpuCount, VK_NULL_HANDLE);
 
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    if (gpuCount == 0)
+    {
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return vkResult;
+    }
+
+    gpus = (XrPhysicalDevice *)malloc(sizeof(XrPhysicalDevice) * gpuCount);
+    memset((void *)gpus, 0, sizeof(XrPhysicalDevice) * gpuCount);
+
+    VkPhysicalDevice *deviceList = (VkPhysicalDevice *)malloc(sizeof(VkPhysicalDevice) * gpuCount);
+    memset((void *)deviceList, 0, sizeof(VkPhysicalDevice) * gpuCount);
+
+    vkResult = vkEnumeratePhysicalDevices(context->instance, &gpuCount, deviceList);
+    if (XR_IS_ERROR(vkResult))
+    {
+        XR_FREE(gpus);
+        XR_FREE(deviceList);
+        return vkResult;
+    }
+
+    XR_LOG_INFO(context->logger, "Total GPU Found: %d", gpuCount);
     for (uint32_t counter = 0; counter < gpuCount; ++counter)
     {
-        XrPhysicalDevice *nextGpuDetails = &gpuList[counter];
-        findSuitableDeviceQueues(context, nextGpuDetails);
-        findMaxMSAASampleCount(nextGpuDetails);
-        rankDevice(context, nextGpuDetails);
-        printGpuProperties(context, nextGpuDetails, counter + 1, gpuCount);
+        XrPhysicalDevice *nextGpu = &gpus[counter];
+        nextGpu->gpu = deviceList[counter];
+        nextGpu->properties = {};
+        nextGpu->memoryProperties = {};
 
-        if (lastRank < nextGpuDetails->rank)
+        vkGetPhysicalDeviceProperties(nextGpu->gpu, &(nextGpu->properties));
+        vkGetPhysicalDeviceMemoryProperties((nextGpu->gpu), &(nextGpu->memoryProperties));
+
+        findSuitableDeviceQueues(context, nextGpu);
+        findMaxMSAASampleCount(nextGpu);
+        rankDevice(context, nextGpu);
+        printGpuProperties(context, nextGpu, counter + 1, gpuCount);
+
+        if (lastRank < nextGpu->rank)
         {
-            lastRank = nextGpuDetails->rank;
+            lastRank = nextGpu->rank;
             selectedGpuIndex = counter;
         }
     }
 
     if (selectedGpuIndex > -1)
     {
-        XrPhysicalDevice *nextGpuDetails = &gpuList[selectedGpuIndex];
+        XrPhysicalDevice *nextGpuDetails = &gpus[selectedGpuIndex];
         context->gpu = (XrPhysicalDevice *)malloc(sizeof(XrPhysicalDevice));
         memset((void *)context->gpu, 0, sizeof(XrPhysicalDevice));
         memcpy((void *)context->gpu, nextGpuDetails, sizeof(XrPhysicalDevice));
     }
-    else
+
+    XR_FREE(gpus);
+    XR_FREE(deviceList);
+
+    if (!context->gpu)
     {
-        return VK_ERROR_INITIALIZATION_FAILED;
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return vkResult;
     }
 
     XR_LOG_INFO(context->logger, "---------- Selected GPU Properties ----------");
@@ -485,24 +531,63 @@ VkResult initDevice(XrContext *context)
     {
         uint32_t layerCount = 0;
         vkEnumerateInstanceLayerProperties(&layerCount, VK_NULL_HANDLE);
-        std::vector<VkLayerProperties> layerPropertiesList(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, layerPropertiesList.data());
-        xrPrintInstanceLayerProperties(context, &layerPropertiesList);
+        VkLayerProperties *layerProperties = (VkLayerProperties *)malloc(sizeof(VkLayerProperties) * layerCount);
+        memset((void *)layerProperties, 0, sizeof(VkLayerProperties) * layerCount);
+
+        vkEnumerateInstanceLayerProperties(&layerCount, layerProperties);
+        xrPrintInstanceLayerProperties(context, layerProperties, layerCount);
+        XR_FREE(layerProperties);
     }
 
     {
         uint32_t layerCount = 0;
         vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, VK_NULL_HANDLE);
-        std::vector<VkLayerProperties> layerPropertiesList(layerCount);
-        vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, layerPropertiesList.data());
-        xrPrintDeviceLayerProperties(context, &layerPropertiesList);
+        VkLayerProperties *layerProperties = (VkLayerProperties *)malloc(sizeof(VkLayerProperties) * layerCount);
+        memset((void *)layerProperties, 0, sizeof(VkLayerProperties) * layerCount);
+
+        vkEnumerateDeviceLayerProperties(context->gpu->gpu, &layerCount, layerProperties);
+        xrPrintDeviceLayerProperties(context, layerProperties, layerCount);
+        XR_FREE(layerProperties);
     }
 
-    return VK_SUCCESS;
+    return vkResult;
 }
 
 VkResult initializeVulkan(XrContext *context)
 {
+    VkResult vkResult = VK_SUCCESS;
+    context->clearValueCount = 2;
+    context->clearValue = (VkClearValue *)malloc(sizeof(VkClearValue) * context->clearValueCount);
+    memset((void *)context->clearValue, 0, sizeof(VkClearValue) * context->clearValueCount);
+
+    context->clearValue[0].color = {0.0f, 0.0f, 0.0f, 1.0f}; // {r, g, b, a}
+    context->clearValue[1].depthStencil = {1.0f, 0};         // {depth, stencil}
+
+#ifdef XR_ENABLE_RUNTIME_DEBUG
+
+    context->enableValidations = VK_TRUE;
+
+    VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+
+#ifdef XR_ENABLE_DEBUG_REPORT_VERBOSE_BIT
+
+    debugReportFlags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+
+#endif
+
+#ifdef XR_ENABLE_DEBUG_REPORT_VERBOSE_BIT
+
+    debugReportFlags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+
+#endif
+
+    vkResult = xrSetupLayersAndExtensions(context);
+
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
     VkApplicationInfo applicationInfo;
     memset((void *)&applicationInfo, 0, sizeof(VkApplicationInfo));
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -513,134 +598,284 @@ VkResult initializeVulkan(XrContext *context)
     applicationInfo.pEngineName = VK_NULL_HANDLE;
     applicationInfo.engineVersion = 0;
 
-    xrInitInstance(context, &applicationInfo);
-    xrCreateDebugger(context);
-    initPlatformSpecificSurface(context);
-    initDevice(context);
-
-    xrInitLogicalDevice(context);
-
-    context->swapchainSupportDetails = (XrSwapchainSupportDetails *)malloc(sizeof(XrSwapchainSupportDetails));
-    memset((void *)context->swapchainSupportDetails, 0, sizeof(XrSwapchainSupportDetails));
-
-    xrInitSwapchain(context);
-    xrInitSwapchainImageViews(context);
-    xrInitRenderPass(context);
-    xrInitDescriptorSetLayout(context);
-    xrInitGraphicsPiplineCache(context);
-
-    context->vertexShaderModule = VK_NULL_HANDLE;
-    xrCreateShaderModule(context, "../shaders/vert.spv", &(context->vertexShaderModule));
-
-    context->fragmentShaderModule = VK_NULL_HANDLE;
-    xrCreateShaderModule(context, "../shaders/frag.spv", &(context->fragmentShaderModule));
-
-    xrInitGraphicsPipline(context);
-
-    xrDestroyShaderModule(context, &(context->vertexShaderModule));
-    context->vertexShaderModule = VK_NULL_HANDLE;
-
-    xrDestroyShaderModule(context, &(context->fragmentShaderModule));
-    context->fragmentShaderModule = VK_NULL_HANDLE;
-
-    xrInitCommandPool(context);
-    xrInitDepthStencilImage(context);
-    xrInitMSAAColorImage(context);
-    xrInitFrameBuffers(context);
-
-    homeModel = (XrModel *)malloc(sizeof(XrModel));
-    memset((void *)homeModel, 0, sizeof(XrModel));
-
-    bool homeModelLoaded = xrLoadModal(context, "../resources/models/chalet/chalet.obj", homeModel);
-
-    if (!homeModelLoaded)
+    vkResult = xrInitInstance(context, &applicationInfo);
+    if (XR_IS_ERROR(vkResult))
     {
-        XR_LOG_ERROR(context->logger, "Not able to load home model.");
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return vkResult;
     }
 
-    XR_LOG_INFO(context->logger, "Home model loaded");
-
-    homeTexture = (XrTexture *)malloc(sizeof(XrTexture));
-    memset((void *)homeTexture, 0, sizeof(XrTexture));
-
-    stbi_uc *homeTextureData = VK_NULL_HANDLE;
-    xrLoadTexture(context, "../resources/textures/chalet/chalet.jpg", homeTexture, &homeTextureData);
-
-    if (!homeTextureData)
+    vkResult = xrCreateDebugger(context, debugReportFlags);
+    if (XR_IS_ERROR(vkResult))
     {
-        XR_LOG_ERROR(context->logger, "Not able to load home texture.");
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return vkResult;
     }
 
-    xrInitTextureImage(context, homeModel, homeTexture, homeTextureData);
-    XR_LOG_INFO(context->logger, "Home texture loaded");
+#endif
 
-    // Free the texture data as no longer required
-    if (homeTextureData)
+    vkResult = initPlatformSpecificSurface(context);
+    if (XR_IS_ERROR(vkResult))
     {
-        free(homeTextureData);
-        homeTextureData = VK_NULL_HANDLE;
-        XR_LOG_INFO(context->logger, "Free home texture data");
+        return vkResult;
     }
 
-    xrInitTextureImageView(context, homeModel, homeTexture);
-    xrInitTextureSampler(context, homeModel, homeTexture);
-    xrInitVertexBuffer(context, homeModel);
-    xrInitIndexBuffer(context, homeModel);
-    xrInitUniformBuffers(context, homeModel);
-
-    vikingRoomModel = (XrModel *)malloc(sizeof(XrModel));
-    memset((void *)vikingRoomModel, 0, sizeof(XrModel));
-
-    bool vikingRoomModelLoaded = xrLoadModal(context, "../resources/models/vikingRoom/vikingRoom.obj", vikingRoomModel);
-
-    if (!vikingRoomModelLoaded)
+    vkResult = initDevice(context);
+    if (XR_IS_ERROR(vkResult))
     {
-        XR_LOG_ERROR(context->logger, "Not able to load viking room model.");
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return vkResult;
     }
 
-    XR_LOG_INFO(context->logger, "Viking room model loaded");
-
-    vikingRoomTexture = (XrTexture *)malloc(sizeof(XrTexture));
-    memset((void *)vikingRoomTexture, 0, sizeof(XrTexture));
-
-    stbi_uc *vikingRoomTextureData = VK_NULL_HANDLE;
-    xrLoadTexture(context, "../resources/textures/vikingRoom/vikingRoom.png", vikingRoomTexture, &vikingRoomTextureData);
-
-    if (!vikingRoomTextureData)
+    vkResult = xrInitLogicalDevice(context);
+    if (XR_IS_ERROR(vkResult))
     {
-        XR_LOG_ERROR(context->logger, "Not able to load viking room texture");
-        return VK_ERROR_INITIALIZATION_FAILED;
+        return vkResult;
     }
 
-    xrInitTextureImage(context, vikingRoomModel, vikingRoomTexture, vikingRoomTextureData);
-    XR_LOG_INFO(context->logger, "Viking room texture loaded");
-
-    // Free the texture data as no longer required
-    if (vikingRoomTextureData)
+    vkResult = xrInitSwapchain(context);
+    if (XR_IS_ERROR(vkResult))
     {
-        free(vikingRoomTextureData);
-        vikingRoomTextureData = VK_NULL_HANDLE;
-        XR_LOG_INFO(context->logger, "Free viking room texture loaded");
+        return vkResult;
     }
 
-    xrInitTextureImageView(context, vikingRoomModel, vikingRoomTexture);
-    xrInitTextureSampler(context, vikingRoomModel, vikingRoomTexture);
-    xrInitVertexBuffer(context, vikingRoomModel);
-    xrInitIndexBuffer(context, vikingRoomModel);
-    xrInitUniformBuffers(context, vikingRoomModel);
+    vkResult = xrInitSwapchainImageViews(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
 
-    models.push_back(homeModel);
-    models.push_back(vikingRoomModel);
+    vkResult = xrInitDepthStencilImage(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
 
-    xrInitDescriptorPool(context, models.size());
-    xrInitDescriptorSets(context, &models);
-    xrInitCommandBuffers(context, &models);
-    xrInitSynchronizations(context);
+    vkResult = xrInitMSAAColorImage(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
 
-    return VK_SUCCESS;
+    vkResult = xrInitCommandPool(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitFrameBuffers(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitRenderPass(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    {
+        homeModel = (XrModel *)malloc(sizeof(XrModel));
+        memset((void *)homeModel, 0, sizeof(XrModel));
+
+        homeModel->texture = (XrTexture *)malloc(sizeof(XrTexture));
+        memset((void *)homeModel->texture, 0, sizeof(XrTexture));
+
+        homeModel->draw = updateHomeModel;
+
+        VkBool32 homeModelLoaded = xrLoadModal(context, "../resources/models/chalet", "../resources/models/chalet/chalet.obj", homeModel);
+
+        if (homeModelLoaded != VK_TRUE)
+        {
+            XR_LOG_ERROR(context->logger, "Not able to load home model.");
+        }
+        else
+        {
+            XR_LOG_INFO(context->logger, "Home model loaded");
+        }
+
+        stbi_uc *homeTextureData = VK_NULL_HANDLE;
+        xrLoadTexture(context, "../resources/models/chalet/chalet.jpg", homeModel->texture, &homeTextureData);
+
+        if (!homeTextureData)
+        {
+            XR_LOG_ERROR(context->logger, "Not able to load home texture.");
+        }
+
+        vkResult = xrInitTextureImage(context, homeModel->texture, homeTextureData);
+
+        // Free the texture data as no longer required
+        XR_FREE(homeTextureData);
+
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        XR_LOG_INFO(context->logger, "Home texture loaded");
+
+        vkResult = xrInitTextureImageView(context, homeModel->texture);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitTextureSampler(context, homeModel->texture);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitVertexBuffer(context, homeModel);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitIndexBuffer(context, homeModel);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitUniformBuffers(context, homeModel);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+    }
+
+    {
+        vikingRoomModel = (XrModel *)malloc(sizeof(XrModel));
+        memset((void *)vikingRoomModel, 0, sizeof(XrModel));
+
+        vikingRoomModel->texture = (XrTexture *)malloc(sizeof(XrTexture));
+        memset((void *)vikingRoomModel->texture, 0, sizeof(XrTexture));
+
+        vikingRoomModel->draw = updateVikingRoomModel;
+
+        VkBool32 vikingRoomModelLoaded =
+            xrLoadModal(context, "../resources/models/vikingRoom", "../resources/models/vikingRoom/viking_room.obj", vikingRoomModel);
+
+        if (vikingRoomModelLoaded != VK_TRUE)
+        {
+            XR_LOG_ERROR(context->logger, "Not able to load viking room model.");
+        }
+        else
+        {
+            XR_LOG_INFO(context->logger, "Viking room model loaded");
+        }
+
+        stbi_uc *vikingRoomTextureData = VK_NULL_HANDLE;
+        xrLoadTexture(context, "../resources/models/vikingRoom/viking_room.png", vikingRoomModel->texture, &vikingRoomTextureData);
+
+        if (!vikingRoomTextureData)
+        {
+            XR_LOG_ERROR(context->logger, "Not able to load viking room texture");
+        }
+
+        vkResult = xrInitTextureImage(context, vikingRoomModel->texture, vikingRoomTextureData);
+
+        // Free the texture data as no longer required
+        XR_FREE(vikingRoomTextureData);
+
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        XR_LOG_INFO(context->logger, "Viking room texture loaded");
+
+        vkResult = xrInitTextureImageView(context, vikingRoomModel->texture);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitTextureSampler(context, vikingRoomModel->texture);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitVertexBuffer(context, vikingRoomModel);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitIndexBuffer(context, vikingRoomModel);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        vkResult = xrInitUniformBuffers(context, vikingRoomModel);
+        if (XR_IS_ERROR(vkResult))
+        {
+            return vkResult;
+        }
+
+        models = (XrModel **)malloc(sizeof(XrModel *) * modelsCount);
+        memset((void *)models, 0, sizeof(XrModel *) * modelsCount);
+
+        models[0] = homeModel;
+        models[1] = vikingRoomModel;
+    }
+
+    vkResult = xrCreateShaderModule(context, "../shaders/vert.spv", &(context->vertexShaderModule));
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrCreateShaderModule(context, "../shaders/frag.spv", &(context->fragmentShaderModule));
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitDescriptorSetLayout(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitDescriptorPool(context, modelsCount);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitDescriptorSets(context, models, modelsCount);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitGraphicsPiplineCache(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitGraphicsPipline(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitSynchronizations(context);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    vkResult = xrInitCommandBuffers(context, models, modelsCount);
+    if (XR_IS_ERROR(vkResult))
+    {
+        return vkResult;
+    }
+
+    return vkResult;
 }
 
 void cleanUp(XrContext *context)
@@ -656,22 +891,22 @@ void cleanUp(XrContext *context)
     xrWaitForIdle(context);
     xrDestroySynchronizations(context);
     xrDestroyCommandBuffers(context);
-    xrDestroyDescriptorSets(context, &models);
+    xrDestroyDescriptorSets(context, models, modelsCount);
     xrDestroyDescriptorPool(context);
 
     xrDestroyUniformBuffers(context, homeModel);
     xrDestroyIndexBuffer(context, homeModel);
     xrDestroyVertexBuffer(context, homeModel);
-    xrDestroyTextureSampler(context, homeModel);
-    xrDestroyTextureImageView(context, homeModel);
-    xrDestroyTextureImage(context, homeModel);
+    xrDestroyTextureSampler(context, homeModel->texture);
+    xrDestroyTextureImageView(context, homeModel->texture);
+    xrDestroyTextureImage(context, homeModel->texture);
 
     xrDestroyUniformBuffers(context, vikingRoomModel);
     xrDestroyIndexBuffer(context, vikingRoomModel);
     xrDestroyVertexBuffer(context, vikingRoomModel);
-    xrDestroyTextureSampler(context, vikingRoomModel);
-    xrDestroyTextureImageView(context, vikingRoomModel);
-    xrDestroyTextureImage(context, vikingRoomModel);
+    xrDestroyTextureSampler(context, vikingRoomModel->texture);
+    xrDestroyTextureImageView(context, vikingRoomModel->texture);
+    xrDestroyTextureImage(context, vikingRoomModel->texture);
 
     xrDestroyFrameBuffers(context);
     xrDestroyMSAAColorImage(context);
@@ -679,6 +914,8 @@ void cleanUp(XrContext *context)
     xrDestroyCommandPool(context);
     xrDestroyGraphicsPipline(context);
     xrDestroyGraphicsPiplineCache(context);
+    xrDestroyShaderModule(context, &(context->vertexShaderModule));
+    xrDestroyShaderModule(context, &(context->fragmentShaderModule));
     xrDestroyDescriptorSetLayout(context);
     xrDestroyRenderPass(context);
     xrDestroySwapchainImageViews(context);
@@ -691,56 +928,31 @@ void cleanUp(XrContext *context)
     xrDestroyDebugger(context);
     xrDestroyInstance(context);
 
-    if (context->swapchainSupportDetails)
-    {
-        free(context->swapchainSupportDetails);
-        context->swapchainSupportDetails = VK_NULL_HANDLE;
-    }
+    XR_FREE(vikingRoomModel->texture->image);
+    XR_FREE(vikingRoomModel->texture);
+    XR_FREE(vikingRoomModel->vertices);
+    XR_FREE(vikingRoomModel->vertexIndices);
+    XR_FREE(vikingRoomModel->material);
+    XR_FREE(vikingRoomModel);
 
-    if (context->gpu)
-    {
-        free(context->gpu);
-        context->gpu = VK_NULL_HANDLE;
-    }
+    XR_FREE(homeModel->texture->image);
+    XR_FREE(homeModel->texture);
+    XR_FREE(homeModel->vertices);
+    XR_FREE(homeModel->vertexIndices);
+    XR_FREE(homeModel->material);
+    XR_FREE(homeModel);
 
-    if (context->logger)
-    {
-        XR_LOG_INFO(context->logger, "---------- Cleanup done ----------");
-        xrDestroyLogger(&(context->logger));
-        context->logger = VK_NULL_HANDLE;
-    }
+    XR_FREE(models);
+    XR_FREE(context->clearValue);
+    XR_FREE(context->gpu);
 
-    if (homeTexture)
-    {
-        free(homeTexture);
-        homeTexture = VK_NULL_HANDLE;
-    }
+    XR_LOG_INFO(context->logger, "---------- Cleanup done ----------");
 
-    if (vikingRoomTexture)
-    {
-        free(vikingRoomTexture);
-        vikingRoomTexture = VK_NULL_HANDLE;
-    }
-
-    if (homeModel)
-    {
-        free(homeModel);
-        homeModel = VK_NULL_HANDLE;
-    }
-
-    if (vikingRoomModel)
-    {
-        free(vikingRoomModel);
-        vikingRoomModel = VK_NULL_HANDLE;
-    }
-
-    models.clear();
-
-    free(context);
-    context = VK_NULL_HANDLE;
+    xrDestroyLogger(&(context->logger));
+    XR_FREE(context);
 }
 
-void updateHomeModel()
+void updateHomeModel(XrUniformBuffer *ubo)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -750,19 +962,30 @@ void updateHomeModel()
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(homeModel->ubo), 0, sizeof(XrUniformBufferObject));
-    homeModel->ubo.model = translationMatrix * rotationMatrix;
-    homeModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    homeModel->ubo.projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
+    ubo->model = translationMatrix * rotationMatrix;
+    ubo->view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo->projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
     // The easy way to fix this is to flip the sign on the scaling factor of Y axis
     // in the projection matrix.
-    homeModel->ubo.projection[1][1] *= -1.0f;
+    ubo->projection[1][1] *= -1.0f;
+
+    // Lights
+    ubo->lightAmbient = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+    ubo->lightDiffuse = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ubo->lightSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ubo->lightPosition = glm::vec4(100.0f, 100.0f, 100.0f, 1.0f);
+
+    // Material
+    ubo->materialAmbient = homeModel->material->ambient;
+    ubo->materialDiffuse = homeModel->material->diffuse;
+    ubo->materialSpecular = homeModel->material->specular;
+    ubo->materialShininess = homeModel->material->shininess;
 }
 
-void updateVikingRoomModel()
+void updateVikingRoomModel(XrUniformBuffer *ubo)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -772,17 +995,27 @@ void updateVikingRoomModel()
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // To push object deep into screen, modify the eye matrix to have more positive (greater) value at z-axis.
-    memset((void *)&(vikingRoomModel->ubo), 0, sizeof(XrUniformBufferObject));
-    vikingRoomModel->ubo.model = translationMatrix * rotationMatrix;
-    vikingRoomModel->ubo.view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    vikingRoomModel->ubo.projection =
-        glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
+    ubo->model = translationMatrix * rotationMatrix;
+    ubo->view = glm::lookAt(glm::vec3(6.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo->projection = glm::perspective(glm::radians(45.0f), (float)context->surfaceExtent.width / (float)context->surfaceExtent.height, 0.1f, 100.0f);
 
     // The GLM is designed for OpenGL, where the Y coordinate of the clip coordinate is inverted.
     // If we do not fix this then the image will be rendered upside-down.
     // The easy way to fix this is to flip the sign on the scaling factor of Y axis
     // in the projection matrix.
-    vikingRoomModel->ubo.projection[1][1] *= -1.0f;
+    ubo->projection[1][1] *= -1.0f;
+
+    // Lights
+    ubo->lightAmbient = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+    ubo->lightDiffuse = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ubo->lightSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ubo->lightPosition = glm::vec4(100.0f, 100.0f, 100.0f, 1.0f);
+
+    // Material
+    ubo->materialAmbient = vikingRoomModel->material->ambient;
+    ubo->materialDiffuse = vikingRoomModel->material->diffuse;
+    ubo->materialSpecular = vikingRoomModel->material->specular;
+    ubo->materialShininess = vikingRoomModel->material->shininess;
 }
 
 int mainLoop(XrContext *context)
@@ -828,12 +1061,48 @@ int mainLoop(XrContext *context)
             xcb_flush(xcbConnection);
         }
 
-        updateHomeModel();
-        updateVikingRoomModel();
-        xrRender(context, &models);
+        render();
     }
 
     return EXIT_SUCCESS;
+}
+
+void render()
+{
+    VkResult vkResult = xrRender(context, models, modelsCount);
+
+    // Recreate the swap chain if vkResult is suboptimal or out of data because we want the best possible vkResult.
+    if (vkResult == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        XR_LOG_INFO(context->logger, "Swapchain out of date");
+
+        vkResult = xrRecreateSwapChain(context, models, modelsCount);
+
+        if (XR_IS_ERROR(vkResult))
+        {
+            XR_LOG_ERROR(context->logger, "Failed to recreate out of date swapchain");
+        }
+
+        return;
+    }
+
+    if (vkResult == VK_SUBOPTIMAL_KHR)
+    {
+        XR_LOG_INFO(context->logger, "Swapchain suboptimal");
+        vkResult = xrRecreateSwapChain(context, models, modelsCount);
+
+        if (XR_IS_ERROR(vkResult))
+        {
+            XR_LOG_ERROR(context->logger, "Failed to recreate suboptimal swapchain");
+        }
+
+        return;
+    }
+
+    if (XR_IS_ERROR(vkResult))
+    {
+        XR_LOG_ERROR(context->logger, "Failed to render");
+    }
 }
 
 VkResult initPlatformSpecificSurface(XrContext *context)
@@ -871,7 +1140,7 @@ void resize(uint32_t width, uint32_t height)
 
     if (context)
     {
-        xrRecreateSwapChain(context, &models);
+        xrRecreateSwapChain(context, models, modelsCount);
     }
 }
 

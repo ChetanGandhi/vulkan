@@ -1,0 +1,13 @@
+# Blender v2.82 (sub 7) OBJ File: ''
+# www.blender.org
+# Self created mtl since the obj file from vulkan-tutorial didn't come with one
+
+newmtl Texture1
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd viking_room.png

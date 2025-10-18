@@ -3,8 +3,10 @@
 VkResult xrCreateVulkanInstance(
     XrContext *context,
     VkApplicationInfo *applicationInfo,
-    std::vector<const char *> *instanceLayers,
-    std::vector<const char *> *instanceExtensions
+    char **instanceLayers,
+    uint32_t instanceLayersCount,
+    char **instanceExtensions,
+    uint32_t instanceExtensionsCount
 )
 {
     VkInstanceCreateInfo instanceCreateInfo;
@@ -13,21 +15,19 @@ VkResult xrCreateVulkanInstance(
     instanceCreateInfo.pNext = VK_NULL_HANDLE;
     instanceCreateInfo.flags = 0;
     instanceCreateInfo.pApplicationInfo = applicationInfo;
-    instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayers->size());
-    instanceCreateInfo.ppEnabledLayerNames = instanceLayers->data();
-    instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions->size());
-    instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions->data();
+    instanceCreateInfo.enabledLayerCount = instanceLayersCount;
+    instanceCreateInfo.ppEnabledLayerNames = instanceLayers;
+    instanceCreateInfo.enabledExtensionCount = instanceExtensionsCount;
+    instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions;
 
     return vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &(context->instance));
 }
 
-VkResult xrDestroyVulkanInstance(XrContext *context)
+void xrDestroyVulkanInstance(XrContext *context)
 {
     if (context->instance)
     {
         vkDestroyInstance(context->instance, VK_NULL_HANDLE);
         context->instance = VK_NULL_HANDLE;
     }
-
-    return VK_SUCCESS;
 }

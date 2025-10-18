@@ -6,8 +6,10 @@
 VkResult xrCreateVulkanInstance(
     XrContext *context,
     VkApplicationInfo *applicationInfo,
-    std::vector<const char *> *instanceLayers,
-    std::vector<const char *> *instanceExtensions
+    char **instanceLayers,
+    uint32_t instanceLayersCount,
+    char **instanceExtensions,
+    uint32_t instanceExtensionsCount
 );
 
-VkResult xrDestroyVulkanInstance(XrContext *context);
+void xrDestroyVulkanInstance(XrContext *context);

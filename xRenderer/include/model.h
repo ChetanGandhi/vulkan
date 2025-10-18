@@ -3,27 +3,26 @@
 #include "platform.h"
 #include "common.h"
 #include "vertex.h"
-#include "texture.h"
 
 typedef struct XrModel
 {
-    std::vector<XrVertex> vertices = {};
-    std::vector<uint32_t> vertexIndices = {};
+    XrVertex *vertices = VK_NULL_HANDLE;
+    uint32_t verticesCount = 0;
 
-    std::vector<VkDescriptorSet> descriptorSets = {};
+    uint32_t *vertexIndices = VK_NULL_HANDLE;
+    uint32_t vertexIndicesCount = 0;
 
-    VkBuffer vertexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
+    VkDescriptorSet *descriptorSets = VK_NULL_HANDLE;
+    uint32_t descriptorSetsCount = 0;
 
-    VkBuffer indexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
+    XrBuffer *vertexBuffer = VK_NULL_HANDLE;
+    XrBuffer *indexBuffer = VK_NULL_HANDLE;
 
-    XrUniformBufferObject ubo = {};
-    std::vector<VkBuffer> uniformBuffers = {};
-    std::vector<VkDeviceMemory> uniformBuffersMemory = {};
+    XrBuffer *uniformBuffers = VK_NULL_HANDLE;
+    uint32_t uniformBuffersCount = 0;
 
-    VkImage textureImage = VK_NULL_HANDLE;
-    VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
-    VkImageView textureImageView = VK_NULL_HANDLE;
-    VkSampler textureSampler = VK_NULL_HANDLE;
+    XrTexture *texture = VK_NULL_HANDLE;
+    XrMaterial *material = VK_NULL_HANDLE;
+
+    void (*draw)(XrUniformBuffer *ubo);
 } XrModel;
