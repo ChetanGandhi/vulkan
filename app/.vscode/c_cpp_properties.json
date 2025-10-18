@@ -10,15 +10,30 @@
             "cppStandard": "c++17",
             "intelliSenseMode": "${default}",
             "mergeConfigurations": true,
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "recursiveIncludes": {
+                "reduce": "always"
+            },
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
         },
         {
             "name": "Linux",
             "includePath": ["${workspaceFolder}/**", "${xRenderer}/include/*"],
+            "defines": [],
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c11",
+            "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "mergeConfigurations": true,
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "recursiveIncludes": {
+                "reduce": "always"
+            }
         }
     ],
     "version": 4
