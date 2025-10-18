@@ -54,8 +54,7 @@ void handleEvent(const xcb_generic_event_t *event)
                     isEscapeKeyPressed = true;
                     break;
 
-                case 'f':
-                case 'F':
+                case 0x29: // 'f; key code
                     isFullscreen = !isFullscreen;
                     toggleFullscreen(isFullscreen);
                     break;
