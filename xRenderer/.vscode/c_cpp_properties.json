@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "Win32",
-            "includePath": ["${workspaceFolder}/**", "${workspaceFolder}/include/**", "${workspaceFolder}/lib/**", "${VULKAN_SDK}/include/**"],
+            "includePath": ["${workspaceFolder}/**", "${VULKAN_SDK}/include/**", "${default}"],
             "defines": ["_DEBUG", "XR_EXPORTS"],
             "windowsSdkVersion": "10.0.17763.0",
             "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x64/cl.exe",
@@ -20,7 +20,7 @@
         },
         {
             "name": "Linux",
-            "includePath": ["${workspaceFolder}/**", "${workspaceFolder}/include", "${workspaceFolder}/lib", "${VULKAN_SDK}/include/*"],
+            "includePath": ["${workspaceFolder}/**", "${VULKAN_SDK}/include/**", "${default}"],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
