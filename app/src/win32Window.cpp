@@ -159,7 +159,7 @@ void initializePlatformSpecificWindow(XrContext *context)
     if (!hWindow)
     {
         XR_LOG_ERROR(context->logger, "Cannot create window.\n");
-        cleanup();
+        cleanUp(context);
         std::exit(EXIT_FAILURE);
     }
 
