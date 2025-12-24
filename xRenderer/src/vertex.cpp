@@ -1,5 +1,3 @@
-#pragma once
-
 #include "platform.h"
 #include "vertex.h"
 
